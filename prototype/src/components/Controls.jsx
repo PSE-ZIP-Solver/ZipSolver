@@ -60,7 +60,9 @@ export default function Controls({
 
       {/* Status Message */}
       <div className={`status-${statusType} rounded-3xl p-4 mb-4 border`}>
-        <p className="text-xs font-bold">{statusMessage}</p>
+        <p className="text-xs text-center font-bold">
+          {solverRunning ? 'Loading...' : statusMessage}
+        </p>
         {solutions.length > 1 && (
           <div className="flex items-center justify-center gap-3 mt-3">
             <button

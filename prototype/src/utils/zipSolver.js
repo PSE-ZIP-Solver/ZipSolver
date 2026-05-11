@@ -11,6 +11,9 @@ class ZipSolver {
     this.numberPositions = {};
     this.allSolutions = [];
     this.visited = new Set();
+    this.iterationCount = 0;
+    this.maxIterations = 15000000; // Hard iteration limit to prevent infinite loops
+    this.hitIterationLimit = false;
 
     // Build number positions map
     for (const [pos, num] of Object.entries(numbers)) {
@@ -101,6 +104,13 @@ class ZipSolver {
   }
 
   dfs(r, c, nextNum, path, startTime) {
+    // Check iteration limit
+    this.iterationCount++;
+    if (this.iterationCount > this.maxIterations) {
+      this.hitIterationLimit = true;
+      return;
+    }
+
     if (this.allSolutions.length >= 50) return;
 
     const key = `${r},${c}`;
@@ -152,10 +162,10 @@ class ZipSolver {
         }
       }
 
-      // Prune isolated cells
-      if (this.detectIsolated(new Set([...this.visited, `${nr},${nc}`]))) {
-        continue;
-      }
+      // Disable isolation check for performance - will be optimized later
+      // if (this.detectIsolated(new Set([...this.visited, `${nr},${nc}`]))) {
+      //   continue;
+      // }
 
       this.dfs(nr, nc, next, path, startTime);
     }
@@ -172,6 +182,8 @@ class ZipSolver {
     this.allSolutions = [];
     this.visited = new Set();
     this.lastTime = t0;
+    this.iterationCount = 0;
+    this.hitIterationLimit = false;
 
     this.dfs(startPos[0], startPos[1], 2, [], t0);
 

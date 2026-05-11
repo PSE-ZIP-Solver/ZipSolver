@@ -103,15 +103,17 @@ export default function GridBuilder() {
       setSolutions(results);
       setCurrentSolutionIndex(0);
       setStatusType('done');
+      const limitMsg = solver.hitIterationLimit ? ' (limit reached)' : '';
       setStatusMessage(
         `${results.length >= 50 ? '50+' : results.length} Solution${
           results.length === 1 ? '' : 's'
-        } found!`
+        } found!${limitMsg}`
       );
     } else {
       setSolverRunning(false);
       setStatusType('err');
-      setStatusMessage('No solution found');
+      const limitMsg = solver.hitIterationLimit ? ' (iteration limit reached)' : '';
+      setStatusMessage(`No solution found${limitMsg}`);
       setSolutions([]);
     }
   };
