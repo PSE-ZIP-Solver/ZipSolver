@@ -14,7 +14,8 @@ export default function GridBuilder() {
   const [solutions, setSolutions] = useState([]);
   const [currentSolutionIndex, setCurrentSolutionIndex] = useState(0);
   const [solverRunning, setSolverRunning] = useState(false);
-  const [animationIndex, setAnimationIndex] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
   const [displayTime, setDisplayTime] = useState(0);
   const [statusType, setStatusType] = useState('ok');
   const [statusMessage, setStatusMessage] = useState('Click cells to add numbers');
@@ -92,7 +93,8 @@ export default function GridBuilder() {
     }
 
     setSolverRunning(true);
-    setAnimationIndex(0);
+    setCurrentStepIndex(0);
+    setIsAutoPlayPaused(false);
     setDisplayTime(0);
 
     // Run solver
@@ -125,7 +127,8 @@ export default function GridBuilder() {
     setSolutions([]);
     setCurrentSolutionIndex(0);
     setSolverRunning(false);
-    setAnimationIndex(0);
+    setCurrentStepIndex(0);
+    setIsAutoPlayPaused(false);
     setDisplayTime(0);
     setStatusType('ok');
     setStatusMessage('Click cells to add numbers');
@@ -145,14 +148,14 @@ export default function GridBuilder() {
 
   // Animation loop
   useEffect(() => {
-    if (!solverRunning || solutions.length === 0) return;
+    if (!solverRunning || solutions.length === 0 || isAutoPlayPaused) return;
 
     const currentSolution = solutions[currentSolutionIndex];
     const pathLength = currentSolution.path.length;
     const totalTime = parseFloat(currentSolution.time);
 
     const interval = setInterval(() => {
-      setAnimationIndex((idx) => {
+      setCurrentStepIndex((idx) => {
         if (idx >= pathLength - 1) {
           setSolverRunning(false);
           setDisplayTime(totalTime);
@@ -167,7 +170,7 @@ export default function GridBuilder() {
     }, 25); // Smooth animation
 
     return () => clearInterval(interval);
-  }, [solverRunning, solutions, currentSolutionIndex]);
+  }, [solverRunning, solutions, currentSolutionIndex, isAutoPlayPaused]);
 
   // Handle grid size change
   const handleGridSizeChange = (size) => {
@@ -175,7 +178,8 @@ export default function GridBuilder() {
     setWayPoints({});
     setWalls({ h: {}, v: {} });
     setSolutions([]);
-    setAnimationIndex(0);
+    setCurrentStepIndex(0);
+    setIsAutoPlayPaused(false);
     setDisplayTime(0);
     setStatusType('ok');
     setStatusMessage('Click cells to add numbers');
@@ -186,7 +190,8 @@ export default function GridBuilder() {
     setCurrentSolutionIndex((idx) =>
       idx === 0 ? solutions.length - 1 : idx - 1
     );
-    setAnimationIndex(0);
+    setCurrentStepIndex(0);
+    setIsAutoPlayPaused(false);
     setSolverRunning(true);
   };
 
@@ -194,9 +199,42 @@ export default function GridBuilder() {
     setCurrentSolutionIndex((idx) =>
       idx === solutions.length - 1 ? 0 : idx + 1
     );
-    setAnimationIndex(0);
+    setCurrentStepIndex(0);
+    setIsAutoPlayPaused(false);
     setSolverRunning(true);
   };
+
+  // Handle step navigation
+  const handlePreviousStep = () => {
+    setCurrentStepIndex((idx) => Math.max(0, idx - 1));
+    setIsAutoPlayPaused(true);
+    setSolverRunning(false);
+  };
+
+  const handleNextStep = () => {
+    if (solutions.length === 0) return;
+    const currentSolution = solutions[currentSolutionIndex];
+    const pathLength = currentSolution.path.length;
+    setCurrentStepIndex((idx) => Math.min(pathLength - 1, idx + 1));
+    setIsAutoPlayPaused(true);
+    setSolverRunning(false);
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (solutions.length === 0) return;
+      
+      if (e.key === 'ArrowLeft') {
+        handlePreviousStep();
+      } else if (e.key === 'ArrowRight') {
+        handleNextStep();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [solutions, currentSolutionIndex]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-4 w-full">
@@ -211,11 +249,46 @@ export default function GridBuilder() {
             solutions={solutions}
             currentSolutionIndex={currentSolutionIndex}
             isAnimating={solverRunning}
-            animationIndex={animationIndex}
+            currentStepIndex={currentStepIndex}
             editMode={editMode}
             onCellClick={handleCellClick}
             onWallClick={handleWallClick}
           />
+          
+          {/* Step Navigation Buttons */}
+          {solutions.length > 0 && (
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={handlePreviousStep}
+                disabled={currentStepIndex === 0}
+                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200"
+                style={{
+                  backgroundColor: currentStepIndex === 0 ? '#e5e5e5' : '#3b82f6',
+                  color: currentStepIndex === 0 ? '#9ca3af' : '#ffffff',
+                  cursor: currentStepIndex === 0 ? 'not-allowed' : 'pointer',
+                  opacity: currentStepIndex === 0 ? 0.6 : 1,
+                }}
+              >
+                ◄ Previous
+              </button>
+              <div className="flex items-center px-4 py-2 bg-gray-100 rounded-lg font-semibold">
+                Step {currentStepIndex + 1} / {solutions[currentSolutionIndex]?.path.length || 0}
+              </div>
+              <button
+                onClick={handleNextStep}
+                disabled={currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0)}
+                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200"
+                style={{
+                  backgroundColor: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? '#e5e5e5' : '#3b82f6',
+                  color: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? '#9ca3af' : '#ffffff',
+                  cursor: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? 'not-allowed' : 'pointer',
+                  opacity: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? 0.6 : 1,
+                }}
+              >
+                Next ►
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Controls & Metrics */}

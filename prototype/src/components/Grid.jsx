@@ -7,7 +7,7 @@ export default function Grid({
   solutions,
   currentSolutionIndex,
   isAnimating,
-  animationIndex,
+  currentStepIndex,
   editMode,
   onCellClick,
   onWallClick,
@@ -48,7 +48,7 @@ export default function Grid({
     if (solutions.length > 0 && currentSolutionIndex < solutions.length) {
       const solution = solutions[currentSolutionIndex];
       const path = solution.path;
-      const drawLimit = isAnimating ? animationIndex + 1 : path.length;
+      const drawLimit = currentStepIndex + 1;
 
       ctx.lineWidth = Math.max(2, cellSize * 0.15);
       ctx.lineCap = 'round';
@@ -76,7 +76,7 @@ export default function Grid({
         ctx.stroke();
       }
     }
-  }, [solutions, currentSolutionIndex, isAnimating, animationIndex, gridPixels, cellSize]);
+  }, [solutions, currentSolutionIndex, isAnimating, currentStepIndex, gridPixels, cellSize]);
 
   return (
     <div ref={containerRef} className="flex justify-center">
