@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Grid({
   gridSize,
@@ -15,6 +16,7 @@ export default function Grid({
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const { theme } = useTheme();
 
   // Measure container width on mount and resize
   useEffect(() => {
@@ -32,6 +34,7 @@ export default function Grid({
 
   const gridPixels = Math.min(containerWidth, 600); // Max 600px
   const cellSize = gridPixels / gridSize;
+  const [hoveredCell, setHoveredCell] = useState(null);
 
   // Draw solution path on canvas
   useEffect(() => {
@@ -81,12 +84,12 @@ export default function Grid({
   return (
     <div ref={containerRef} className="flex justify-center">
       <div
-        className="relative rounded-xl overflow-hidden shadow-lg"
+        className="relative rounded-xl overflow-hidden shadow-lg transition-colors duration-200"
         style={{
           width: gridPixels,
           height: gridPixels,
-          backgroundColor: '#ffffff',
-          border: '2px solid #e5e5e5',
+          backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+          border: `2px solid ${theme === 'dark' ? '#404040' : '#e5e5e5'}`,
         }}
       >
         {/* Canvas for drawing solution path */}
@@ -117,21 +120,29 @@ export default function Grid({
             const number = wayPoints[posKey];
             const hasRightWall = walls.v[posKey];
             const hasBottomWall = walls.h[posKey];
+            const isHovered = hoveredCell === idx && editMode !== 'walls';
 
             return (
               <div
                 key={idx}
-                className={`cell ${col < gridSize - 1 ? 'border-r' : ''} ${row < gridSize - 1 ? 'border-b' : ''
-                  } ${editMode === 'walls' ? 'no-hover' : ''}`}
+                className="relative cursor-pointer transition-colors duration-150 flex items-center justify-center border"
                 onClick={() => {
                   if (editMode === 'numbers') {
                     onCellClick(row, col);
                   }
                 }}
+                onMouseEnter={() => setHoveredCell(idx)}
+                onMouseLeave={() => setHoveredCell(null)}
                 style={{
                   position: 'relative',
                   width: cellSize,
                   height: cellSize,
+                  borderColor: theme === 'dark' ? '#404040' : '#d1d5db',
+                  borderWidth: '1px',
+                  backgroundColor: isHovered
+                    ? (theme === 'dark' ? '#92400e' : '#fef5f0')
+                    : (theme === 'dark' ? '#111827' : '#ffffff'),
+                  transition: 'background-color 0.15s ease-in-out',
                 }}
               >
                 {/* Number Ball */}
@@ -189,8 +200,18 @@ export default function Grid({
                 )}
 
                 {/* Wall Visuals */}
-                {hasRightWall && <div className="wall-vertical" />}
-                {hasBottomWall && <div className="wall-horizontal" />}
+                {hasRightWall && (
+                  <div
+                    className="absolute top-0 bottom-0 w-1 bg-gray-950 dark:bg-gray-100 z-50 -right-0.5"
+                    style={{ boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)' }}
+                  />
+                )}
+                {hasBottomWall && (
+                  <div
+                    className="absolute left-0 right-0 h-1 bg-gray-950 dark:bg-gray-100 z-50 -bottom-0.5"
+                    style={{ boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)' }}
+                  />
+                )}
               </div>
             );
           })}

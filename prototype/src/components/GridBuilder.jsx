@@ -261,29 +261,17 @@ export default function GridBuilder() {
               <button
                 onClick={handlePreviousStep}
                 disabled={currentStepIndex === 0}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200"
-                style={{
-                  backgroundColor: currentStepIndex === 0 ? '#e5e5e5' : '#3b82f6',
-                  color: currentStepIndex === 0 ? '#9ca3af' : '#ffffff',
-                  cursor: currentStepIndex === 0 ? 'not-allowed' : 'pointer',
-                  opacity: currentStepIndex === 0 ? 0.6 : 1,
-                }}
+                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
               >
                 ◄ Previous
               </button>
-              <div className="flex items-center px-4 py-2 bg-gray-100 rounded-lg font-semibold">
+              <div className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 transition-colors duration-200">
                 Step {currentStepIndex + 1} / {solutions[currentSolutionIndex]?.path.length || 0}
               </div>
               <button
                 onClick={handleNextStep}
                 disabled={currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0)}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200"
-                style={{
-                  backgroundColor: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? '#e5e5e5' : '#3b82f6',
-                  color: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? '#9ca3af' : '#ffffff',
-                  cursor: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? 'not-allowed' : 'pointer',
-                  opacity: currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0) ? 0.6 : 1,
-                }}
+                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
               >
                 Next ►
               </button>

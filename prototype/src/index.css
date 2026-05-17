@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -6,51 +7,14 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f1ed;
-  color: #1a1a1a;
-  min-height: 100vh;
+  @apply bg-orange-50 text-gray-900;
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+:root.dark body {
+  @apply bg-orange-950 text-gray-100;
 }
 
-.cell {
-  position: relative;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  touch-action: manipulation;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(200, 200, 200, 0.5);
-  background: #ffffff;
-}
-
-.cell:hover:not(.no-hover) {
-  background: rgba(249, 115, 22, 0.08);
-}
-
-.num-ball {
-  position: absolute;
-  inset: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  background: conic-gradient(from 135deg, #f97316, #fb923c, #f97316);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.45);
-  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  z-index: 20;
-  pointer-events: none;
-}
-
+/* Animations */
 @keyframes popIn {
   from {
     transform: translate(-50%, -50%) scale(0);
@@ -62,75 +26,81 @@ body {
   }
 }
 
+/* Complex button styles with gradients */
 .btn-primary {
+  @apply cursor-pointer font-bold uppercase tracking-[0.08em] transition-all duration-200 border-none disabled:opacity-50 disabled:cursor-not-allowed;
   background: linear-gradient(135deg, #f97316, #ea6b12);
   color: white;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
-  border: none;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 6px 16px rgba(224, 106, 22, 0.4);
 }
 
 .btn-primary:active:not(:disabled) {
   transform: scale(0.97);
 }
 
+:root.dark .btn-primary {
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
+}
+
+:root.dark .btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.6);
+}
+
+/* Ghost button with hover states */
 .btn-ghost {
-  border: 1px solid rgba(200, 200, 200, 0.6);
-  color: #666;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  @apply border-gray-400/60 text-gray-600 font-bold uppercase tracking-[0.08em] cursor-pointer transition-all duration-200 dark:border-gray-600/60 dark:text-gray-400;
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.8);
-  color: #1a1a1a;
+  @apply bg-white/80 text-gray-900 dark:bg-gray-700/80 dark:text-gray-100;
   border-color: rgba(249, 115, 22, 0.35);
 }
 
+:root.dark .btn-ghost:hover {
+  border-color: rgba(249, 115, 22, 0.6);
+}
+
+/* Status indicators */
 .status-ok {
-  background: rgba(249, 115, 22, 0.1);
-  color: #d97706;
+  @apply bg-orange-500/10 text-orange-600 border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/40;
 }
 
-.wall-horizontal {
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #1a1a1a;
-  z-index: 50;
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+.status-err {
+  @apply bg-red-500/10 text-red-600 border-red-500/30 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/40;
 }
 
-.wall-vertical {
-  position: absolute;
-  right: -2px;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #1a1a1a;
-  z-index: 50;
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+/* Num ball with gradient and animation */
+.num-ball {
+  @apply absolute pointer-events-none z-20 flex items-center justify-center rounded-full font-bold;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(from 135deg, #f97316, #fb923c, #f97316);
+  color: white;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.45);
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 #root {
-  max-width: 100%;
-  width: 100%;
+  @apply max-w-full w-full box-border flex flex-col;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+}
+
+/* Range Input Styling */
+input[type="range"] {
+  accent-color: #f97316;
+}
+
+/* Label and text improvements */
+label {
+  transition: color 0.2s ease;
+}
+
+:root.dark label {
+  color: #d1d5db;
 }
