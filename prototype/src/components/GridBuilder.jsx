@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import Grid from './Grid';
 import Controls from './Controls';
 import MetricsPanel from './MetricsPanel';
+import ExamplesSection from './ExamplesSection';
 import ZipSolver from '../utils/zipSolver';
 import { exportGridToJSON, downloadJSON } from '../utils/jsonExporter';
+import { useTheme } from '../context/ThemeContext';
 
 export default function GridBuilder() {
-  // State
+  const { advancedMode } = useTheme();
+
   const [gridSize, setGridSize] = useState(6);
   const [wayPoints, setWayPoints] = useState({});
   const [walls, setWalls] = useState({ h: {}, v: {} });
@@ -107,8 +110,7 @@ export default function GridBuilder() {
       setStatusType('done');
       const limitMsg = solver.hitIterationLimit ? ' (limit reached)' : '';
       setStatusMessage(
-        `${results.length >= 50 ? '50+' : results.length} Solution${
-          results.length === 1 ? '' : 's'
+        `${results.length >= 50 ? '50+' : results.length} Solution${results.length === 1 ? '' : 's'
         } found!${limitMsg}`
       );
     } else {
@@ -138,7 +140,11 @@ export default function GridBuilder() {
   const handleExport = () => {
     if (solutions.length === 0) return;
 
-    const jsonData = exportGridToJSON(gridSize, wayPoints, walls);
+    // Get current solution path
+    const currentSolution = solutions[currentSolutionIndex];
+    const solutionPath = currentSolution.path || [];
+
+    const jsonData = exportGridToJSON(gridSize, wayPoints, walls, solutionPath);
     const timestamp = new Date().toISOString().slice(0, 10);
     downloadJSON(jsonData, `zip_puzzle_${gridSize}x${gridSize}_${timestamp}.json`);
 
@@ -185,6 +191,67 @@ export default function GridBuilder() {
     setStatusMessage('Click cells to add numbers');
   };
 
+  // Handle loading example from Examples section
+  const handleLoadExample = (example) => {
+    // Convert new representation to old format
+    const newWayPoints = {};
+    example.waypoints.forEach((waypoint, index) => {
+      const key = `${waypoint[0]},${waypoint[1]}`;
+      newWayPoints[key] = index + 1;
+    });
+
+    // Convert walls from new format to old format
+    const newWalls = { h: {}, v: {} };
+    example.walls.forEach((wall) => {
+      const [row1, col1] = wall.neighborA;
+      const [row2, col2] = wall.neighborB;
+
+      // Determine if wall is horizontal or vertical
+      if (row1 === row2) {
+        // Horizontal wall - same row, different column
+        const minCol = Math.min(col1, col2);
+        const key = `${row1},${minCol}`;
+        newWalls.v[key] = true;
+      } else {
+        // Vertical wall - same column, different row
+        const minRow = Math.min(row1, row2);
+        const key = `${minRow},${col1}`;
+        newWalls.h[key] = true;
+      }
+    });
+
+    setGridSize(example.boardSize);
+    setWayPoints(newWayPoints);
+    setWalls(newWalls);
+
+    // Load solution if available
+    if (example.solutionPath && example.solutionPath.length > 0) {
+      setSolutions([
+        {
+          path: example.solutionPath,
+          time: (example.solutionPath.length * 0.1).toFixed(2),
+        },
+      ]);
+      setCurrentSolutionIndex(0);
+      setSolverRunning(false);
+      setCurrentStepIndex(0);
+      setStatusType('done');
+      setStatusMessage('Solution loaded from example!');
+    } else {
+      setSolutions([]);
+      setCurrentSolutionIndex(0);
+      setSolverRunning(false);
+      setCurrentStepIndex(0);
+      setStatusType('ok');
+      setStatusMessage('Ready to solve!');
+    }
+
+    setIsAutoPlayPaused(false);
+    setDisplayTime(0);
+    // Scroll to top to show loaded maze
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Handle solution navigation
   const handlePrevSolution = () => {
     setCurrentSolutionIndex((idx) =>
@@ -224,7 +291,7 @@ export default function GridBuilder() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (solutions.length === 0) return;
-      
+
       if (e.key === 'ArrowLeft') {
         handlePreviousStep();
       } else if (e.key === 'ArrowRight') {
@@ -237,74 +304,85 @@ export default function GridBuilder() {
   }, [solutions, currentSolutionIndex]);
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-4 w-full">
-      {/* Responsive Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-        {/* Left Column: Grid */}
-        <div className="min-w-0">
-          <Grid
-            gridSize={gridSize}
-            wayPoints={wayPoints}
-            walls={walls}
-            solutions={solutions}
-            currentSolutionIndex={currentSolutionIndex}
-            isAnimating={solverRunning}
-            currentStepIndex={currentStepIndex}
-            editMode={editMode}
-            onCellClick={handleCellClick}
-            onWallClick={handleWallClick}
-          />
-          
-          {/* Step Navigation Buttons */}
-          {solutions.length > 0 && (
-            <div className="mt-4 flex justify-center gap-4">
-              <button
-                onClick={handlePreviousStep}
-                disabled={currentStepIndex === 0}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
-              >
-                ◄ Previous
-              </button>
-              <div className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 transition-colors duration-200">
-                Step {currentStepIndex + 1} / {solutions[currentSolutionIndex]?.path.length || 0}
+    <>
+      <div className="max-w-7xl mx-auto px-6 py-4 w-full">
+        {/* Responsive Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+          {/* Left Column: Grid */}
+          <div className="min-w-0">
+            <Grid
+              gridSize={gridSize}
+              wayPoints={wayPoints}
+              walls={walls}
+              solutions={solutions}
+              currentSolutionIndex={currentSolutionIndex}
+              isAnimating={solverRunning}
+              currentStepIndex={currentStepIndex}
+              editMode={editMode}
+              onCellClick={handleCellClick}
+              onWallClick={handleWallClick}
+            />
+
+            {/* Step Navigation Buttons */}
+            {solutions.length > 0 && (
+              <div className="mt-4 flex justify-center gap-4">
+                <button
+                  onClick={handlePreviousStep}
+                  disabled={currentStepIndex === 0}
+                  className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
+                >
+                  ◄ Previous
+                </button>
+                <div className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-semibold text-gray-900 dark:text-gray-100 transition-colors duration-200">
+                  Step {currentStepIndex + 1} / {solutions[currentSolutionIndex]?.path.length || 0}
+                </div>
+                <button
+                  onClick={handleNextStep}
+                  disabled={currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0)}
+                  className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
+                >
+                  Next ►
+                </button>
               </div>
-              <button
-                onClick={handleNextStep}
-                disabled={currentStepIndex === (solutions[currentSolutionIndex]?.path.length - 1 || 0)}
-                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-600 dark:hover:bg-orange-700 dark:text-white disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:text-gray-500 dark:disabled:text-gray-400"
-              >
-                Next ►
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Right Column: Controls & Metrics */}
-        <div className="space-y-4">
-          <Controls
-            gridSize={gridSize}
-            onGridSizeChange={handleGridSizeChange}
-            onSolve={handleSolve}
-            onReset={handleReset}
-            onExport={handleExport}
-            statusType={statusType}
-            statusMessage={statusMessage}
-            solutions={solutions}
-            currentSolutionIndex={currentSolutionIndex}
-            onPrevSolution={handlePrevSolution}
-            onNextSolution={handleNextSolution}
-            editMode={editMode}
-            onEditModeChange={setEditMode}
-            solverRunning={solverRunning}
-            displayTime={displayTime}
-          />
+          {/* Right Column: Controls & Metrics */}
+          <div className="space-y-4">
+            <Controls
+              gridSize={gridSize}
+              onGridSizeChange={handleGridSizeChange}
+              onSolve={handleSolve}
+              onReset={handleReset}
+              onExport={handleExport}
+              statusType={statusType}
+              statusMessage={statusMessage}
+              solutions={solutions}
+              currentSolutionIndex={currentSolutionIndex}
+              onPrevSolution={handlePrevSolution}
+              onNextSolution={handleNextSolution}
+              editMode={editMode}
+              onEditModeChange={setEditMode}
+              solverRunning={solverRunning}
+              displayTime={displayTime}
+            />
 
-          <MetricsPanel
-            solutions={solutions}
-            currentSolutionIndex={currentSolutionIndex}
-          />
+            {/* Metrics Panel - only visible in Advanced Mode */}
+            {advancedMode && (
+              <MetricsPanel
+                solutions={solutions}
+                currentSolutionIndex={currentSolutionIndex}
+              />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Examples Section */}
+      <ExamplesSection 
+        gridSize={gridSize}
+        onExampleSelect={handleLoadExample} 
+      />
+    </>
   );
 }

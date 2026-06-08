@@ -3,12 +3,19 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
+  // Theme state
   const [theme, setThemeState] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       return savedTheme;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  // Advanced Mode state
+  const [advancedMode, setAdvancedModeState] = useState(() => {
+    const savedAdvancedMode = localStorage.getItem('advancedMode');
+    return savedAdvancedMode ? JSON.parse(savedAdvancedMode) : false;
   });
 
   useEffect(() => {
@@ -21,6 +28,11 @@ export function ThemeProvider({ children }) {
     }
   }, [theme]);
 
+  // Save advanced mode to local storage
+  useEffect(() => {
+    localStorage.setItem('advancedMode', JSON.stringify(advancedMode));
+  }, [advancedMode]);
+
   const toggleTheme = () => {
     setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
@@ -29,8 +41,23 @@ export function ThemeProvider({ children }) {
     setThemeState(newTheme);
   };
 
+  const toggleAdvancedMode = () => {
+    setAdvancedModeState((prev) => !prev);
+  };
+
+  const setAdvancedMode = (value) => {
+    setAdvancedModeState(value);
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      toggleTheme, 
+      setTheme,
+      advancedMode,
+      toggleAdvancedMode,
+      setAdvancedMode
+    }}>
       {children}
     </ThemeContext.Provider>
   );

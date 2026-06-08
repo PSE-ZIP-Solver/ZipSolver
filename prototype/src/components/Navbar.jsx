@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function Navbar() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, advancedMode, toggleAdvancedMode } = useTheme();
 
   return (
     <>
@@ -21,6 +21,20 @@ export default function Navbar() {
 
           {/* Right Side Buttons */}
           <div className="flex items-center gap-3">
+            {/* Advanced Mode Toggle */}
+            <button
+              onClick={toggleAdvancedMode}
+              className={`px-3 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                advancedMode
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-600 dark:hover:bg-purple-700'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100'
+              }`}
+              title={advancedMode ? 'Disable Advanced Mode' : 'Enable Advanced Mode'}
+              aria-label="Toggle Advanced Mode"
+            >
+              <span className="text-sm">⚙️ Advanced</span>
+            </button>
+
             {/* Help Button */}
             <button
               onClick={() => setIsHelpOpen(true)}

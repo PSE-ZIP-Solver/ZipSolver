@@ -1,53 +1,63 @@
 /**
- * JSON Exporter for backend integration
+ * JSON Exporter using unified board representation format
+ * Format: boardSize, waypoints (array of [row, col]), walls (array of {neighborA, neighborB})
  */
 
-export function exportGridToJSON(gridSize, wayPoints, walls) {
-  // Convert wayPoints object to array format
-  const waypointsArray = [];
-  for (const [pos, number] of Object.entries(wayPoints)) {
+export function exportGridToJSON(boardSize, wayPoints, walls, solutionPath = null) {
+  // Convert wayPoints object to array format sorted by number
+  const sortedWaypoints = [];
+  const entries = Object.entries(wayPoints).map(([pos, number]) => ({
+    pos,
+    number,
+  }));
+  entries.sort((a, b) => a.number - b.number);
+  
+  for (const { pos } of entries) {
     const [r, c] = pos.split(',').map(Number);
-    waypointsArray.push({
-      position: [r, c],
-      number: number,
-    });
+    sortedWaypoints.push([r, c]);
   }
 
-  // Convert walls to array format
-  const horizontalWalls = [];
-  const verticalWalls = [];
+  // Convert walls from h/v format to neighborA/neighborB format
+  const wallsArray = [];
 
   if (walls && walls.h) {
     for (const pos of Object.keys(walls.h)) {
       const [r, c] = pos.split(',').map(Number);
-      horizontalWalls.push({ position: [r, c] });
+      // Horizontal wall: between [r, c] and [r+1, c]
+      wallsArray.push({
+        neighborA: [r, c],
+        neighborB: [r + 1, c],
+      });
     }
   }
 
   if (walls && walls.v) {
     for (const pos of Object.keys(walls.v)) {
       const [r, c] = pos.split(',').map(Number);
-      verticalWalls.push({ position: [r, c] });
+      // Vertical wall: between [r, c] and [r, c+1]
+      wallsArray.push({
+        neighborA: [r, c],
+        neighborB: [r, c + 1],
+      });
     }
   }
 
-  return {
-    grid_size: gridSize,
-    waypoints: waypointsArray,
-    walls: {
-      horizontal: horizontalWalls,
-      vertical: verticalWalls,
-    },
-    metadata: {
-      created_at: new Date().toISOString(),
-      has_solution: true,
-      solvable: true,
-    },
+  const exportData = {
+    boardSize,
+    waypoints: sortedWaypoints,
+    walls: wallsArray,
   };
+
+  // Add solution path if provided
+  if (solutionPath && solutionPath.length > 0) {
+    exportData.solutionPath = solutionPath;
+  }
+
+  return exportData;
 }
 
 export function downloadJSON(data, filename = 'zip_puzzle.json') {
-  const json = JSON.stringify(data, null, 2);
+  const json = JSON.stringify(data, null, 1);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

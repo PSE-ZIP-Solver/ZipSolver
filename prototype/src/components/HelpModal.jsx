@@ -21,7 +21,7 @@ export default function HelpModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4 z-50 transition-all duration-200"
+      className="fixed inset-0 flex items-center justify-center p-4 z-[9999] transition-all duration-200"
       style={{ 
         backgroundColor: isOpen ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0)',
         pointerEvents: isOpen ? 'auto' : 'none'
