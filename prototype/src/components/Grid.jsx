@@ -202,13 +202,13 @@ export default function Grid({
                 {/* Wall Visuals */}
                 {hasRightWall && (
                   <div
-                    className="absolute top-0 bottom-0 w-1 bg-gray-950 dark:bg-gray-100 z-50 -right-0.5"
+                    className="absolute top-0 bottom-0 w-1 bg-gray-950 dark:bg-orange-500 z-50 -right-0.5"
                     style={{ boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)' }}
                   />
                 )}
                 {hasBottomWall && (
                   <div
-                    className="absolute left-0 right-0 h-1 bg-gray-950 dark:bg-gray-100 z-50 -bottom-0.5"
+                    className="absolute left-0 right-0 h-1 bg-gray-950 dark:bg-orange-500 z-50 -bottom-0.5"
                     style={{ boxShadow: '0 0 10px rgba(249, 115, 22, 0.4)' }}
                   />
                 )}

@@ -101,26 +101,26 @@ export default function Controls({
       {/* Action Buttons */}
       <div className="flex flex-col gap-2">
         <button
-          className="btn-ghost py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-ghost py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300/20 dark:border-gray-600/20"
           onClick={() => {}}
           disabled={solverRunning}
         >
           <span>📤</span>
-          IMPORT JSON/SCREENSHOT
+          IMPORT
         </button>
 
         <button
-          className="btn-primary py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300/20 dark:border-gray-600/20"
           onClick={onSolve}
           disabled={solverRunning}
         >
           <span>⚡</span>
-          SOLVE ALL
+          SOLVE
         </button>
         
         {solutions.length > 0 && (
           <button
-            className="btn-ghost py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full hover:text-orange-600"
+            className="btn-ghost py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full hover:text-orange-600 border border-gray-300/20 dark:border-gray-600/20"
             onClick={onExport}
             disabled={solverRunning}
           >
@@ -130,7 +130,7 @@ export default function Controls({
         )}
 
         <button
-          className="btn-ghost py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full hover:text-orange-600"
+          className="btn-ghost py-2.5 px-4 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 w-full hover:text-orange-600 border border-gray-300/20 dark:border-gray-600/20"
           onClick={onReset}
           disabled={solverRunning}
         >

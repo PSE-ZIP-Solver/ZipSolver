@@ -6,20 +6,17 @@ export default function MetricsPanel({ solutions, currentSolutionIndex }) {
       return {
         averageReward: 0,
         episodeSteps: 0,
-        trainingProgress: 0,
-        convergenceRate: 0,
+        deadEndsEncountered: 0,
+        solvingTime: 0,
       };
     }
 
     // Generate realistic RL metrics with some randomness
-    const episode = currentSolutionIndex + 1;
-    const baseFactor = Math.log(episode + 1);
-
     return {
       averageReward: (Math.random() * 50 + 30).toFixed(2),
       episodeSteps: Math.floor(Math.random() * 100 + 50),
-      trainingProgress: Math.min(95, Math.floor(baseFactor * 15 + Math.random() * 10)),
-      convergenceRate: (Math.random() * 0.8 + 0.2).toFixed(3),
+      deadEndsEncountered: Math.floor(Math.random() * 20 + 5),
+      solvingTime: Math.floor(Math.random() * 1000 + 100),
     };
   }, [solutions, currentSolutionIndex]);
 
@@ -44,18 +41,18 @@ export default function MetricsPanel({ solutions, currentSolutionIndex }) {
           <p className="text-base font-bold text-cyan-600 dark:text-cyan-400">{metrics.episodeSteps}</p>
         </div>
 
-        {/* Metric Card: Training Progress */}
+        {/* Metric Card: Dead Ends Encountered */}
         <div className="bg-white/50 backdrop-blur-md border border-white/80 dark:bg-gray-900/50 dark:border-gray-600/80 rounded-xl p-2.5 border transition-colors">
-          <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">Progress</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">Dead Ends</p>
           <p className="text-base font-bold text-green-600 dark:text-green-400">
-            {metrics.trainingProgress}%
+            {metrics.deadEndsEncountered}
           </p>
         </div>
 
-        {/* Metric Card: Convergence Rate */}
+        {/* Metric Card: Solving Time */}
         <div className="bg-white/50 backdrop-blur-md border border-white/80 dark:bg-gray-900/50 dark:border-gray-600/80 rounded-xl p-2.5 border transition-colors">
-          <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">Convergence</p>
-          <p className="text-base font-bold text-purple-600 dark:text-purple-400">{metrics.convergenceRate}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">Solving Time</p>
+          <p className="text-base font-bold text-purple-600 dark:text-purple-400">{metrics.solvingTime}ms</p>
         </div>
       </div>
     </div>

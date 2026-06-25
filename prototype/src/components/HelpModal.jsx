@@ -29,7 +29,7 @@ export default function HelpModal({ isOpen, onClose }) {
       onClick={onClose}
     >
       <div
-        className="rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg transition-opacity duration-200 dark:border-gray-700"
+        className="rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg transition-opacity duration-200 border border-gray-300 dark:border-gray-600"
         onClick={(e) => e.stopPropagation()}
         style={{ 
           opacity: isOpen ? 1 : 0,
@@ -50,77 +50,63 @@ export default function HelpModal({ isOpen, onClose }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-8">
-          {/* Game Rules Section */}
+        <div className="p-6 space-y-6">
+          {/* What is ZipSolver Section */}
           <section>
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <span className="text-orange-500">🎮</span> Game Rules
+              <span className="text-orange-500">❓</span> What is ZipSolver?
             </h3>
-            <div className="space-y-3 text-gray-700 dark:text-gray-300">
+            <div className="text-gray-700 dark:text-gray-300 space-y-2">
               <p>
-                <strong>Objective:</strong> Solve the puzzle by finding the correct path from the start cell to the end cell.
-              </p>
-              <p>
-                <strong>How to Build:</strong>
-              </p>
-              <ul className="list-disc list-inside space-y-2 ml-2">
-                <li>Left-click on grid cells to create walls</li>
-                <li>Right-click to remove walls</li>
-                <li>Create a connected path using vertical and horizontal walls</li>
-                <li>The solver will find the optimal path through your maze</li>
-              </ul>
-              <p>
-                <strong>Challenge:</strong> Design increasingly complex puzzles and see how the solver navigates through them.
+                ZipSolver is a web-based tool for creating, editing, validating, and solving Zip puzzles. The solver uses a Reinforcement Learning (RL) agent to search for valid solutions.
               </p>
             </div>
           </section>
 
-          {/* Interface Guide Section */}
+          <hr className="border-gray-200 dark:border-gray-700" />
+
+          {/* How do I create a puzzle Section */}
           <section>
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <span className="text-orange-500">🎯</span> Interface Guide
+              <span className="text-orange-500">🎮</span> How do I create a puzzle?
             </h3>
-            <div className="space-y-4 text-gray-700 dark:text-gray-300">
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">Grid Panel</p>
-                <p className="mt-1">The main canvas where you design your maze. Click and drag to draw walls or use right-click to erase.</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">Controls Panel</p>
-                <p className="mt-1">
-                  Contains buttons to manage your puzzle:
-                </p>
-                <ul className="list-disc list-inside space-y-1 ml-2 mt-2">
-                  <li><strong>SOLVE ALL</strong> - Run the solver algorithm</li>
-                  <li><strong>RESET</strong> - Clear the grid</li>
-                  <li><strong>EXPORT</strong> - Save your puzzle as JSON</li>
-                  <li><strong>IMPORT</strong> - Load a saved puzzle</li>
-                </ul>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">Metrics Panel</p>
-                <p className="mt-1">Displays statistics about your current puzzle including grid dimensions, wall count, and path length.</p>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">Navigation</p>
-                <p className="mt-1">
-                  Use <span className="font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">← →</span> arrow keys or Previous/Next buttons to step through the solution animation.
-                </p>
-              </div>
+            <ol className="space-y-2 text-gray-700 dark:text-gray-300 list-decimal list-inside">
+              <li>Select a grid size.</li>
+              <li>Place numbered waypoints on the board.</li>
+              <li>Add walls between adjacent cells if needed.</li>
+              <li>Click <strong>Solve</strong> to start the solver.</li>
+            </ol>
+          </section>
+
+          <hr className="border-gray-200 dark:border-gray-700" />
+
+          {/* Validation Failed Section */}
+          <section>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+              <span className="text-orange-500">⚠️</span> What does "Validation Failed" mean?
+            </h3>
+            <div className="text-gray-700 dark:text-gray-300 space-y-2">
+              <p>
+                The puzzle configuration is not valid and cannot be solved yet.
+              </p>
+              <p>
+                Correct the reported issue and try again.
+              </p>
             </div>
           </section>
 
-          {/* Tips Section */}
+          <hr className="border-gray-200 dark:border-gray-700" />
+
+          {/* No Solution Found Section */}
           <section>
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <span className="text-orange-500">💡</span> Tips & Tricks
+              <span className="text-orange-500">🔍</span> What does "No Solution Found" mean?
             </h3>
-            <ul className="space-y-2 text-gray-700 dark:text-gray-300 list-disc list-inside">
-              <li>Start with simple designs before attempting complex mazes</li>
-              <li>Use the Step Counter to trace the solution path step by step</li>
-              <li>Export your puzzles to share or save your best designs</li>
-              <li>The solver works with any maze size you create</li>
-            </ul>
+            <div className="text-gray-700 dark:text-gray-300 space-y-2">
+              <p>
+                The puzzle is valid, but the solver could not find a valid path for the current configuration.
+              </p>
+            </div>
           </section>
         </div>
 
