@@ -1,0 +1,17 @@
+name: Auto Assign Issue Creator
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  assign-author:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign issue to its creator
+        uses: toshimaru/auto-author-assign@v3.0.3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
