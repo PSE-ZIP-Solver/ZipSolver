@@ -49,3 +49,15 @@ class Board:
 
     def getCellCount(self) -> int:
         return self._size * self._size
+    
+    @property
+    def getSize(self):
+        return self._size
+    
+    @property
+    def getWaypoints(self):
+        return self._waypoints
+    
+    @property
+    def getWalls(self):
+        return self._walls
