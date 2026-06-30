@@ -18,3 +18,7 @@ class Wall:
     
     def __eq__(self, other):
         return  isinstance(other, Wall) and self.connects(other._cellA, other._cellB)
+    
+    def __hash__(self):
+        cells = sorted([(self._cellA.getX, self._cellA.getY), (self._cellB.getX, self._cellB.getY)])
+        return hash(tuple(cells))
