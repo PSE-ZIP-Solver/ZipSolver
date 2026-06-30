@@ -1,4 +1,4 @@
-import Position
+from Position import Position
 
 class Wall:
     def __init__(self, a: Position, b: Position):

@@ -1,4 +1,4 @@
-import Position
+from Position import Position
 
 class Waypoint:
     def __init__(self, position: Position, order: int):
