@@ -1,4 +1,4 @@
-from backend.PuzzleLogic import  Board, Position
+from backend.PuzzleLogic import  Position, Waypoint, Wall, Board
 from typing import List
 import random
 
@@ -8,19 +8,19 @@ RESULTS = 1000
 
 class BoardGenerator:
     @staticmethod
-    def genrate(boardSize: int, maxIntermediateWaypoints: int, maxWalls: int) -> List[Board]:
+    def genrate(boardSize: int, intermediateWaypoints: int, maxWalls: int) -> List[Board]:
         results: List[Board] = [] 
         
         # TODO remove?
         # Assert parameter constraints are meat
-        assert 6 <= boardSize <= 8 and maxIntermediateWaypoints <= boardSize*boardSize - 2 and maxWalls <=  (boardSize - 1) * (boardSize - 1)
+        assert 6 <= boardSize <= 8 and intermediateWaypoints <= boardSize*boardSize - 2 and maxWalls <=  (boardSize - 1) * (boardSize - 1)
         
         # genrate resulting boards
-        for i in RESULTS:
+        for _ in range(RESULTS):
             board = Board(boardSize)
             start, end = BoardGenerator._generateTwoDistinctRandomPositions(boardSize)
             path = BoardGenerator._findHamitonianPath(board, start, end)
-            board = BoardGenerator._placeRandomWaypoints(board, path, maxIntermediateWaypoints)
+            board = BoardGenerator._placeRandomWaypoints(board, path, intermediateWaypoints)
             board = BoardGenerator._placeRandomWalls(board, path, maxWalls)
             results.append(board)
         
@@ -79,16 +79,34 @@ class BoardGenerator:
         return None
     
     @staticmethod
-    def _placeRandomWaypoints(board: Board, path: List[Position], maxIntermediateWaypoints: int) -> Board:
-        allowedPositions = set(range(board.getSize * board.getSize))
+    def _placeRandomWaypoints(board: Board, path: List[Position], intermediateWaypoints: int) -> Board:
+        # Generate positions of intermediate waypoints randomly
         
-        # add waypoints at start and end
-        board.addWaypoint(path[0])
+        # add all possible positions as 1D indices to allowed intermediate positions
+        allowedIndices = set(range(board.getSize * board.getSize))
+        # remove start and end from from allowed positions
+        idxStart = path[0].getX + path[0].getY * board.getSize
+        idxEnd = path[-1].getX + path[-1].getY * board.getSize
+        allowedIndices.discard(idxStart)
+        allowedIndices.discard(idxEnd) 
+        # add random waypoints at allowed positions
+        samples = min(intermediateWaypoints, len(allowedIndices))
+        intermediateIndices = random.sample(list(allowedIndices), samples)
+        # convert 1D indices to 2D positions
+        intermediatePosition = {Position(idx % board.getSize, idx // board.getSize) for idx in intermediateIndices}
+        # sort according to path
+        intermediatePosition = [pos for pos in path if pos in intermediatePosition]
+        
+        # add waypoints
 
-        # TODO add random waypoints 
+        # add waypoint at start of path
+        board.addWaypoint(path[0], 1)
+        # add intermediate waypoints
         nextOrder = 2
-        
-        # add waypoint at end
+        for pos in intermediatePosition:
+            board.addWaypoint(pos, nextOrder)
+            nextOrder += 1
+        # add waypoint at end of path
         board.addWaypoint(path[-1], nextOrder)
         
         return board
