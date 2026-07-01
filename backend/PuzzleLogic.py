@@ -21,7 +21,7 @@ class Position:
         return self._y
 
     def __eq__(self, other):
-        return isinstance(other, Position) and self._x == other._x() and self._y == other._y()
+        return isinstance(other, Position) and self._x == other._x and self._y == other._y
     
     def __hash__(self):
         return hash((self._x, self._y))
