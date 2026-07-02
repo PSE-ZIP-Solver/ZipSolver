@@ -34,14 +34,21 @@ class BoardGenerator:
             # select two distinct 1D-indices for the square grid (0 to boardSize-1)
             idxStart, idxEnd = random.sample(range(boardSize * boardSize), 2)
             # project the two 1D-indices to 2D- coordinates 
-            # (i.e. for a board of size 3: idx = 4 = 0 + 1 * 3 <=> x = idx % 3 = 1; y = idx / 3 = 1)
             start = Position(idxStart % boardSize, idxStart // boardSize)
             end = Position(idxEnd % boardSize, idxEnd // boardSize)
             
-            # Parity check: For even-sized boards, start and end must be on 
-            # different "checkerboard colors" (one x+y sum must be even, the other odd)
-            if (start.getX + start.getY) % 2 != (end.getX + end.getY) % 2:
-                return start, end
+            p_start = (start.getX + start.getY) % 2
+            p_end = (end.getX + end.getY) % 2
+
+            if boardSize % 2 == 0:
+                # Even board: start and end must be on different "checkerboard colors"
+                if p_start != p_end:
+                    return start, end
+            else:
+                # Odd board: both must be on the majority color (parity 0) 
+                # to allow a path through all cells
+                if p_start == 0 and p_end == 0:
+                    return start, end
     
     @staticmethod
     def _findHamiltonianPath(board: Board, start: Position, end: Position) -> List[Position]:
@@ -49,30 +56,44 @@ class BoardGenerator:
         visited = {start}
         path: List[Position] = [start]
 
+        def get_degree(p: Position) -> int:
+            """Warnsdorff's heuristic: count available unvisited neighbors."""
+            count = 0
+            for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                nb = Position(p.getX + dx, p.getY + dy)
+                if board.isInside(nb) and nb not in visited:
+                    count += 1
+            return count
+
         def _dfs(current: Position) -> bool:
-            # Break Condition: hamitonian path from start to end found
+            # Break Condition: hamiltonian path found
             if len(path) == total_cells:
                 return current == end
 
-            # Check neighbors
             cx, cy = current.getX, current.getY
+            neighbors = []
             for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
                 neighbor = Position(cx + dx, cy + dy)
                 if board.isInside(neighbor) and neighbor not in visited:
                     # only visit end as the last move 
                     if neighbor == end and len(path) < total_cells - 1:
                         continue
+                    neighbors.append(neighbor)
+            
+            # Warnsdorff's heuristic: Sort neighbors by their degree (fewer neighbors first)
+            # This speeds up finding the first valid path significantly
+            neighbors.sort(key=get_degree)
 
-                    # step
-                    visited.add(neighbor)
-                    path.append(neighbor)
+            for neighbor in neighbors:
+                visited.add(neighbor)
+                path.append(neighbor)
 
-                    if _dfs(neighbor):
-                        return True
-                    
-                    # backtracking
-                    path.pop()
-                    visited.remove(neighbor)
+                if _dfs(neighbor):
+                    return True
+                
+                # backtracking
+                path.pop()
+                visited.remove(neighbor)
 
             return False
 
@@ -80,7 +101,6 @@ class BoardGenerator:
         if _dfs(start):
             return list(path)
     
-        # might occur if board is of odd size
         return None
     
     @staticmethod
