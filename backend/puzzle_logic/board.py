@@ -1,5 +1,5 @@
 from typing import List, Set, Optional
-from .models import Position, Waypoint, Wall
+from .data_models import Position, Waypoint, Wall
 
 
 class Board:
