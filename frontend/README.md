@@ -1,34 +1,40 @@
-# React + TypeScript + Vite
+# 🧩 Queens Puzzle Platform – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This is the frontend package for our university project: a one-page web application that allows users to create, play, and upload custom puzzle configurations (via JSON) for LinkedIn's **Queens** (Zip) game. 
 
-Currently, two official plugins are available:
+The backend powering this application is written in **Python**.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Tech Stack
 
-## React Compiler
+* **Framework:** React (TypeScript)
+* **Build Tool:** Vite
+* **Linter:** Oxlint + `oxlint-tsgolint` (Type-aware)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+---
 
-Note: This will impact Vite dev & build performances.
+## 🛠️ Getting Started
 
-## Expanding the Oxlint configuration
+### 1. Installation
+Navigate to this directory and install the dependencies:
+Bash
+npm install
+### 2. Development Server
+Start the local Vite development server:
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Bash
+npm run dev
+### 3. Linting & Code Quality
+We use Oxlint for lightning-fast code analysis. To manually scan the project for errors:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+Bash
+npx oxlint
+💡 Tip: For live, real-time error highlighting in your editor, install the official Oxc extension in VS Code.
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+📂 Core Features & Scope
+One-Page Architecture: Everything happens seamlessly in a single dashboard view.
+
+Puzzle Creator: An interactive grid UI to design custom grid boundaries.
+
+JSON Import/Export: Load or save puzzle designs instantly using a structured JSON schema.
+
+(For full details on project architecture, algorithm design, and Python backend setup, please refer to the main repository README at the root level.)
