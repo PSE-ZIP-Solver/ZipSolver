@@ -8,7 +8,7 @@ RESULTS = 1000
 
 class BoardGenerator:
     @staticmethod
-    def genrate(boardSize: int, intermediateWaypoints: int, walls: int) -> List[Board]:
+    def generate(boardSize: int, intermediateWaypoints: int, walls: int) -> List[Board]:
         results: List[Board] = [] 
         
         # TODO remove?
@@ -16,29 +16,35 @@ class BoardGenerator:
         assert 6 <= boardSize <= 8 and intermediateWaypoints <= boardSize*boardSize - 2 and walls <=  (boardSize - 1) * (boardSize - 1)
         
         # genrate resulting boards
-        for _ in range(RESULTS):
+        while len(results) < RESULTS:
             board = Board(boardSize)
             start, end = BoardGenerator._generateTwoDistinctRandomPositions(boardSize)
-            path = BoardGenerator._findHamitonianPath(board, start, end)
-            board = BoardGenerator._placeRandomWaypoints(board, path, intermediateWaypoints)
-            board = BoardGenerator._placeRandomWalls(board, path, walls)
-            results.append(board)
+            path = BoardGenerator._findHamiltonianPath(board, start, end)
+            
+            if path:
+                board = BoardGenerator._placeRandomWaypoints(board, path, intermediateWaypoints)
+                board = BoardGenerator._placeRandomWalls(board, path, walls)
+                results.append(board)
         
         return results
     
     @staticmethod
     def _generateTwoDistinctRandomPositions(boardSize: int) -> tuple[Position, Position]:
-        # select two distinct 1D-indices for the square grid (0 to boardSize-1)
-        idxStart, idxEnd = random.sample(range(boardSize * boardSize), 2)
-
-        # project the two 1D-indices to 2D- coordinates (i.e. for a board of size 3: idx = 4 = 0 + 1 * 3 <=> x = idx % 3 = 1; y = idx / 3 = 1)
-        start = Position(idxStart % boardSize, idxStart // boardSize)
-        end = Position(idxEnd % boardSize, idxEnd // boardSize)
-
-        return start, end
+        while True:
+            # select two distinct 1D-indices for the square grid (0 to boardSize-1)
+            idxStart, idxEnd = random.sample(range(boardSize * boardSize), 2)
+            # project the two 1D-indices to 2D- coordinates 
+            # (i.e. for a board of size 3: idx = 4 = 0 + 1 * 3 <=> x = idx % 3 = 1; y = idx / 3 = 1)
+            start = Position(idxStart % boardSize, idxStart // boardSize)
+            end = Position(idxEnd % boardSize, idxEnd // boardSize)
+            
+            # Parity check: For even-sized boards, start and end must be on 
+            # different "checkerboard colors" (one x+y sum must be even, the other odd)
+            if (start.getX + start.getY) % 2 != (end.getX + end.getY) % 2:
+                return start, end
     
     @staticmethod
-    def _findHamitonianPath(board: Board, start: Position, end: Position) -> List[Position]:
+    def _findHamiltonianPath(board: Board, start: Position, end: Position) -> List[Position]:
         total_cells = board.getCellCount()
         visited = {start}
         path: List[Position] = [start]
@@ -72,9 +78,9 @@ class BoardGenerator:
 
         # start dfs
         if _dfs(start):
-            return path
+            return list(path)
     
-        # will only be reached if start or end are invalid 
+        # might occur if board is of odd size
         return None
     
     @staticmethod
