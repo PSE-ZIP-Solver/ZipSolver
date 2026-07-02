@@ -1,4 +1,4 @@
-from backend.PuzzleLogic import  Position, Waypoint, Wall, Board
+from backend.PuzzleLogic import  Position, Board
 from typing import List
 import random
 
@@ -8,12 +8,12 @@ RESULTS = 1000
 
 class BoardGenerator:
     @staticmethod
-    def genrate(boardSize: int, intermediateWaypoints: int, maxWalls: int) -> List[Board]:
+    def genrate(boardSize: int, intermediateWaypoints: int, walls: int) -> List[Board]:
         results: List[Board] = [] 
         
         # TODO remove?
         # Assert parameter constraints are meat
-        assert 6 <= boardSize <= 8 and intermediateWaypoints <= boardSize*boardSize - 2 and maxWalls <=  (boardSize - 1) * (boardSize - 1)
+        assert 6 <= boardSize <= 8 and intermediateWaypoints <= boardSize*boardSize - 2 and walls <=  (boardSize - 1) * (boardSize - 1)
         
         # genrate resulting boards
         for _ in range(RESULTS):
@@ -21,7 +21,7 @@ class BoardGenerator:
             start, end = BoardGenerator._generateTwoDistinctRandomPositions(boardSize)
             path = BoardGenerator._findHamitonianPath(board, start, end)
             board = BoardGenerator._placeRandomWaypoints(board, path, intermediateWaypoints)
-            board = BoardGenerator._placeRandomWalls(board, path, maxWalls)
+            board = BoardGenerator._placeRandomWalls(board, path, walls)
             results.append(board)
         
         return results
@@ -52,7 +52,6 @@ class BoardGenerator:
             cx, cy = current.getX, current.getY
             for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
                 neighbor = Position(cx + dx, cy + dy)
-
                 if board.isInside(neighbor) and neighbor not in visited:
                     # only visit end as the last move 
                     if neighbor == end and len(path) < total_cells - 1:
@@ -64,7 +63,7 @@ class BoardGenerator:
 
                     if _dfs(neighbor):
                         return True
-
+                    
                     # backtracking
                     path.pop()
                     visited.remove(neighbor)
@@ -112,8 +111,43 @@ class BoardGenerator:
         return board
     
     @staticmethod
-    def _placeRandomWalls(board: Board, path: List[Position], maxWalls: int) -> Board:
-        
-        # TODO impl
-        return None
-    
+    def _placeRandomWalls(board: Board, path: List[Position], walls: int) -> Board:
+        # Find all possible wall positions
+        # Store them in sorted tuples, for (A, B) to equal (B, A)
+        possibleWalls = set()
+        for y in range(board.getSize):
+            for x in range(board.getSize):
+                current = Position(x, y)
+                # right neighbor
+                if x + 1 < board.getSize:
+                    right = Position(x + 1, y)
+                    # sort by coordinate for unique ID
+                    wall = tuple(sorted([current, right], key=lambda p: (p.getX, p.getY)))
+                    possibleWalls.add(wall)
+                # bottom neighbor
+                if y + 1 < board.getSize:
+                    down = Position(x, y + 1)
+                    # sort by coordinate for unique ID
+                    wall = tuple(sorted([current, down], key=lambda p: (p.getX, p.getY)))
+                    possibleWalls.add(wall)
+
+        # Find wall positions, that obstruct the path
+        pathObstructingWalls = set()
+        for i in range(len(path) - 1):
+            current = path[i]
+            next = path[i+1]
+            wall = tuple(sorted([current, next], key=lambda p: (p.getX, p.getY)))
+            pathObstructingWalls.add(wall)
+ 
+        # Determine allowedWallPositions
+        allowedWalls = list(possibleWalls - pathObstructingWalls)
+
+        # Select wall from allowed walls randomly  
+        samples = min(walls, len(allowedWalls))
+        selectedWalls = random.sample(allowedWalls, samples)
+
+        # Add walls to the board
+        for wall in selectedWalls:
+            board.addWall(wall[0], wall[1])
+
+        return board
