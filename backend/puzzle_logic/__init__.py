@@ -1,4 +1,4 @@
-from .models import Position, Waypoint, Wall
+from .data_models import Position, Waypoint, Wall
 from .board import Board
 
 

@@ -1,7 +1,7 @@
 from typing import List
 from .board import Board
 from .game_state import GameState
-from .models import Position
+from .data_models import Position
 
 
 class PuzzleRules:
@@ -44,3 +44,17 @@ class PuzzleRules:
             return True
 
         return waypoint.getOrder == state.getNextWaypointOrder
+
+    def _coversEveryCellExactlyOnce(self, board: Board, path: List[Position]) -> bool:
+        """Return True if the path visits every board cell exactly once."""
+        return len(path) == board.getCellCount() and set(path) == board.getAllPositions()
+
+    def _containsOnlyValidMoves(self, board: Board, path: List[Position]) -> bool:
+        
+
+    # NEW METHODE
+    def _visitsWaypointsInCorrectOrder(self, board: Board, path: List[Position]) -> bool:
+        waypoint_orders = []
+
+        for position in path:
+            

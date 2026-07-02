@@ -1,5 +1,5 @@
 from typing import List, Set
-from .models import Position
+from .data_models import Position
 from .board import Board
 
 

@@ -1,5 +1,3 @@
-from typing import List, Set, Optional
-
 
 class Position:
     def __init__(self, x: int, y: int):
