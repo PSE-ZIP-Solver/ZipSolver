@@ -1,4 +1,4 @@
-from backend.PuzzleLogic import Position, Board
+from backend.puzzle_logic import Position, Board
 from typing import List
 import random
 
