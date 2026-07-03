@@ -3,3 +3,5 @@
 .vscode/
 *.env
 *.env.local
+uv.lock
+*__pycache__*
