@@ -1,6 +1,6 @@
 import unittest
-from offline_training.BoardGenerator import BoardGenerator
 from backend.PuzzleLogic import Board, Position
+from offline_training.BoardGenerator import BoardGenerator
 
 class TestBoardGenerator(unittest.TestCase):
 
