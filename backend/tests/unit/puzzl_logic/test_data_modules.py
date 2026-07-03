@@ -15,12 +15,13 @@ def test_position_init_and_properties():
     assert neg_pos.getX == -1
     assert neg_pos.getY == -99
 
-def test_position_setters():
-    pos = Position(0, 0)
-    pos.setX(10)
-    pos.setY(-5)
-    assert pos.getX == 10
-    assert pos.getY == -5
+# TODO remove entirely
+# def test_position_setters():
+#    pos = Position(0, 0)
+#    pos.setX(10)
+#    pos.setY(-5)
+#    assert pos.getX == 10
+#    assert pos.getY == -5
 
 def test_position_equality():
     pos1 = Position(5, 10)

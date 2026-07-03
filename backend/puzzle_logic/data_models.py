@@ -4,11 +4,12 @@ class Position:
         self._x = x
         self._y = y
 
-    def setX(self, value: int):
-        self._x = value
-    
-    def setY(self, value: int):
-        self._y = value    
+# TODO remove entirely
+#    def setX(self, value: int):
+#        self._x = value
+#    
+#    def setY(self, value: int):
+#        self._y = value    
 
     @property
     def getX(self) -> int:
