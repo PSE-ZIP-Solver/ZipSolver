@@ -1,4 +1,4 @@
-from backend.PuzzleLogic import  Position, Board
+from backend.PuzzleLogic import Position, Board
 from typing import List
 import random
 
@@ -9,11 +9,28 @@ RESULTS = 1000
 class BoardGenerator:
     @staticmethod
     def generate(boardSize: int, intermediateWaypoints: int, walls: int) -> List[Board]:
+        """
+        Generates a batch of solvable puzzle, as follows:
+        1. Selects two distinct random positions (start and end) that satisfy 
+           mathematical parity requirements for a Hamiltonian path.
+        2. Finds a Hamiltonian path that visits every cell on the grid exactly once 
+           using DFS with Warnsdorff's heuristic for efficiency.
+        3. Places waypoints along the discovered path in ascending order, ensuring 
+           the puzzle follows a specific sequence.
+        4. Randomly places walls on the grid that do not obstruct the path, 
+           increasing difficulty without making the board unsolvable.
+
+        Args:
+            boardSize (int): The side length of the square board (e.g., 6, 7, or 8).
+            intermediateWaypoints (int): The number of waypoint markers to place 
+                between the start and end positions.
+            walls (int): The number of distinct walls to place on the board.
+
+        Returns:
+            List[Board]: A list containing the generated Board objects. The number 
+                of boards is determined by the global RESULTS constant.
+        """
         results: List[Board] = [] 
-        
-        # TODO remove?
-        # Assert parameter constraints are meat
-        assert 6 <= boardSize <= 8 and intermediateWaypoints <= boardSize*boardSize - 2 and walls <=  (boardSize - 1) * (boardSize - 1)
         
         # genrate resulting boards
         while len(results) < RESULTS:
