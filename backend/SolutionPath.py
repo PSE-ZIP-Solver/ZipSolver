@@ -1,4 +1,4 @@
-from PuzzleLogic import Position
+from backend.PuzzleLogic import Position
 from typing import List
 
 class SolutionPath:
