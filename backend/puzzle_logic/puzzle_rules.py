@@ -36,6 +36,7 @@ class PuzzleRules:
             and self._visitsWaypointsInCorrectOrder(board, path)
         )
 
+
     # PRIVATE METHODS:
     def _preservesWaypointOrder(self, board: Board, state: GameState, target: Position) -> bool:
         waypoint = board.getWaypointAt(target)
@@ -46,15 +47,42 @@ class PuzzleRules:
         return waypoint.getOrder == state.getNextWaypointOrder
 
     def _coversEveryCellExactlyOnce(self, board: Board, path: List[Position]) -> bool:
-        """Return True if the path visits every board cell exactly once."""
+
         return len(path) == board.getCellCount() and set(path) == board.getAllPositions()
 
     def _containsOnlyValidMoves(self, board: Board, path: List[Position]) -> bool:
+        #Path empty or None
+        if not path:
+            return False
         
+        #path inside Grid
+        for pos in path: 
+            if not board.isInside(pos):
+                return False
+        
+        #path is continuous and has no walls between
+        for i in range(len(path) - 1):
+            current = path[i]
+            next_pos = path[i + 1]
+
+            if not board.areAdjacent(current, next_pos):
+                return False
+            
+            if board.hasWallBetween(current, next_pos):
+                return False
+
+        return True
 
     # NEW METHODE
     def _visitsWaypointsInCorrectOrder(self, board: Board, path: List[Position]) -> bool:
         waypoint_orders = []
 
-        for position in path:
+        for pos in path:
+            waypoint = board.getWaypointAt(pos)
             
+            if waypoint is not None:
+                waypoint_orders.append(waypoint.getOrder)
+
+        expected_orders = sorted([wp.getOrder for wp in board.getWaypoints])
+
+        return expected_orders == waypoint_orders
