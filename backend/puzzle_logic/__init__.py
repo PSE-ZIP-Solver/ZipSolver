@@ -7,4 +7,7 @@ __all__ = [
     "Waypoint",
     "Wall",
     "Board",
+    "GameState",
+    "PuzzleRules",
+    "Game",
 ]
