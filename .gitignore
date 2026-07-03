@@ -3,5 +3,8 @@
 .vscode/
 *.env
 *.env.local
+
 uv.lock
-*__pycache__*
+__pycache__/
+*.pyc
+.pytest_cache/

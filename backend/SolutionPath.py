@@ -1,4 +1,4 @@
-from PuzzleLogic import Position
+from puzzle_logic import Position
 from typing import List
 
 class SolutionPath:
