@@ -5,9 +5,10 @@ from backend.PuzzleLogic import Board, Position
 class TestBoardGenerator(unittest.TestCase):
 
     def setUp(self):
-        # We reduce the RESULTS constant for testing purposes to keep tests fast
+        # Reduce RESULTS for faster testing
         BoardGenerator.RESULTS = 1
-        self.sizes = [6, 8] # Excl. 7 due to the parity loop mentioned above
+        # Now including size 7 as the parity logic is fixed
+        self.sizes = [6, 7, 8] 
 
     def testGenerate(self):
         """Tests the main entry point for different sizes and basic constraints."""
@@ -22,15 +23,18 @@ class TestBoardGenerator(unittest.TestCase):
         """Tests _generateTwoDistinctRandomPositions logic and parity."""
         for size in self.sizes:
             start, end = BoardGenerator._generateTwoDistinctRandomPositions(size)
+            self.assertNotEqual(start, end)
             
-            # Check distinctness
-            self.assertNotEqual((start.getX, start.getY), (end.getX, end.getY))
+            p_start = (start.getX + start.getY) % 2
+            p_end = (end.getX + end.getY) % 2
             
-            # Check parity (must be different for even boards)
             if size % 2 == 0:
-                start_parity = (start.getX + start.getY) % 2
-                end_parity = (end.getX + end.getY) % 2
-                self.assertNotEqual(start_parity, end_parity, f"Parity failed for size {size}")
+                # Even: different parity
+                self.assertNotEqual(p_start, p_end)
+            else:
+                # Odd: both must be parity 0 (majority color)
+                self.assertEqual(p_start, 0)
+                self.assertEqual(p_end, 0)
 
     def testFindHamiltonianPath(self):
         """Tests if the path visits every cell exactly once."""
@@ -42,67 +46,58 @@ class TestBoardGenerator(unittest.TestCase):
         self.assertIsNotNone(path)
         self.assertEqual(len(path), size * size)
         
-        # Check for uniqueness of all positions in path
-        unique_pos = set((p.getX, p.getY) for p in path)
-        self.assertEqual(len(unique_pos), size * size)
+        # Check for uniqueness using the class's built-in __hash__
+        self.assertEqual(len(set(path)), size * size)
         self.assertEqual(path[-1], end)
 
     def testEdgeCasesPlaceRandomWaypoints(self):
         """Tests _placeRandomWaypoints with 0 and max waypoints."""
         size = 6
         board = Board(size)
-        # Mock a simple path for testing (usually needs to be Hamiltonian, but method works on any list)
         path = [Position(x, 0) for x in range(size)] 
         
-        # Edge Case: 0 intermediate waypoints (Only Start and End should exist)
+        # 0 intermediate waypoints -> 2 total (Start/End)
         BoardGenerator._placeRandomWaypoints(board, path, 0)
-        # Order 1 (Start) and Order 2 (End)
         self.assertEqual(len(board.getWaypoints), 2)
 
-        # Edge Case: Max waypoints
+        # Max waypoints -> All cells in path become waypoints
         board_max = Board(size)
-        max_wp = size * size # Requesting more than possible
-        BoardGenerator._placeRandomWaypoints(board_max, path, max_wp)
-        # Start + End + all intermediate points in path
+        BoardGenerator._placeRandomWaypoints(board_max, path, 1000) 
         self.assertEqual(len(board_max.getWaypoints), len(path))
 
     def testPlaceRandomWalls(self):
-        """Tests _placeRandomWalls with 0 and max walls."""
+        """Tests _placeRandomWalls with 0 and unrealistic wall counts."""
         size = 6
         board = Board(size)
-        # Minimal path
         path = [Position(0, 0), Position(1, 0)]
         
-        # Edge Case: 0 walls
+        # 0 walls
         BoardGenerator._placeRandomWalls(board, path, 0)
         self.assertEqual(len(board.getWalls), 0)
 
-        # Edge Case: Very high number of walls
-        max_possible_walls = (size - 1) * (size - 1)
-        BoardGenerator._placeRandomWalls(board, path, max_possible_walls)
-        # Should not exceed available grid edges minus path edges
-        self.assertLessEqual(len(board.getWalls), max_possible_walls)
+        # Excess walls (should be capped safely)
+        BoardGenerator._placeRandomWalls(board, path, 500)
+        max_possible = (2 * size * (size - 1)) - (len(path) - 1)
+        self.assertLessEqual(len(board.getWalls), max_possible)
 
-    def testPlaceRandomWaypoints(self):
-        """Verifies that waypoints are added in the correct order according to the path."""
+    def testWaypointOrdering(self):
+        """Verifies waypoints are in ascending order relative to the path sequence."""
         size = 6
         board = Board(size)
-        path = [Position(0,0), Position(1,0), Position(1,1), Position(0,1)]
+        path = [Position(0,0), Position(1,0), Position(1,1), Position(0,1), Position(0,2)]
         
-        # Add 2 intermediate waypoints
         BoardGenerator._placeRandomWaypoints(board, path, 2)
-        
         wps = sorted(board.getWaypoints, key=lambda w: w.getOrder)
         
-        # Check that the position of waypoint with order 2 comes AFTER order 1 in the path
+        # Verify continuous ordering (1, 2, 3...)
+        for i, wp in enumerate(wps):
+            self.assertEqual(wp.getOrder, i + 1)
+
+        # Verify path sequence
         for i in range(len(wps) - 1):
-            pos_curr = wps[i].getPosition
-            pos_next = wps[i+1].getPosition
-            
-            idx_curr = next(j for j, p in enumerate(path) if p == pos_curr)
-            idx_next = next(j for j, p in enumerate(path) if p == pos_next)
-            
-            self.assertLess(idx_curr, idx_next, f"Waypoint order {wps[i+1].getOrder} appeared before {wps[i].getOrder} in path")
+            idx_curr = path.index(wps[i].getPosition)
+            idx_next = path.index(wps[i+1].getPosition)
+            self.assertLess(idx_curr, idx_next)
 
 if __name__ == '__main__':
     unittest.main()
