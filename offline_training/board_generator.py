@@ -1,6 +1,8 @@
-from backend.puzzle_logic import Position, Board
-from typing import List
+import argparse
 import random
+from typing import List
+
+from backend.puzzle_logic import Board, Position
 
 
 # number of results to generate
@@ -8,7 +10,12 @@ RESULTS = 1000
 
 class BoardGenerator:
     @staticmethod
-    def generate(boardSize: int, intermediateWaypoints: int, walls: int) -> List[Board]:
+    def generate(
+        boardSize: int,
+        intermediateWaypoints: int,
+        walls: int,
+        resultCount: int | None = None,
+    ) -> List[Board]:
         """
         Generates a batch of solvable puzzle, as follows:
         1. Selects two distinct random positions (start and end) that satisfy 
@@ -27,13 +34,26 @@ class BoardGenerator:
             walls (int): The number of distinct walls to place on the board.
 
         Returns:
-            List[Board]: A list containing the generated Board objects. The number 
-                of boards is determined by the global RESULTS constant.
+            resultCount (int | None): Number of boards to generate. When omitted,
+                the global RESULTS constant is used.
+
+        Returns:
+            List[Board]: A list containing the generated Board objects.
         """
+        target_results = RESULTS if resultCount is None else resultCount
+        if boardSize < 2:
+            raise ValueError("boardSize must be at least 2")
+        if intermediateWaypoints < 0:
+            raise ValueError("intermediateWaypoints cannot be negative")
+        if walls < 0:
+            raise ValueError("walls cannot be negative")
+        if target_results < 0:
+            raise ValueError("resultCount cannot be negative")
+
         results: List[Board] = [] 
         
         # genrate resulting boards
-        while len(results) < RESULTS:
+        while len(results) < target_results:
             board = Board(boardSize)
             start, end = BoardGenerator._generateTwoDistinctRandomPositions(boardSize)
             path = BoardGenerator._findHamiltonianPath(board, start, end)
@@ -194,3 +214,50 @@ class BoardGenerator:
             board.addWall(wall[0], wall[1])
 
         return board
+
+
+def _non_negative_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("value must be zero or greater")
+    return parsed
+
+
+def _board_size(value: str) -> int:
+    parsed = int(value)
+    if parsed < 2:
+        raise argparse.ArgumentTypeError("board size must be at least 2")
+    return parsed
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Generate solvable Zip puzzle boards."
+    )
+    parser.add_argument("--board-size", type=_board_size, default=6)
+    parser.add_argument("--intermediate-waypoints", type=_non_negative_int, default=5)
+    parser.add_argument("--walls", type=_non_negative_int, default=5)
+    parser.add_argument("--results", type=_non_negative_int, default=1)
+    parser.add_argument("--seed", type=int, help="Optional random seed for reproducible output")
+    args = parser.parse_args(argv)
+
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    boards = BoardGenerator.generate(
+        args.board_size,
+        args.intermediate_waypoints,
+        args.walls,
+        resultCount=args.results,
+    )
+    print(f"Generated {len(boards)} board(s):")
+    for index, board in enumerate(boards, start=1):
+        print(
+            f"  {index}: {board.getSize}x{board.getSize}, "
+            f"{len(board.getWaypoints)} waypoints, {len(board.getWalls)} walls"
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
