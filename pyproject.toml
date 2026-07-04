@@ -7,4 +7,5 @@ dependencies = [
     "numpy==2.5.0",
     "pytest==9.1.1",
     "stable-baselines3==2.9.0",
+    "torch>=2.12.1",
 ]
