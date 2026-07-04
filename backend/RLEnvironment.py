@@ -60,13 +60,13 @@ class RLEnvironment(gym.Env):
     def _get_observation(self) -> np.ndarray:
         """ Return the current observation of the environment as a 7-channel tensor.
             Channels:
-            0: Current position of the player
-            1: Visited cells        (1 if visited, 0 otherwise)
-            2: Waypoints            (value = order of waypoint, 0 if not a waypoint)
-            3: Wall above           (1 if wall exists, 0 otherwise)
-            4: Wall to the right    (1 if wall exists, 0 otherwise)
-            5: Wall below           (1 if wall exists, 0 otherwise)
-            6: Wall to the left     (1 if wall exists, 0 otherwise)
+            0: Current position of the player \n
+            1: Visited cells        (1 if visited, 0 otherwise) \n
+            2: Waypoints            (value = order of waypoint, 0 if not a waypoint) \n
+            3: Wall above           (1 if wall exists, 0 otherwise) \n
+            4: Wall to the right    (1 if wall exists, 0 otherwise) \n
+            5: Wall below           (1 if wall exists, 0 otherwise) \n
+            6: Wall to the left     (1 if wall exists, 0 otherwise) \n
         """
         size = self.config.size
         obs = np.zeros((7, size, size), dtype=np.float32)
