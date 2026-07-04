@@ -1,0 +1,231 @@
+import pytest
+from puzzle_logic.data_models import Position
+from puzzle_logic.board import Board
+from puzzle_logic.game_state import GameState
+from puzzle_logic.puzzle_rules import PuzzleRules
+
+
+@pytest.fixture
+def rules():
+    """Provides a fresh PuzzleRules instance for each test."""
+    return PuzzleRules()
+
+
+@pytest.fixture
+def board():
+    """Provides a fresh supported 6x6 board for each test."""
+    return Board(6)
+
+
+@pytest.fixture
+def start_position():
+    """Provides a default start position."""
+    return Position(0, 0)
+
+
+@pytest.fixture
+def game_state(start_position):
+    """Provides a fresh GameState starting at (0, 0)."""
+    return GameState(start_position)
+
+
+def create_snake_path(size: int = 6):
+    """
+    Creates a complete snake-like path through a square board.
+
+    Example for 6x6:
+    Row 0: left to right
+    Row 1: right to left
+    Row 2: left to right
+    ...
+    """
+    path = []
+
+    for y in range(size):
+        if y % 2 == 0:
+            for x in range(size):
+                path.append(Position(x, y))
+        else:
+            for x in reversed(range(size)):
+                path.append(Position(x, y))
+
+    return path
+
+
+# ==========================================
+# Valid Move Checks
+# ==========================================
+
+def test_valid_move_to_empty_adjacent_cell(board, game_state, rules):
+    """Test that moving to an adjacent, unvisited, empty cell is valid."""
+    target = Position(1, 0)
+
+    assert rules.isValidMove(board, game_state, target)
+
+
+def test_invalid_move_outside_board(board, game_state, rules):
+    """Test that moving outside the board is invalid."""
+    target = Position(-1, 0)
+
+    assert not rules.isValidMove(board, game_state, target)
+
+
+def test_invalid_move_not_adjacent(board, game_state, rules):
+    """Test that moving to a non-adjacent cell is invalid."""
+    target = Position(2, 0)
+
+    assert not rules.isValidMove(board, game_state, target)
+
+
+def test_invalid_move_through_wall(board, game_state, rules):
+    """Test that moving through a wall is invalid."""
+    target = Position(1, 0)
+
+    board.addWall(Position(0, 0), target)
+
+    assert not rules.isValidMove(board, game_state, target)
+
+
+def test_invalid_move_to_visited_cell(board, game_state, rules):
+    """Test that moving to an already visited cell is invalid."""
+    first_step = Position(1, 0)
+    game_state.addStep(first_step)
+
+    target = Position(0, 0)
+
+    assert not rules.isValidMove(board, game_state, target)
+
+
+# ==========================================
+# Waypoint Order Checks
+# ==========================================
+
+def test_valid_move_to_next_waypoint(board, game_state, rules):
+    """Test that moving to the next expected waypoint is valid."""
+    start = Position(0, 0)
+    target = Position(1, 0)
+
+    board.addWaypoint(start, 1)
+    board.addWaypoint(target, 2)
+
+    assert rules.isValidMove(board, game_state, target)
+
+
+def test_invalid_move_to_wrong_waypoint_order(board, game_state, rules):
+    """Test that moving to a waypoint with the wrong order is invalid."""
+    start = Position(0, 0)
+    target = Position(1, 0)
+
+    board.addWaypoint(start, 1)
+    board.addWaypoint(target, 3)
+
+    assert not rules.isValidMove(board, game_state, target)
+
+
+def test_valid_move_to_waypoint_after_increment(board, game_state, rules):
+    """Test that a later waypoint becomes valid after incrementing nextWaypointOrder."""
+    start = Position(0, 0)
+    target = Position(1, 0)
+
+    board.addWaypoint(start, 1)
+    board.addWaypoint(target, 3)
+
+    game_state.incrementNextWaypointOrder()
+
+    assert rules.isValidMove(board, game_state, target)
+
+
+# ==========================================
+# Complete Solution Checks
+# ==========================================
+
+def test_complete_solution_valid_snake_path(board, rules):
+    """Test that a full valid snake path with correct waypoint order is accepted."""
+    path = create_snake_path(6)
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
+    board.addWaypoint(Position(0, 5), 3)
+
+    assert rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_missing_cell(board, rules):
+    """Test that a path missing one board cell is not a complete solution."""
+    path = create_snake_path(6)
+    incomplete_path = path[:-1]
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
+    board.addWaypoint(Position(0, 5), 3)
+
+    assert not rules.isCompleteSolution(board, incomplete_path)
+
+
+def test_complete_solution_duplicate_cell_edge_case(board, rules):
+    """
+    Edge case: A path with duplicate cells cannot cover every cell exactly once,
+    even if its length is close to the board cell count.
+    """
+    path = create_snake_path(6)
+    path[-1] = path[0]
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
+    board.addWaypoint(Position(0, 5), 3)
+
+    assert not rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_with_wall_between_path_cells(board, rules):
+    """Test that a path is invalid if a wall blocks one of its moves."""
+    path = create_snake_path(6)
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
+    board.addWaypoint(Position(0, 5), 3)
+
+    board.addWall(Position(0, 0), Position(1, 0))
+
+    assert not rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_wrong_waypoint_order(board, rules):
+    """Test that a complete path is invalid if waypoints are visited in the wrong order."""
+    path = create_snake_path(6)
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(0, 5), 2)
+    board.addWaypoint(Position(5, 0), 3)
+
+    assert not rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_empty_path(board, rules):
+    """Test that an empty path is not a complete solution."""
+    assert not rules.isCompleteSolution(board, [])
+
+
+def test_complete_solution_with_out_of_bounds_position(board, rules):
+    """Test that a path containing an out-of-bounds position is invalid."""
+    path = create_snake_path(6)
+    path[10] = Position(99, 99)
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
+    board.addWaypoint(Position(0, 5), 3)
+
+    assert not rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_with_non_adjacent_jump(board, rules):
+    """Test that a path containing a non-adjacent jump is invalid."""
+    path = create_snake_path(6)
+
+    path[1] = Position(5, 5)
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
+    board.addWaypoint(Position(0, 5), 3)
+
+    assert not rules.isCompleteSolution(board, path)
