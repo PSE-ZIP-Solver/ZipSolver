@@ -2,10 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [dev, main]
+    branches: [dev, main, "CI-CD", "**"]   # "**" = every branch, temporarily
   pull_request:
     branches: [dev, main]
-
+  workflow_dispatch:                        # adds a "Run workflow" button in the UI
 # Cancel superseded runs on the same ref — saves minutes during rapid pushes.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
