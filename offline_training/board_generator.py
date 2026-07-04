@@ -1,8 +1,16 @@
 import argparse
 import random
+import sys
+from pathlib import Path
 from typing import List
 
-from backend.puzzle_logic import Board, Position
+# Direct execution makes ``offline_training`` the import root. Add the repository
+# root so sibling packages such as ``backend`` remain importable.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from backend.puzzle_logic.board import Board
+from backend.puzzle_logic.data_models import Position
 
 
 # number of results to generate
@@ -33,7 +41,7 @@ class BoardGenerator:
                 between the start and end positions.
             walls (int): The number of distinct walls to place on the board.
 
-        Returns:
+        Args:
             resultCount (int | None): Number of boards to generate. When omitted,
                 the global RESULTS constant is used.
 
@@ -88,7 +96,7 @@ class BoardGenerator:
                     return start, end
     
     @staticmethod
-    def _findHamiltonianPath(board: Board, start: Position, end: Position) -> List[Position]:
+    def _findHamiltonianPath(board: Board, start: Position, end: Position) -> List[Position] | None:
         total_cells = board.getCellCount()
         visited = {start}
         path: List[Position] = [start]
