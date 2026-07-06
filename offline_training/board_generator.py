@@ -8,7 +8,7 @@ RESULTS = 1000
 
 class BoardGenerator:
     @staticmethod
-    def generate(boardSize: int, intermediateWaypoints: int, walls: int) -> List[Board]:
+    def generate(boardSize: int, intermediateWaypoints: int, walls: int, numberBoards: int = 1) -> List[Board]:
         """
         Generates a batch of solvable puzzle, as follows:
         1. Selects two distinct random positions (start and end) that satisfy 
@@ -25,6 +25,7 @@ class BoardGenerator:
             intermediateWaypoints (int): The number of waypoint markers to place 
                 between the start and end positions.
             walls (int): The number of distinct walls to place on the board.
+            numberBoards (int, optional): The number of boards to generate. Defaults to 1000.
 
         Returns:
             List[Board]: A list containing the generated Board objects. The number 
@@ -33,7 +34,7 @@ class BoardGenerator:
         results: List[Board] = [] 
         
         # genrate resulting boards
-        while len(results) < RESULTS:
+        while len(results) < numberBoards:
             board = Board(boardSize)
             start, end = BoardGenerator._generateTwoDistinctRandomPositions(boardSize)
             path = BoardGenerator._findHamiltonianPath(board, start, end)
