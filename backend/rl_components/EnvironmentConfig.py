@@ -9,6 +9,6 @@ class EnvironmentConfig:
 
         # Rewards / penalties
         self.invalid_move_penalty = -1
-        self.completion_reward = 100
-        self.next_waypoint_reward = 20
+        self.completion_reward = 500
+        self.next_waypoint_reward = 50
         self.new_cell_reward = 1

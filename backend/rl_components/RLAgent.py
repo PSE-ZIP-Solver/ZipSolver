@@ -1,6 +1,7 @@
 import stable_baselines3 as sb
 import gymnasium as gym
 from backend.rl_components.RLEnvironment import RLEnvironment
+from stable_baselines3.common.utils import get_linear_fn
 
 class RLAgent:
     """Wraps a Stable-Baselines3 DQN model for training and inference on RLEnvironment."""
@@ -16,8 +17,8 @@ class RLAgent:
             self._model = self.load(model_path)
         else:
             dqn_kwargs.setdefault("exploration_initial_eps", 1.0)
-            dqn_kwargs.setdefault("exploration_final_eps", 0.3)
-            dqn_kwargs.setdefault("exploration_fraction", 0.6)
+            dqn_kwargs.setdefault("exploration_final_eps", 0.2)
+            dqn_kwargs.setdefault("exploration_fraction", 0.8)
             dqn_kwargs.setdefault("learning_starts", 100)
 
             self._model = sb.DQN(
@@ -25,8 +26,26 @@ class RLAgent:
                 env=self._env,
                 policy_kwargs=self.policy_kwargs,
                 verbose=1,
+                device="auto", # GPU or CPU
                 **dqn_kwargs,
             )
+
+
+    def set_exploration_schedule(
+        self,
+        initial_eps: float = 1.0,
+        final_eps: float = 0.2,
+        fraction: float = 0.8,
+    ):
+        self._model.exploration_initial_eps = initial_eps
+        self._model.exploration_final_eps = final_eps
+        self._model.exploration_fraction = fraction
+        self._model.exploration_schedule = get_linear_fn(
+            initial_eps,
+            final_eps,
+            fraction,
+        )
+        self._model.exploration_rate = initial_eps
 
     def predict(self, observation, deterministic: bool = True):
         """Return the action the agent chooses for a given observation."""
@@ -55,7 +74,12 @@ class RLAgent:
         custom_objects = {
             "policy_kwargs": self.policy_kwargs,
         }
-        return sb.DQN.load(path, env=self._env, custom_objects=custom_objects)
+        return sb.DQN.load(
+            path,
+            env=self._env,
+            custom_objects=custom_objects,
+            device="auto",
+        )
 
     def solve(
             self,
