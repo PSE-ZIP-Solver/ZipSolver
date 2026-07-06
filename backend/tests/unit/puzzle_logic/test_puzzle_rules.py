@@ -101,12 +101,14 @@ def test_invalid_move_to_visited_cell(board, game_state, rules):
 # ==========================================
 
 def test_valid_move_to_next_waypoint(board, game_state, rules):
-    """Test that moving to the next expected waypoint is valid."""
+    """Test that moving to the next expected non-final waypoint is valid."""
     start = Position(0, 0)
     target = Position(1, 0)
+    final_waypoint = Position(5, 5)
 
     board.addWaypoint(start, 1)
     board.addWaypoint(target, 2)
+    board.addWaypoint(final_waypoint, 3)
 
     assert rules.isValidMove(board, game_state, target)
 
@@ -123,16 +125,68 @@ def test_invalid_move_to_wrong_waypoint_order(board, game_state, rules):
 
 
 def test_valid_move_to_waypoint_after_increment(board, game_state, rules):
-    """Test that a later waypoint becomes valid after incrementing nextWaypointOrder."""
+    """Test that a later non-final waypoint becomes valid after incrementing nextWaypointOrder."""
     start = Position(0, 0)
+    skipped_waypoint = Position(2, 0)
     target = Position(1, 0)
+    final_waypoint = Position(5, 5)
 
     board.addWaypoint(start, 1)
+    board.addWaypoint(skipped_waypoint, 2)
     board.addWaypoint(target, 3)
+    board.addWaypoint(final_waypoint, 4)
 
     game_state.incrementNextWaypointOrder()
 
     assert rules.isValidMove(board, game_state, target)
+
+
+# ==========================================
+# Endpoint Rule Checks
+# ==========================================
+
+def test_invalid_move_to_final_waypoint_too_early(board, game_state, rules):
+    """Test that moving to the final waypoint before covering all cells is invalid."""
+    start = Position(0, 0)
+    final_waypoint = Position(1, 0)
+
+    board.addWaypoint(start, 1)
+    board.addWaypoint(final_waypoint, 2)
+
+    assert not rules.isValidMove(board, game_state, final_waypoint)
+
+
+def test_invalid_move_away_from_final_waypoint(board, rules):
+    """Test that moving away from the final waypoint is invalid."""
+    start = Position(5, 5)
+    final_waypoint = Position(0, 0)
+    target = Position(1, 0)
+
+    board.addWaypoint(start, 1)
+    board.addWaypoint(final_waypoint, 2)
+
+    state = GameState(final_waypoint)
+
+    assert not rules.isValidMove(board, state, target)
+
+
+def test_valid_move_to_final_waypoint_as_last_cell(board, rules):
+    """Test that moving to the final waypoint is valid if it completes the board."""
+    path = create_snake_path(6)
+
+    start = path[0]
+    final_waypoint = path[-1]
+
+    board.addWaypoint(start, 1)
+    board.addWaypoint(final_waypoint, 2)
+
+    state = GameState(start)
+
+    for pos in path[1:-1]:
+        state.addStep(pos)
+
+    assert state.getCurrentPosition == path[-2]
+    assert rules.isValidMove(board, state, final_waypoint)
 
 
 # ==========================================
@@ -221,11 +275,30 @@ def test_complete_solution_with_out_of_bounds_position(board, rules):
 def test_complete_solution_with_non_adjacent_jump(board, rules):
     """Test that a path containing a non-adjacent jump is invalid."""
     path = create_snake_path(6)
-
     path[1] = Position(5, 5)
 
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(5, 0), 2)
     board.addWaypoint(Position(0, 5), 3)
+
+    assert not rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_must_start_at_first_waypoint(board, rules):
+    """Test that a complete path is invalid if it does not start at waypoint 1."""
+    path = create_snake_path(6)
+
+    board.addWaypoint(Position(1, 0), 1)
+    board.addWaypoint(Position(0, 5), 2)
+
+    assert not rules.isCompleteSolution(board, path)
+
+
+def test_complete_solution_must_end_at_last_waypoint(board, rules):
+    """Test that a complete path is invalid if it does not end at the final waypoint."""
+    path = create_snake_path(6)
+
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 0), 2)
 
     assert not rules.isCompleteSolution(board, path)
