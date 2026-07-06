@@ -1,10 +1,11 @@
 import stable_baselines3 as sb
 import gymnasium as gym
+from backend.rl_components.RLEnvironment import RLEnvironment
 
 class RLAgent:
     """Wraps a Stable-Baselines3 DQN model for training and inference on RLEnvironment."""
 
-    def __init__(self, env: gym.Env, model_path: str | None = None, **dqn_kwargs):
+    def __init__(self, env: RLEnvironment, model_path: str | None = None, **dqn_kwargs):
         self._env = env
         self.policy_kwargs = dict(
             features_extractor_class=ZipCNN,
@@ -26,6 +27,16 @@ class RLAgent:
         """Return the action the agent chooses for a given observation."""
         action, _state = self._model.predict(observation, deterministic=deterministic)
         return action
+    
+    def learn(self, total_timesteps: int, reset_num_timesteps: bool = False):
+        """Train the model for the given amount of timesteps."""
+        self._model.learn(total_timesteps=total_timesteps, reset_num_timesteps=reset_num_timesteps)
+        return self
+    
+    def set_env(self, env: gym.Env):
+        """Switch the environment used by the wrapped model."""
+        self._env = env
+        self._model.set_env(env)
 
     def save(self, path: str):
         """Save the trained model to disk."""
@@ -38,6 +49,62 @@ class RLAgent:
         }
         return sb.DQN.load(path, env=self._env, custom_objects=custom_objects)
 
+    def solve(
+            self,
+            deterministic: bool = True,
+            max_steps: int = 99999,
+            render: bool = True):
+        """Run the agent on the current environment until it solves the board,
+        fails, or hits the step limit.
+
+        Args:
+            deterministic (bool): Whether to use deterministic action selection.
+            max_steps (int | None): Hard cap on steps; falls back to the
+                environment's own configured max_steps if not provided.
+            render (bool): Whether to capture rendered states along the way.
+
+        Returns:
+            dict: Summary of the rollout, including whether the board was solved.
+        """
+        options = {}
+        observation, info = self._env.reset()
+
+        step_limit = max_steps
+        if step_limit <= 0:
+            raise ValueError("max_steps must be > 0.")
+
+        terminated = False
+        truncated = False
+        total_reward = 0.0
+        actions: list[int] = []
+        states: list[str] = []
+
+        for _ in range(step_limit):
+            if render:
+                self._env.render()
+
+            action = self.predict(observation, deterministic=deterministic)
+            action_int = int(action)
+            actions.append(action_int)
+
+            observation, reward, terminated, truncated, info = self._env.step(action_int)
+            total_reward += float(reward)
+
+            if terminated or truncated:
+                break
+
+        if render:
+            self._env.render()
+
+        solved = terminated and self._env.game.isFinished()
+        return {
+            "solved": solved,
+            "truncated": truncated,
+            "total_reward": total_reward,
+            "actions": actions,
+            "final_info": info,
+            "states": states,
+        }
 
 
 # CUSTOM NEW CLASS FOR CUSTOM CNN POLICY INSTEAD OF MLP POLICY
