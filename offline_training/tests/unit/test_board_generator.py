@@ -1,5 +1,5 @@
 import pytest
-from backend.PuzzleLogic import Board, Position
+from backend.puzzle_logic import Board, Position
 from offline_training.board_generator import BoardGenerator
 
 # ==========================================
