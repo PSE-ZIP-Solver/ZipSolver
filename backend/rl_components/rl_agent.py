@@ -15,6 +15,11 @@ class RLAgent:
         if model_path is not None:
             self._model = self.load(model_path)
         else:
+            dqn_kwargs.setdefault("exploration_initial_eps", 1.0)
+            dqn_kwargs.setdefault("exploration_final_eps", 0.2)
+            dqn_kwargs.setdefault("exploration_fraction", 0.7)
+            dqn_kwargs.setdefault("learning_starts", 100)
+
             self._model = sb.DQN(
                 policy="CnnPolicy",
                 env=self._env,
@@ -28,9 +33,12 @@ class RLAgent:
         action, _state = self._model.predict(observation, deterministic=deterministic)
         return action
     
-    def learn(self, total_timesteps: int, reset_num_timesteps: bool = False):
+    def learn(self, total_timesteps: int, reset_num_timesteps: bool = True):
         """Train the model for the given amount of timesteps."""
-        self._model.learn(total_timesteps=total_timesteps, reset_num_timesteps=reset_num_timesteps)
+        self._model.learn(
+            total_timesteps=total_timesteps,
+            reset_num_timesteps=reset_num_timesteps
+        )
         return self
     
     def set_env(self, env: gym.Env):
