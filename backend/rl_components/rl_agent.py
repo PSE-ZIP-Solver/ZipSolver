@@ -16,8 +16,8 @@ class RLAgent:
             self._model = self.load(model_path)
         else:
             dqn_kwargs.setdefault("exploration_initial_eps", 1.0)
-            dqn_kwargs.setdefault("exploration_final_eps", 0.2)
-            dqn_kwargs.setdefault("exploration_fraction", 0.7)
+            dqn_kwargs.setdefault("exploration_final_eps", 0.3)
+            dqn_kwargs.setdefault("exploration_fraction", 0.6)
             dqn_kwargs.setdefault("learning_starts", 100)
 
             self._model = sb.DQN(

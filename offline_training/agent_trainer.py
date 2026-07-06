@@ -141,17 +141,21 @@ class AgentTrainer:
 if __name__ == "__main__":
     trainer = AgentTrainer(
         boardSize=3,
-        nrOfWalls=0,
+        nrOfWalls=1,
         nrOfWaypoints=2,
         modelPath="default-model.zip",
         nrTrainingBoards=1,
         nrEvaluationBoards=1,
-        timestepsPerBoard=30000,
+        timestepsPerBoard=50000,
     )
 
     trainedAgent = trainer.train()
     trainer.save(trainedAgent, "trained-model.zip")
 
-    env = RLEnvironment(trainer.trainingBoards[0])
-    loadedAgent = RLAgent(env, model_path="trained-model.zip")
-    print(loadedAgent.solve(max_steps=env.config.max_steps, render=True))
+
+    env1 = RLEnvironment(trainer.trainingBoards[0])
+   # env2 = RLEnvironment(trainer.trainingBoards[1])
+    loadedAgent1 = RLAgent(env1, model_path="trained-model.zip")
+   # loadedAgent2 = RLAgent(env2, model_path="trained-model.zip")
+    print(loadedAgent1.solve(max_steps=env1.config.max_steps, render=True))
+   # print(loadedAgent2.solve(max_steps=env2.config.max_steps, render=True))
