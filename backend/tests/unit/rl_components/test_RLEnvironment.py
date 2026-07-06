@@ -4,7 +4,9 @@ import gymnasium as gym
 
 from puzzle_logic.data_models import Position
 from puzzle_logic.board import Board
-from backend import RLEnvironment
+from backend.rl import RLEnvironment
+
+
 # ==========================================
 # Setup & Fixtures
 # ==========================================
