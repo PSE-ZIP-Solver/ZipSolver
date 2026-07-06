@@ -19,27 +19,29 @@ class RLEnvironment(gym.Env):
         self.action_space = gym.spaces.Discrete(4)
         # 0 = UP, 1 = RIGHT, 2 = DOWN, 3 = LEFT
         self.game = Game(board)
+        self.current_step_count = 0
 
-    def reset(self, seed: int = None):
-        """ Reset the environment to the initial state and return the initial observation and info."""
+    def reset(self, seed: int = None, options=None):
         super().reset(seed=seed)
         self.game.reset()
-
+        self.current_step_count = 0
 
         observation = self._get_observation()
-        info = {}  #TODO add something here?
+        info = {}
 
         return observation, info
 
     def step(self, action: int):
         """ Apply the given action to the environment and return (obs, reward, terminated, truncated, info)."""
+        self.current_step_count += 1
+
         current_position = self.game.getState.getCurrentPosition
         target_position = self._get_target_position(current_position, action)
 
         if not self.game.isValidNextStep(target_position):
             reward = self.config.invalid_move_penalty
-            terminated = True
-            truncated = False
+            terminated = False
+            truncated = self.current_step_count >= self.config.max_steps
             info = {"invalid_move": True}
             return self._get_observation(), reward, terminated, truncated, info
 
@@ -51,7 +53,7 @@ class RLEnvironment(gym.Env):
 
         reward = self._calculate_reward(waypoint, expected_order, was_visited)
         terminated = self.game.isFinished()
-        truncated = len(self.game.getState.getPath) >= self.config.max_steps
+        truncated = self.current_step_count >= self.config.max_steps
         info = {"invalid_move": False}
 
         return self._get_observation(), reward, terminated, truncated, info
