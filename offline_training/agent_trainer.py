@@ -1,4 +1,3 @@
-from torch.distributed.elastic import agent
 
 from backend.puzzle_logic import Board
 from backend.rl_components import RLAgent, RLEnvironment
@@ -13,8 +12,8 @@ class AgentTrainer:
         nrOfWalls: int,
         nrOfWaypoints: int,
         modelPath: str,
-        nrTrainingBoards: int = 10000,
-        nrEvaluationBoards: int = 100,
+        nrTrainingBoards: int = 10,
+        nrEvaluationBoards: int = 10,
         trainingBoards: list[Board] | None = None,
         evaluationBoards: list[Board] | None = None,
         timestepsPerBoard: int | None = None,
@@ -50,17 +49,38 @@ class AgentTrainer:
             raise ValueError("Cannot train without at least one training board.")
 
         firstEnv = RLEnvironment(self.trainingBoards[0])
-        agent = RLAgent(firstEnv)
+        agent = RLAgent(
+            firstEnv,
+            learning_rate=0.0003,
+            exploration_initial_eps=1.0,
+            exploration_final_eps=0.2,
+            exploration_fraction=0.7,
+            learning_starts=100,
+        )
 
-        for board in self.trainingBoards:
+        chunk_timesteps = 1000
+        max_timesteps_per_board = self._timestepsPerBoard if self._timestepsPerBoard is not None else 30000
+        max_chunks_per_board = max_timesteps_per_board // chunk_timesteps
+
+        for index, board in enumerate(self.trainingBoards):
             env = RLEnvironment(board)
             agent.set_env(env)
 
-            timesteps = self._timestepsPerBoard if self._timestepsPerBoard is not None else env.config.max_steps
-            if timesteps <= 0:
-                raise ValueError("timestepsPerBoard must be > 0.")
+            solved = False
 
-            agent.learn(total_timesteps=timesteps, reset_num_timesteps=False)
+            for chunk in range(max_chunks_per_board):
+                agent.learn(
+                    total_timesteps=chunk_timesteps,
+                    reset_num_timesteps=False,
+                )
+
+                if self._can_solve_board(agent, board):
+                    print(f"Board {index + 1} solved after {(chunk + 1) * chunk_timesteps} timesteps.")
+                    solved = True
+                    break
+
+            if not solved:
+                print(f"Board {index + 1} not solved. Moving to next board anyway.")
 
         return agent
 
@@ -82,7 +102,7 @@ class AgentTrainer:
             boardReward = 0.0
 
             while not terminated and not truncated:
-                action, _ = agent.predict(observation, deterministic=True)
+                action = agent.predict(observation, deterministic=True)
                 observation, reward, terminated, truncated, _ = env.step(int(action))
                 boardReward += reward
 
@@ -104,9 +124,34 @@ class AgentTrainer:
         agent.save(path)
 
 
-trainer = AgentTrainer(boardSize=3, nrOfWalls=2, nrOfWaypoints=2, modelPath="default-model.zip")
-trainer.save(trainer.train(), "trained-model.zip")
+    def _can_solve_board(self, agent: RLAgent, board: Board) -> bool:
+        env = RLEnvironment(board)
+        observation, _ = env.reset()
 
-env = RLEnvironment(trainer.trainingBoards[0])
-trainedAgent = RLAgent(env, model_path="trained-model.zip")
-print(trainedAgent.solve())
+        terminated = False
+        truncated = False
+
+        while not terminated and not truncated:
+            action = agent.predict(observation, deterministic=True)
+            observation, reward, terminated, truncated, info = env.step(int(action))
+
+        return terminated and env.game.isFinished()
+
+
+if __name__ == "__main__":
+    trainer = AgentTrainer(
+        boardSize=3,
+        nrOfWalls=0,
+        nrOfWaypoints=2,
+        modelPath="default-model.zip",
+        nrTrainingBoards=1,
+        nrEvaluationBoards=1,
+        timestepsPerBoard=30000,
+    )
+
+    trainedAgent = trainer.train()
+    trainer.save(trainedAgent, "trained-model.zip")
+
+    env = RLEnvironment(trainer.trainingBoards[0])
+    loadedAgent = RLAgent(env, model_path="trained-model.zip")
+    print(loadedAgent.solve(max_steps=env.config.max_steps, render=True))
