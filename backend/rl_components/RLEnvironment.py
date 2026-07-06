@@ -9,7 +9,7 @@ class RLEnvironment(gym.Env):
     """ Custom Gym environment for the Zip puzzle game."""
     def __init__(self, board: Board):
         super().__init__()
-        self.config = EnvironmentConfig(6)
+        self.config = EnvironmentConfig() #SIZE HERE
         self.observation_space = gym.spaces.Box(
             low = 0,
             high = 1,

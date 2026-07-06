@@ -14,7 +14,10 @@ from backend.rl_components.RLEnvironment import RLEnvironment
 @pytest.fixture
 def real_board():
     """Provides a real 6x6 Board instance."""
-    return Board(6)
+    board = Board(6)
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 5), 2)
+    return board
 
 @pytest.fixture
 def env(real_board):
@@ -214,8 +217,8 @@ def test_get_observation_channels(env):
     x, y = current.getX, current.getY
     
     # Place real waypoints on the board
-    board.addWaypoint(Position(4, 4), 1)
-    board.addWaypoint(Position(5, 5), 2)
+    #board.addWaypoint(Position(4, 4), 1)
+    #board.addWaypoint(Position(5, 5), 2)
     
     # Surround the player with walls (respecting boundaries so we don't hit OOB errors)
     if y > 0: board.addWall(current, Position(x, y - 1)) # Above
@@ -233,7 +236,7 @@ def test_get_observation_channels(env):
     assert obs[1, x, y] == 1.0
     
     # C2: Waypoints (Scaled 1/2 and 2/2)
-    assert obs[2, 4, 4] == 0.5
+    assert obs[2, 0, 0] == 0.5
     assert obs[2, 5, 5] == 1.0
     
     # C3-C6: Walls dynamically checked based on where the player spawned
