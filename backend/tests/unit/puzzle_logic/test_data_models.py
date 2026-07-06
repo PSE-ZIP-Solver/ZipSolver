@@ -1,5 +1,5 @@
 import pytest
-from puzzle_logic.data_models import Position, Wall, Waypoint
+from backend.puzzle_logic.data_models import Position, Wall, Waypoint
 # ==========================================
 # Tests for Position
 # ==========================================

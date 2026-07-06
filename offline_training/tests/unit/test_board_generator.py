@@ -1,7 +1,6 @@
 import pytest
 from backend.puzzle_logic import Board, Position
 from offline_training.board_generator import BoardGenerator
-
 # ==========================================
 # Setup / Fixtures
 # ==========================================
@@ -13,7 +12,7 @@ def setup_generator_results(monkeypatch):
     It safely overrides the global RESULTS constant in the BoardGenerator 
     module to 1 to ensure tests run fast, restoring it after the test.
     """
-    monkeypatch.setattr('offline_training.BoardGenerator.RESULTS', 1)
+    monkeypatch.setattr('offline_training.board_generator.RESULTS', 1)
 
 # ==========================================
 # Tests

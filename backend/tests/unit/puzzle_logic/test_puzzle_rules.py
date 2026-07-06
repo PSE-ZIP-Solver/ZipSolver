@@ -1,8 +1,8 @@
 import pytest
-from puzzle_logic.data_models import Position
-from puzzle_logic.board import Board
-from puzzle_logic.game_state import GameState
-from puzzle_logic.puzzle_rules import PuzzleRules
+from backend.puzzle_logic.data_models import Position
+from backend.puzzle_logic.board import Board
+from backend.puzzle_logic.game_state import GameState
+from backend.puzzle_logic.puzzle_rules import PuzzleRules
 
 
 @pytest.fixture

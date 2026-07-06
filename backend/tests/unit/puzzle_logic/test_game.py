@@ -1,7 +1,7 @@
 import pytest
-from puzzle_logic.data_models import Position
-from puzzle_logic.board import Board
-from puzzle_logic.game import Game
+from backend.puzzle_logic.data_models import Position
+from backend.puzzle_logic.board import Board
+from backend.puzzle_logic.game import Game
 
 
 @pytest.fixture
