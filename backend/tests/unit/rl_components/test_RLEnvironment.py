@@ -2,9 +2,9 @@ import pytest
 import numpy as np
 import gymnasium as gym
 
-from puzzle_logic.data_models import Position
-from puzzle_logic.board import Board
-from backend.rl import RLEnvironment
+from backend.puzzle_logic.data_models import Position
+from backend.puzzle_logic.board import Board
+from backend.rl_components import RLEnvironment
 
 
 # ==========================================
