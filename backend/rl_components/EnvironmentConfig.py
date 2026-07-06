@@ -1,6 +1,6 @@
 class EnvironmentConfig:
     """ Environment configuration """
-    def __init__(self, size: int = 6):
+    def __init__(self, size: int = 3):
         self.size = size
         self.max_steps = self.size ** 2
         self.invalid_move_penalty = -100
