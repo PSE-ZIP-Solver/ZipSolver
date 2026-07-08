@@ -4,7 +4,6 @@ from solver import SolverStatus
 from solver_metrics import SolverMetrics
 from solution_path import SolutionPath  
 
-
 class SolverResult:
     def __init__(self, status: SolverStatus, path: Optional[SolutionPath], message: str, metrics: SolverMetrics):
         self._status = status

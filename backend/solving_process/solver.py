@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from backend.puzzle_logic.board import Board
-from solver_metrics import SolverMetrics
-from solution_path import SolutionPath
+from solver_result import SolverResult
 from enum import Enum
 
 class SolverStatus(Enum):
