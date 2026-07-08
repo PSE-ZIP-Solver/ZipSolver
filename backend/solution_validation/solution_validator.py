@@ -2,7 +2,7 @@
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.puzzle_rules import PuzzleRules
 from backend.solving_process.solution_path import SolutionPath
-# TODO Add imports for ValidationResult and any other necessary classes
+from validatoin_result import ValidationResult
 
 class SolutionValidator:
     """
