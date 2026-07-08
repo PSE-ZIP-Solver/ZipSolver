@@ -1,6 +1,5 @@
 from typing import List
-# Adjust import according to your actual module structure
-from .validation_error import ValidationError
+from validation_error import ValidationError
 
 
 class ValidationResult:
