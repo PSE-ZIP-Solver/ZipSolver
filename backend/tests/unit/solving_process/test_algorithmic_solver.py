@@ -1,8 +1,8 @@
 import pytest
 import time
 
-from algorithmic_solver import AlgorithmicSolver
-from solver_status import SolverStatus
+from backend.solving_process.algorithmic_solver import AlgorithmicSolver
+from backend.solving_process.solver_status import SolverStatus
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position
 

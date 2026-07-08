@@ -3,7 +3,8 @@ import heapq
 from dataclasses import dataclass, field
 from typing import List, Tuple, FrozenSet, Optional, Iterator
 
-from solver import Solver, SolverStatus
+from solver import Solver
+from solver_status import SolverStatus
 from solver_result import SolverResult
 from solver_metrics import SolverMetrics
 from backend.solution_path import SolutionPath
