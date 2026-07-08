@@ -109,11 +109,11 @@ class AgentTrainer:
             print("Creating new agent")
             agent = RLAgent(
                 firstEnv,
-                learning_rate=0.0003,
+                learning_rate=0.0001,
                 exploration_initial_eps=1.0,
-                exploration_final_eps=0.3,
-                exploration_fraction=0.6,
-                learning_starts=100,
+                exploration_final_eps=0.2,
+                exploration_fraction=0.8,
+                learning_starts=3000,
             )
         
         agent.set_exploration_schedule(
@@ -218,12 +218,12 @@ if __name__ == "__main__":
         nrOfWalls=5,
         nrOfWaypoints=5,
         modelPath="trained-model.zip",
-        nrTrainingBoards=1,
+        nrTrainingBoards=20,
         nrEvaluationBoards=100,
-        timestepsPerBoard=10000,
+        timestepsPerBoard=5000,
 
         # True: use old trained-model.zip if it exists
-        loadExistingModel=True,
+        loadExistingModel=False,
 
         # True: delete old trained-model.zip and start from zero
         resetModel=True,
