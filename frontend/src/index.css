@@ -6,7 +6,24 @@
   --color-primary: #f97316;
   --color-primary-hover: #ea580c;
 
-  --color-background: #ffffff;
   --color-surface: #f9fafb;
   --color-text: #111827;
+
+
+  /*
+  This is the current background used by the footer.
+  The other colors above aren't used yet.
+  */
+  --color-background: #ffffff;
+  
+
+  /*
+  Some colors used by the current Footer:
+  1. border color -> white/gray
+  2. footer text -> dark blue gray
+  */
+  --color-footer-border: #e5e7eb;
+  --color-footer-text: #4a5565;
+  
+  
 }
