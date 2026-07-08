@@ -4,7 +4,7 @@ from solver_response import SolverResponse
 from rl_solver import RLSolver
 from algorithmic_solver import AlgorithmicSolver
 from backend.solution_validation.solution_validator import SolutionValidator
-from backend.solution_validation.validatoin_result import ValidationResult
+from backend.validatoin_result import ValidationResult
 
 
 class SolverController:
