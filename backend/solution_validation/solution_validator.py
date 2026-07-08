@@ -2,7 +2,7 @@
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.puzzle_rules import PuzzleRules
 from backend.solving_process.solution_path import SolutionPath
-from validatoin_result import ValidationResult
+from backend.validatoin_result import ValidationResult
 
 class SolutionValidator:
     """

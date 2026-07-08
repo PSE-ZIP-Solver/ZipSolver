@@ -1,5 +1,5 @@
 from typing import List
-from validation_error import ValidationError
+from backend.validation_error import ValidationError
 
 
 class ValidationResult:
