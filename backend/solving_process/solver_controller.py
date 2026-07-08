@@ -44,9 +44,7 @@ class SolverController:
         if rl_result.hasSolution():
             validation = self._validateCandidate(board, rl_result)
             
-            # Note: Assuming ValidationResult has a 'getIsValid' property based on the pattern used so far.
-            # Change this to 'isValid' or 'getSuccess' depending on your actual ValidationResult implementation.
-            if validation.getIsValid:
+            if validation.isValid:
                 return SolverResponse(
                     success=True,
                     path=rl_result.getPath,
@@ -61,7 +59,7 @@ class SolverController:
         if algo_result.hasSolution():
             validation = self._validateCandidate(board, algo_result)
             
-            if validation.getIsValid:
+            if validation.isValid:
                 return SolverResponse(
                     success=True,
                     path=algo_result.getPath,
