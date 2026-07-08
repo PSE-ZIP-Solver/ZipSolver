@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 from backend.api.BackendAPI import BackendAPI
 from backend.puzzle_logic import Board, Position
-from backend.SolutionPath import SolutionPath
+from backend.solution_path import SolutionPath
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 from backend.api.solver_dtos.SolverMetrics import SolverMetrics
 from backend.api.dtos.ValidationResult import ValidationResult

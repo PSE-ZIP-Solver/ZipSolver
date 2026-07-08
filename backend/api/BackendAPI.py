@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.puzzle_logic.board import Board
-from backend.SolutionPath import SolutionPath
+from backend.solution_path import SolutionPath
 from backend.api.dtos.ErrorResponse import ErrorCode, ErrorResponse
 from backend.api.dtos.PuzzleRequest import PuzzleRequest
 from backend.api.dtos.SolverResponse import SolverResponse

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from solver_metrics import SolverMetrics
-from backend.SolutionPath import SolutionPath
+from backend.solution_path import SolutionPath
 
 
 class SolverResponse:
