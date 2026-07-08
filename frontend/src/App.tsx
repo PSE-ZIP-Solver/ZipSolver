@@ -1,6 +1,6 @@
 import { useState } from 'react';
 //import Navbar from './components/Navbar';
-//import Footer from './components/Footer';
+import Footer from './components/Footer';
 //import GridBuilder from './components/GridBuilder';
 
 export const App: React.FC = () => {
@@ -12,7 +12,7 @@ export const App: React.FC = () => {
         {/*<GridBuilder />*/}
       </main>
       
-      {/*<Footer />*/}
+      <Footer />
       
     </div>
   );
