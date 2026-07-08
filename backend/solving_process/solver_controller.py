@@ -8,10 +8,10 @@ from backend.solution_validation.validatoin_result import ValidationResult
 
 
 class SolverController:
-    def __init__(self, rlSolver: RLSolver, algorithmicSolver: AlgorithmicSolver, solutionValidator: SolutionValidator):
-        self._rlSolver = rlSolver
-        self._algorithmicSolver = algorithmicSolver
-        self._solutionValidator = solutionValidator
+    def __init__(self):
+        self._rlSolver = RLSolver()
+        self._algorithmicSolver = AlgorithmicSolver()
+        self._solutionValidator = SolutionValidator()
 
     def _runRlSolver(self, board: Board) -> SolverResult:
         """

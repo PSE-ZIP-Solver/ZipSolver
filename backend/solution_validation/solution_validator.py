@@ -9,8 +9,8 @@ class SolutionValidator:
     Validates whether a given SolutionPath is a correct and complete solution
     for the provided Board, using the configured PuzzleRules.
     """
-    def __init__(self, rules: PuzzleRules):
-        self._rules = rules
+    def __init__(self):
+        self._rules = PuzzleRules()
 
     @property
     def getRules(self) -> PuzzleRules:
