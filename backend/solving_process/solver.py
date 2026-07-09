@@ -1,14 +1,7 @@
 from abc import ABC, abstractmethod
 from backend.puzzle_logic.board import Board
 from solver_result import SolverResult
-from enum import Enum
-
-class SolverStatus(Enum):
-    SOLVED = "SOLVED"
-    UNSOLVABLE = "UNSOLVABLE"
-    TIMEOUT = "TIMEOUT"
-    FAILED = "FAILED"
-    
+ 
 class Solver(ABC):
     """
     Interface for puzzle solving components.

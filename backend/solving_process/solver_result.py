@@ -1,6 +1,6 @@
 from typing import Optional
 
-from solver import SolverStatus
+from solver_status import SolverStatus
 from solver_metrics import SolverMetrics
 from backend.solution_path import SolutionPath  
 
