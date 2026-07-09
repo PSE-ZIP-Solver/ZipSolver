@@ -28,10 +28,6 @@ class AlgorithmicSolver(Solver):
     def __init__(self, timeout: int):
         self._timeout = timeout
 
-    @property
-    def getTimeout(self) -> int:
-        return self._timeout
-
     def _get_bit_index(self, pos: Position, board_size: int) -> int:
         return pos.getY * board_size + pos.getX
 
