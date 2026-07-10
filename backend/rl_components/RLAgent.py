@@ -1,42 +1,80 @@
-import stable_baselines3 as sb
 import gymnasium as gym
-from backend.rl_components.RLEnvironment import RLEnvironment
+import stable_baselines3 as sb
+import torch
+import torch.nn as nn
+
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.utils import get_linear_fn
 
-class RLAgent:
-    """Wraps a Stable-Baselines3 DQN model for training and inference on RLEnvironment."""
 
-    def __init__(self, env: RLEnvironment, model_path: str | None = None, **dqn_kwargs):
+class ZipCNN(BaseFeaturesExtractor):
+    """Small CNN feature extractor for multi-channel grid observations."""
+
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 128):
+        super().__init__(observation_space, features_dim)
+
+        n_input_channels = observation_space.shape[0]  # 8 channels currently
+
+        self.cnn = nn.Sequential(
+            nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # Compute flattened size dynamically so this works across board sizes.
+        with torch.no_grad():
+            sample = torch.zeros(1, *observation_space.shape)
+            n_flatten = self.cnn(sample).shape[1]
+
+        self.linear = nn.Sequential(
+            nn.Linear(n_flatten, features_dim),
+            nn.ReLU(),
+        )
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
+        return self.linear(self.cnn(observations))
+
+
+class RLAgent:
+    """Wraps a Stable-Baselines3 DQN model for training and inference."""
+
+    def __init__(self, env: gym.Env, model_path: str | None = None, **dqn_kwargs):
         self._env = env
+
         self.policy_kwargs = dict(
             features_extractor_class=ZipCNN,
             features_extractor_kwargs=dict(features_dim=128),
             normalize_images=False,
         )
+
         if model_path is not None:
             self._model = self.load(model_path)
         else:
             dqn_kwargs.setdefault("exploration_initial_eps", 1.0)
-            dqn_kwargs.setdefault("exploration_final_eps", 0.2)
-            dqn_kwargs.setdefault("exploration_fraction", 0.8)
-            dqn_kwargs.setdefault("learning_starts", 100)
+            dqn_kwargs.setdefault("exploration_final_eps", 0.05)
+            dqn_kwargs.setdefault("exploration_fraction", 0.5)
+            dqn_kwargs.setdefault("learning_starts", 2_000)
 
             self._model = sb.DQN(
                 policy="CnnPolicy",
                 env=self._env,
                 policy_kwargs=self.policy_kwargs,
                 verbose=1,
-                device="auto", # GPU or CPU
+                device="auto",
                 **dqn_kwargs,
             )
-
 
     def set_exploration_schedule(
         self,
         initial_eps: float = 1.0,
-        final_eps: float = 0.2,
-        fraction: float = 0.8,
+        final_eps: float = 0.05,
+        fraction: float = 0.5,
     ):
+        """Set a new linear exploration schedule."""
         self._model.exploration_initial_eps = initial_eps
         self._model.exploration_final_eps = final_eps
         self._model.exploration_fraction = fraction
@@ -49,17 +87,20 @@ class RLAgent:
 
     def predict(self, observation, deterministic: bool = True):
         """Return the action the agent chooses for a given observation."""
-        action, _state = self._model.predict(observation, deterministic=deterministic)
+        action, _state = self._model.predict(
+            observation,
+            deterministic=deterministic,
+        )
         return action
-    
+
     def learn(self, total_timesteps: int, reset_num_timesteps: bool = True):
         """Train the model for the given amount of timesteps."""
         self._model.learn(
             total_timesteps=total_timesteps,
-            reset_num_timesteps=reset_num_timesteps
+            reset_num_timesteps=reset_num_timesteps,
         )
         return self
-    
+
     def set_env(self, env: gym.Env):
         """Switch the environment used by the wrapped model."""
         self._env = env
@@ -74,6 +115,7 @@ class RLAgent:
         custom_objects = {
             "policy_kwargs": self.policy_kwargs,
         }
+
         return sb.DQN.load(
             path,
             env=self._env,
@@ -82,27 +124,15 @@ class RLAgent:
         )
 
     def solve(
-            self,
-            deterministic: bool = True,
-            max_steps: int = 99999,
-            render: bool = True):
-        """Run the agent on the current environment until it solves the board,
-        fails, or hits the step limit.
-
-        Args:
-            deterministic (bool): Whether to use deterministic action selection.
-            max_steps (int | None): Hard cap on steps; falls back to the
-                environment's own configured max_steps if not provided.
-            render (bool): Whether to capture rendered states along the way.
-
-        Returns:
-            dict: Summary of the rollout, including whether the board was solved.
-        """
-        options = {}
+        self,
+        deterministic: bool = True,
+        max_steps: int = 99999,
+        render: bool = True,
+    ):
+        """Run the agent on the current environment until it solves or fails."""
         observation, info = self._env.reset()
 
-        step_limit = max_steps
-        if step_limit <= 0:
+        if max_steps <= 0:
             raise ValueError("max_steps must be > 0.")
 
         terminated = False
@@ -111,7 +141,7 @@ class RLAgent:
         actions: list[int] = []
         states: list[str] = []
 
-        for _ in range(step_limit):
+        for _ in range(max_steps):
             if render:
                 self._env.render()
 
@@ -128,7 +158,8 @@ class RLAgent:
         if render:
             self._env.render()
 
-        solved = terminated and self._env.game.isFinished()
+        solved = terminated and self._is_current_env_finished()
+
         return {
             "solved": solved,
             "truncated": truncated,
@@ -138,41 +169,12 @@ class RLAgent:
             "states": states,
         }
 
+    def _is_current_env_finished(self) -> bool:
+        """Check whether the currently assigned environment finished the puzzle."""
+        if hasattr(self._env, "game"):
+            return self._env.game.isFinished()
 
-# CUSTOM NEW CLASS FOR CUSTOM CNN POLICY INSTEAD OF MLP POLICY
-# basically turns the obs space's 7 channels and compacts it to a list of 128 numbers that 'summarize' the grid
-# Normally CNN is for image-input but we treat the 7 channels as a stacked 7 layer image
-import torch
-import torch.nn as nn
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+        if hasattr(self._env, "env") and hasattr(self._env.env, "game"):
+            return self._env.env.game.isFinished()
 
-class ZipCNN(BaseFeaturesExtractor):
-    """Small CNN feature extractor sized for 6x6-8x8 multi-channel grid observations."""
-
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 128):
-        super().__init__(observation_space, features_dim)
-
-        n_input_channels = observation_space.shape[0]  # 7
-
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
-
-        # compute flattened size dynamically so this works across board sizes
-        with torch.no_grad():
-            sample = torch.zeros(1, *observation_space.shape)
-            n_flatten = self.cnn(sample).shape[1]
-
-        self.linear = nn.Sequential(
-            nn.Linear(n_flatten, features_dim),
-            nn.ReLU(),
-        )
-
-    def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        return self.linear(self.cnn(observations))
+        return False
