@@ -1,6 +1,12 @@
 import logo from "../assets/logoNoBg.png";
 
-export default function Navbar() {
+interface NavbarProps {
+  onOpenHelp: () => void;
+}
+
+export default function Navbar({
+  onOpenHelp,
+}: NavbarProps) {
   return (
     <nav className="bg-white shadow-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
@@ -29,8 +35,8 @@ export default function Navbar() {
             </span>
           </button>
 
-          {/* TODO: Implement help dialog integration */}
           <button
+            onClick={onOpenHelp}
             className="p-2 rounded-lg text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-colors"
             aria-label="Open help"
           >
