@@ -11,7 +11,7 @@ from offline_training.training_result import TrainingResult
 
 
 class BoardSamplingEnv(gym.Env):
-    """Gym environment that randomly selects a training board on every reset."""
+    """Gym environment that randomly selects one of the training boards on every reset."""
 
     def __init__(self, boards: list[Board]):
         super().__init__()
@@ -19,6 +19,8 @@ class BoardSamplingEnv(gym.Env):
         if not boards:
             raise ValueError("BoardSamplingEnv needs at least one board.")
 
+        # Create one environment per board once.
+        # This is faster than creating a new RLEnvironment on every reset.
         self.envs = [RLEnvironment(board) for board in boards]
         self.env = random.choice(self.envs)
 
@@ -42,7 +44,7 @@ class BoardSamplingEnv(gym.Env):
 
     @property
     def game(self):
-        """Expose current game for debugging if needed."""
+        """Expose the current game for debugging and solve checks."""
         return self.env.game
 
 
@@ -62,21 +64,21 @@ class AgentTrainer:
         resetModel: bool = False,
     ):
         """
-        Creates a trainer configured with training/evaluation board sets.
+        Creates a trainer configured with training and evaluation board sets.
 
         Args:
-            boardSize (int): Side length of each square board.
-            nrOfWalls (int): Maximum number of walls per generated board.
-            nrOfWaypoints (int): Maximum number of intermediate waypoints per board.
-            modelPath (str): Path used for loading/saving the model.
-            nrTrainingBoards (int): Number of generated training boards.
-            nrEvaluationBoards (int): Number of generated evaluation boards.
-            trainingBoards (list[Board] | None): Optional externally prepared training boards.
-            evaluationBoards (list[Board] | None): Optional externally prepared evaluation boards.
-            timestepsPerBoard (int | None): Kept for compatibility.
-                Now interpreted as total training timesteps.
-            loadExistingModel (bool): If True, loads modelPath if it exists.
-            resetModel (bool): If True, deletes modelPath before training and starts fresh.
+            boardSize: Side length of each square board.
+            nrOfWalls: Maximum number of walls per generated board.
+            nrOfWaypoints: Maximum number of intermediate waypoints per generated board.
+            modelPath: Path used for loading/saving the model.
+            nrTrainingBoards: Number of generated training boards.
+            nrEvaluationBoards: Number of generated evaluation boards.
+            trainingBoards: Optional externally prepared training boards.
+            evaluationBoards: Optional externally prepared evaluation boards.
+            timestepsPerBoard: Kept for compatibility.
+                It is now interpreted as total training timesteps.
+            loadExistingModel: If True, loads modelPath if it exists.
+            resetModel: If True, deletes modelPath before training and starts fresh.
         """
         self.modelPath = modelPath
         self._totalTimesteps = timestepsPerBoard
@@ -112,7 +114,7 @@ class AgentTrainer:
         maxWalls: int,
         numberBoards: int,
     ) -> list[Board]:
-        """Generate boards with random numbers of waypoints and walls."""
+        """Generate random boards with random numbers of waypoints and walls."""
         boards: list[Board] = []
 
         for _ in range(numberBoards):
@@ -147,6 +149,7 @@ class AgentTrainer:
             print(f"Loading existing model from {self.modelPath}")
             agent = RLAgent(trainEnv, model_path=self.modelPath)
 
+            # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
                 initial_eps=0.2,
                 final_eps=0.05,
@@ -181,6 +184,8 @@ class AgentTrainer:
         print(f"Training on {len(self.trainingBoards)} boards.")
         print(f"Total timesteps: {totalTimesteps}")
 
+        # True resets only the SB3 step counter / exploration schedule.
+        # It does not delete the loaded model weights.
         agent.learn(
             total_timesteps=totalTimesteps,
             reset_num_timesteps=True,
@@ -228,6 +233,110 @@ class AgentTrainer:
             successRate,
         )
 
+    def evaluate_saved_model(self, showExamples: bool = False) -> TrainingResult:
+        """Load a saved model and evaluate it without further training."""
+        if not self.evaluationBoards:
+            return TrainingResult(0, 0, 0.0, 0.0)
+
+        modelFile = Path(self.modelPath)
+
+        if not modelFile.exists():
+            raise FileNotFoundError(f"Model file not found: {self.modelPath}")
+
+        # The loaded model needs one compatible environment.
+        # During evaluation, evaluate() switches the environment for every board.
+        env = RLEnvironment(self.evaluationBoards[0])
+        agent = RLAgent(env, model_path=self.modelPath)
+
+        if showExamples:
+            return self.evaluate_with_examples(agent)
+
+        return self.evaluate(agent)
+
+    def evaluate_with_examples(self, agent: RLAgent) -> TrainingResult:
+        """Evaluate the agent and afterwards show one solved and one failed example."""
+        totalBoards = len(self.evaluationBoards)
+
+        if totalBoards == 0:
+            return TrainingResult(0, 0, 0.0, 0.0)
+
+        solveCount = 0
+        rewards = 0.0
+
+        firstSolvedBoard: Board | None = None
+        firstFailedBoard: Board | None = None
+
+        for board in self.evaluationBoards:
+            env = RLEnvironment(board)
+            agent.set_env(env)
+
+            observation, _ = env.reset()
+
+            terminated = False
+            truncated = False
+            boardReward = 0.0
+
+            while not terminated and not truncated:
+                action = agent.predict(observation, deterministic=True)
+                observation, reward, terminated, truncated, _ = env.step(int(action))
+                boardReward += float(reward)
+
+            rewards += boardReward
+
+            solved = terminated and env.game.isFinished()
+
+            if solved:
+                solveCount += 1
+
+                if firstSolvedBoard is None:
+                    firstSolvedBoard = board
+            else:
+                if firstFailedBoard is None:
+                    firstFailedBoard = board
+
+        averageReward = rewards / totalBoards
+        successRate = solveCount / totalBoards
+
+        result = TrainingResult(
+            solveCount,
+            totalBoards,
+            averageReward,
+            successRate,
+        )
+
+        if firstSolvedBoard is not None:
+            self._show_agent_run(
+                agent,
+                firstSolvedBoard,
+                "Example solved evaluation board",
+            )
+        else:
+            print("\nNo solved evaluation board found.")
+
+        if firstFailedBoard is not None:
+            self._show_agent_run(
+                agent,
+                firstFailedBoard,
+                "Example failed evaluation board",
+            )
+        else:
+            print("\nNo failed evaluation board found. The agent solved all boards.")
+
+        return result
+
+    def _show_agent_run(self, agent: RLAgent, board: Board, title: str):
+        """Render one deterministic agent run on a given board."""
+        print(f"\n{title}:")
+        env = RLEnvironment(board)
+        agent.set_env(env)
+
+        runResult = agent.solve(
+            max_steps=env.config.max_steps,
+            render=True,
+        )
+
+        print(runResult)
+
     def save(self, agent: RLAgent, modelPath: str | None = None):
         """Save the trained agent to the provided model path."""
         path = modelPath if modelPath else self.modelPath
@@ -255,49 +364,47 @@ class AgentTrainer:
 
 
 if __name__ == "__main__":
-    import random
-    import numpy as np
-    import torch
-
-    random.seed(42)
-    np.random.seed(42)
-    torch.manual_seed(42)
-
     trainer = AgentTrainer(
         boardSize=3,
         nrOfWalls=5,
         nrOfWaypoints=5,
-        modelPath="trained-model.zip",
+        modelPath="trained-model-300boards_1500k_95percentSucess.zip",
 
-        # Important: with BoardSamplingEnv, use many training boards.
+        # Only relevant if you uncomment training again.
         nrTrainingBoards=300,
-        nrEvaluationBoards=500,
 
-        # Now interpreted as total training timesteps.
+        # Evaluation boards for testing the saved model.
+        nrEvaluationBoards=1000,
+
+        # Only relevant for training.
         timestepsPerBoard=300_000,
 
-        # True: use old trained-model.zip if it exists
         loadExistingModel=True,
-
-        # True: delete old trained-model.zip and start from zero
         resetModel=False,
     )
 
-    trainedAgent = trainer.train()
-    trainer.save(trainedAgent)
-
-    print("\nTesting trained model on some training boards:")
-
-    for index, board in enumerate(trainer.trainingBoards[:5]):
-        print(f"\nTraining board {index + 1}:")
-        env = RLEnvironment(board)
-        trainedAgent.set_env(env)
-        print(trainedAgent.solve(max_steps=env.config.max_steps, render=True))
-
-    result = trainer.evaluate(trainedAgent)
+    # ==========================
+    # Option 1: Only evaluate saved model
+    # ==========================
+    result = trainer.evaluate_saved_model(showExamples=True)
 
     print("\nEvaluation result:")
     print("Solved:", result.getSolveCount)
     print("Total Boards:", result.getTotalBoards)
     print("Average reward:", result.getAverageReward)
     print("Success rate:", result.getSuccessRate)
+
+    # ==========================
+    # Option 2: Continue training
+    # Uncomment this block if you want to train again.
+    # ==========================
+    # trainedAgent = trainer.train()
+    # trainer.save(trainedAgent)
+    #
+    # result = trainer.evaluate(trainedAgent)
+    #
+    # print("\nEvaluation result after training:")
+    # print("Solved:", result.getSolveCount)
+    # print("Total Boards:", result.getTotalBoards)
+    # print("Average reward:", result.getAverageReward)
+    # print("Success rate:", result.getSuccessRate)
