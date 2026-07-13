@@ -54,7 +54,17 @@ export default function GridBuilder() {
 
 
     const [message, setMessage] =
-        useState<AppMessage | null>(null);
+        useState<AppMessage>({
+            id: crypto.randomUUID(),
+
+            type: "INFO",
+
+            message:
+                "Welcome to ZipSolver! Start placing waypoints and walls.",
+
+            timestamp:
+                new Date()
+        });
 
 
     const [isSolving, setIsSolving] =
@@ -79,8 +89,9 @@ export default function GridBuilder() {
 
         setSolution(null);
 
-        showInfo(
-            `Grid size changed to ${size}x${size}`
+        showMessage(
+            "INFO",
+            `Grid size changed to ${size}`
         );
     }
 
@@ -214,13 +225,10 @@ export default function GridBuilder() {
 
         if (board.waypoints.length < 2) {
 
-            setMessage({
-                id: crypto.randomUUID(),
-                type: "WARNING",
-                message:
-                    "Add at least two waypoints first",
-                timestamp: new Date()
-            });
+            showMessage(
+                "WARNING",
+                "Add at least two waypoints first"
+            );
 
             return;
         }
@@ -243,13 +251,10 @@ export default function GridBuilder() {
                 );
 
 
-                setMessage({
-                    id: crypto.randomUUID(),
-                    type: "SUCCESS",
-                    message:
-                        "Puzzle solved successfully",
-                    timestamp: new Date()
-                });
+                showMessage(
+                    "SUCCESS",
+                    "Puzzle solved successfully"
+                );
 
             }
 
@@ -258,13 +263,10 @@ export default function GridBuilder() {
                 setSolution(null);
 
 
-                setMessage({
-                    id: crypto.randomUUID(),
-                    type: "ERROR",
-                    message:
-                        response.message,
-                    timestamp: new Date()
-                });
+                showMessage(
+                    "ERROR",
+                    response.message
+                );
 
             }
 
@@ -273,13 +275,10 @@ export default function GridBuilder() {
 
         catch {
 
-            setMessage({
-                id: crypto.randomUUID(),
-                type: "ERROR",
-                message:
-                    "Solver request failed",
-                timestamp: new Date()
-            });
+            showMessage(
+                "ERROR",
+                "Solver request failed"
+            );
 
         }
 
@@ -305,12 +304,10 @@ export default function GridBuilder() {
         setSolution(null);
 
 
-        setMessage({
-            id: crypto.randomUUID(),
-            type: "INFO",
-            message: "Puzzle reset",
-            timestamp: new Date()
-        });
+        showMessage(
+            "INFO",
+            "Puzzle reset"
+        );
 
     }
 
@@ -325,19 +322,19 @@ export default function GridBuilder() {
 
 
 
-    function showInfo(
+    function showMessage(
+        type: AppMessage["type"],
         text: string
     ) {
 
         setMessage({
             id: crypto.randomUUID(),
-            type: "INFO",
+            type,
             message: text,
             timestamp: new Date()
         });
 
     }
-
 
 
     /*
@@ -363,6 +360,7 @@ export default function GridBuilder() {
                 grid
                 grid-cols-1
                 gap-4
+                mx-2
 
                 lg:mx-auto
                 lg:w-[70%]
@@ -406,7 +404,7 @@ export default function GridBuilder() {
                 className="
                     order-2
 
-                    lg:order-4
+                    lg:order-2
                 "
             >
 
