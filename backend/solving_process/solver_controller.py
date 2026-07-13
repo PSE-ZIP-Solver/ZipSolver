@@ -6,11 +6,12 @@ from .algorithmic_solver import AlgorithmicSolver
 from backend.solution_validator import SolutionValidator
 from backend.validation_result import ValidationResult
 
+DFS_TIMEOUT_MS = 10000
 
 class SolverController:
     def __init__(self):
         self._rlSolver = RLSolver()
-        self._algorithmicSolver = AlgorithmicSolver()
+        self._algorithmicSolver = AlgorithmicSolver(DFS_TIMEOUT_MS)
         self._solutionValidator = SolutionValidator()
 
     def _runRlSolver(self, board: Board) -> SolverResult:
