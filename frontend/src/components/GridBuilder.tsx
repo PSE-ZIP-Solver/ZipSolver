@@ -7,6 +7,11 @@ import ActionPanel from "./ActionPanel";
 import MetricsPanel from "./MetricsPanel";
 
 import {
+    type EditMode,
+    type GridSize
+} from "../types/grid";
+
+import {
     type BoardConfig,
     type Position,
     type Wall,
@@ -20,11 +25,6 @@ import {
 import {
     solvePuzzle,
 } from "../services/apiCalls";
-
-
-export type EditMode =
-    | "NUMBERS"
-    | "WALLS";
 
 
 export default function GridBuilder() {
@@ -68,7 +68,7 @@ export default function GridBuilder() {
      * ============================
      */
     function handleGridSizeChange(
-        size: 6 | 7 | 8
+        size: GridSize
     ) {
 
         setBoard({
@@ -79,7 +79,7 @@ export default function GridBuilder() {
 
         setSolution(null);
 
-        setInfoMessage(
+        showInfo(
             `Grid size changed to ${size}x${size}`
         );
     }
@@ -325,7 +325,7 @@ export default function GridBuilder() {
 
 
 
-    function setInfoMessage(
+    function showInfo(
         text: string
     ) {
 
@@ -363,6 +363,9 @@ export default function GridBuilder() {
                 grid
                 grid-cols-1
                 gap-4
+
+                lg:mx-auto
+                lg:w-[70%]
 
                 lg:grid-cols-[2fr_1fr]
                 lg:gap-6

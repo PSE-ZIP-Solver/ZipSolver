@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HelpModal from './components/HelpModal';
-// import GridBuilder from './components/GridBuilder';
+import GridBuilder from './components/GridBuilder';
 
 export const App: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -15,7 +15,7 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1 w-full pt-2">
-        {/* <GridBuilder /> */}
+        <GridBuilder />
       </main>
 
       <Footer />
