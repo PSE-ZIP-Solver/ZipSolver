@@ -423,7 +423,7 @@ export default function GridBuilder() {
                     order-3
 
                     lg:order-1
-                    lg:row-span-2
+                    lg:row-span-3
                 "
             >
 
