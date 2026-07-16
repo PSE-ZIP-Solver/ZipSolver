@@ -366,7 +366,6 @@ export default function GridBuilder() {
                 lg:w-[70%]
 
                 lg:grid-cols-[2fr_1fr]
-                lg:gap-6
             "
         >
 
@@ -456,6 +455,8 @@ export default function GridBuilder() {
             >
 
                 <ActionPanel
+                    canSolve={board.waypoints.length >= 2}
+
                     isSolving={isSolving}
 
                     onSolve={
