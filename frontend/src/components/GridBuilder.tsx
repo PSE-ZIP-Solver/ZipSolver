@@ -18,7 +18,8 @@ import {
 } from "../types/board";
 
 import {
-    type SolutionPath
+    type SolutionPath,
+    type SolverMetrics
 } from "../types/solver";
 
 import {
@@ -30,7 +31,13 @@ import {
 } from "../api/apiCalls";
 
 
-export default function GridBuilder() {
+interface GridBuilderProps {
+    advancedMode: boolean;
+}
+
+export default function GridBuilder({
+    advancedMode
+}: GridBuilderProps) {
 
     /*
      * Current puzzle configuration
@@ -47,6 +54,9 @@ export default function GridBuilder() {
      */
     const [solution, setSolution] =
         useState<SolutionPath | null>(null);
+
+    const [metrics, setMetrics] =
+        useState<SolverMetrics | null>(null);
 
 
     /*
@@ -91,6 +101,7 @@ export default function GridBuilder() {
         });
 
         setSolution(null);
+        setMetrics(null);
 
         showMessage(
             "INFO",
@@ -155,6 +166,7 @@ export default function GridBuilder() {
 
 
         setSolution(null);
+        setMetrics(null);
     }
 
 
@@ -169,20 +181,20 @@ export default function GridBuilder() {
 
         const exists =
             board.walls.some(
-                    item => {
+                item => {
 
-                        const [itemARow, itemACol] = item.neighborA;
-                        const [itemBRow, itemBCol] = item.neighborB;
-                        const [wallARow, wallACol] = wall.neighborA;
-                        const [wallBRow, wallBCol] = wall.neighborB;
+                    const [itemARow, itemACol] = item.neighborA;
+                    const [itemBRow, itemBCol] = item.neighborB;
+                    const [wallARow, wallACol] = wall.neighborA;
+                    const [wallBRow, wallBCol] = wall.neighborB;
 
-                        return (
-                            itemARow === wallARow &&
-                            itemACol === wallACol &&
-                            itemBRow === wallBRow &&
-                            itemBCol === wallBCol
-                        );
-                    }
+                    return (
+                        itemARow === wallARow &&
+                        itemACol === wallACol &&
+                        itemBRow === wallBRow &&
+                        itemBCol === wallBCol
+                    );
+                }
             );
 
 
@@ -190,20 +202,20 @@ export default function GridBuilder() {
             exists
 
                 ? board.walls.filter(
-                        item => {
+                    item => {
 
-                            const [itemARow, itemACol] = item.neighborA;
-                            const [itemBRow, itemBCol] = item.neighborB;
-                            const [wallARow, wallACol] = wall.neighborA;
-                            const [wallBRow, wallBCol] = wall.neighborB;
+                        const [itemARow, itemACol] = item.neighborA;
+                        const [itemBRow, itemBCol] = item.neighborB;
+                        const [wallARow, wallACol] = wall.neighborA;
+                        const [wallBRow, wallBCol] = wall.neighborB;
 
-                            return !(
-                                itemARow === wallARow &&
-                                itemACol === wallACol &&
-                                itemBRow === wallBRow &&
-                                itemBCol === wallBCol
-                            );
-                        }
+                        return !(
+                            itemARow === wallARow &&
+                            itemACol === wallACol &&
+                            itemBRow === wallBRow &&
+                            itemBCol === wallBCol
+                        );
+                    }
                 )
 
                 : [
@@ -220,6 +232,7 @@ export default function GridBuilder() {
 
 
         setSolution(null);
+        setMetrics(null);
     }
 
 
@@ -230,7 +243,6 @@ export default function GridBuilder() {
      * ============================
      */
     async function handleSolve() {
-
 
         if (board.waypoints.length < 2) {
 
@@ -248,41 +260,107 @@ export default function GridBuilder() {
             setIsSolving(true);
 
 
-            const response =
-                await solvePuzzle(board);
+            const response = await solvePuzzle(board);
+
+            setMetrics(response.metrics ?? null);
 
 
+            if (response.success && response.solutionPath) {
 
-            if (response.success) {
-
-                setSolution(
-                    response.solutionPath
-                );
+                setSolution(response.solutionPath);
 
 
-                showMessage(
-                    "SUCCESS",
-                    "Puzzle solved successfully"
-                );
+                if (response.solverUsed === "RL") {
 
+                    showMessage(
+                        "SUCCESS",
+                        "Puzzle solved successfully using RL solver"
+                    );
+
+                }
+
+                else if (response.solverUsed === "DFS") {
+
+                    showMessage(
+                        "WARNING",
+                        [
+                            "Puzzle solved using DFS fallback",
+                            response.message
+                        ].join("\n")
+                    );
+
+                }
+
+
+                return;
             }
 
-            else {
 
-                setSolution(null);
+            setSolution(null);
 
 
-                showMessage(
-                    "ERROR",
-                    response.message
-                );
+            switch (response.status) {
 
+                case "UNSOLVABLE":
+
+                    showMessage(
+                        "ERROR",
+                        [
+                            "Puzzle is not solvable",
+                            response.message
+                        ].join("\n")
+                    );
+
+                    break;
+
+
+                case "TIMEOUT":
+
+                    showMessage(
+                        "ERROR",
+                        [
+                            "Solver timed out",
+                            response.message
+                        ].join("\n")
+                    );
+
+                    break;
+
+
+                case "FAILED":
+
+                    showMessage(
+                        "ERROR",
+                        [
+                            "Solver failed",
+                            response.message
+                        ].join("\n")
+                    );
+
+                    break;
+
+
+                default:
+
+                    showMessage(
+                        "ERROR",
+                        response.message || "Unknown solver error"
+                    );
+
+                    break;
             }
 
 
         }
 
-        catch {
+        catch (error) {
+
+            console.error(error);
+
+
+            setSolution(null);
+            setMetrics(null);
+
 
             showMessage(
                 "ERROR",
@@ -311,6 +389,7 @@ export default function GridBuilder() {
 
 
         setSolution(null);
+        setMetrics(null);
 
 
         showMessage(
@@ -431,7 +510,7 @@ export default function GridBuilder() {
                     order-3
 
                     lg:order-1
-                    lg:row-span-3
+                    lg:row-span-4
                 "
             >
 
@@ -490,16 +569,20 @@ export default function GridBuilder() {
 
             {/* Metrics */}
 
-            <div
-                className="
-                    order-5
-                    lg:col-span-2
-                "
-            >
-
-                <MetricsPanel />
-
-            </div>
+            {
+                advancedMode && (
+                    <div
+                        className="
+                order-5
+                lg:order-4
+            "
+                    >
+                        <MetricsPanel
+                            metrics={metrics}
+                        />
+                    </div>
+                )
+            }
 
 
         </div>

@@ -7,15 +7,28 @@ import GridBuilder from './components/GridBuilder';
 
 export const App: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [advancedMode, setAdvancedMode] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
       <Navbar
         onOpenHelp={() => setIsHelpOpen(true)}
+        advancedMode={
+          advancedMode
+        }
+        onToggleAdvanced={() =>
+          setAdvancedMode(
+            previous => !previous
+          )
+        }
       />
 
       <main className="flex-1 w-full pt-2">
-        <GridBuilder />
+        <GridBuilder
+          advancedMode={
+            advancedMode
+          }
+        />
       </main>
 
       <Footer />
