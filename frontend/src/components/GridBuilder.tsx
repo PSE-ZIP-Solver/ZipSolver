@@ -14,9 +14,12 @@ import {
 import {
     type BoardConfig,
     type Position,
-    type Wall,
-    type SolutionPath,
+    type Wall
 } from "../types/board";
+
+import {
+    type SolutionPath
+} from "../types/solver";
 
 import {
     type AppMessage,
@@ -24,7 +27,7 @@ import {
 
 import {
     solvePuzzle,
-} from "../services/apiCalls";
+} from "../api/apiCalls";
 
 
 export default function GridBuilder() {
@@ -107,9 +110,9 @@ export default function GridBuilder() {
 
         const existing =
             board.waypoints.find(
-                waypoint =>
-                    waypoint.position.row === position.row &&
-                    waypoint.position.col === position.col
+                ([row, col]) =>
+                    row === position[0] &&
+                    col === position[1]
             );
 
 
@@ -124,14 +127,9 @@ export default function GridBuilder() {
             updatedWaypoints =
                 board.waypoints
                     .filter(
-                        waypoint =>
-                            waypoint !== existing
-                    )
-                    .map(
-                        (waypoint, index) => ({
-                            ...waypoint,
-                            number: index + 1
-                        })
+                        ([row, col]) =>
+                            row !== position[0] ||
+                            col !== position[1]
                     );
 
         }
@@ -144,12 +142,7 @@ export default function GridBuilder() {
 
             updatedWaypoints = [
                 ...board.waypoints,
-                {
-                    number:
-                        board.waypoints.length + 1,
-
-                    position
-                }
+                position
             ];
 
         }
@@ -176,11 +169,20 @@ export default function GridBuilder() {
 
         const exists =
             board.walls.some(
-                item =>
-                    item.neighborA.row === wall.neighborA.row &&
-                    item.neighborA.col === wall.neighborA.col &&
-                    item.neighborB.row === wall.neighborB.row &&
-                    item.neighborB.col === wall.neighborB.col
+                    item => {
+
+                        const [itemARow, itemACol] = item.neighborA;
+                        const [itemBRow, itemBCol] = item.neighborB;
+                        const [wallARow, wallACol] = wall.neighborA;
+                        const [wallBRow, wallBCol] = wall.neighborB;
+
+                        return (
+                            itemARow === wallARow &&
+                            itemACol === wallACol &&
+                            itemBRow === wallBRow &&
+                            itemBCol === wallBCol
+                        );
+                    }
             );
 
 
@@ -188,13 +190,20 @@ export default function GridBuilder() {
             exists
 
                 ? board.walls.filter(
-                    item =>
-                        !(
-                            item.neighborA.row === wall.neighborA.row &&
-                            item.neighborA.col === wall.neighborA.col &&
-                            item.neighborB.row === wall.neighborB.row &&
-                            item.neighborB.col === wall.neighborB.col
-                        )
+                        item => {
+
+                            const [itemARow, itemACol] = item.neighborA;
+                            const [itemBRow, itemBCol] = item.neighborB;
+                            const [wallARow, wallACol] = wall.neighborA;
+                            const [wallBRow, wallBCol] = wall.neighborB;
+
+                            return !(
+                                itemARow === wallARow &&
+                                itemACol === wallACol &&
+                                itemBRow === wallBRow &&
+                                itemBCol === wallBCol
+                            );
+                        }
                 )
 
                 : [

@@ -1,4 +1,6 @@
-import { type SolutionPath } from "./board";
+import { type Position } from "./board";
+
+export type SolutionPath = Position[];
 
 export type SolverStatus =
     | "SOLVED"

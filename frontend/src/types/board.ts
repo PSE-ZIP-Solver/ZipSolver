@@ -1,22 +1,17 @@
-export type Position = {
-    row: number;
-    col: number;
-};
+export type GridSize =
+    | 6
+    | 7
+    | 8;
 
-export type Waypoint = {
-    number: number;
-    position: Position;
-};
+export type Position = [number, number];
 
-export type Wall = {
+export interface Wall {
     neighborA: Position;
     neighborB: Position;
-};
+}
 
-export type BoardConfig = {
-    boardSize: 6 | 7 | 8;
-    waypoints: Waypoint[];
+export interface BoardConfig {
+    boardSize: GridSize;
+    waypoints: Position[];
     walls: Wall[];
-};
-
-export type SolutionPath = Position[];
+}
