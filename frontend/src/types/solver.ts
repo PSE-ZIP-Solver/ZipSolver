@@ -15,6 +15,7 @@ export type SolverType =
 export interface SolverMetrics {
     runtimeMs: number;
     steps: number;
+    attempts: number;
 }
 
 export interface SolverResponse {
