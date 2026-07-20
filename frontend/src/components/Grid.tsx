@@ -8,10 +8,12 @@ import {
 import {
 	type BoardConfig,
 	type Position,
-	type Wall,
-	type SolutionPath,
+	type Wall
 } from "../types/board";
 
+import {
+	type SolutionPath
+} from "../types/solver";
 
 import {
 	type EditMode
@@ -145,15 +147,15 @@ export default function Grid(
 	 */
 
 
-	function getWaypoint(
+	function getWaypointIndex(
 		row: number,
 		col: number
 	) {
 
-		return board.waypoints.find(
-			waypoint =>
-				waypoint.position.row === row &&
-				waypoint.position.col === col
+		return board.waypoints.findIndex(
+			([waypointRow, waypointCol]) =>
+				waypointRow === row &&
+				waypointCol === col
 		);
 
 	}
@@ -180,25 +182,29 @@ export default function Grid(
 					wall.neighborB;
 
 
+				const [aRow, aCol] = a;
+				const [bRow, bCol] = b;
+
+
 
 				if (direction === "RIGHT") {
 
 					return (
 
 						(
-							a.row === row &&
-							a.col === col &&
-							b.row === row &&
-							b.col === col + 1
+							aRow === row &&
+							aCol === col &&
+							bRow === row &&
+							bCol === col + 1
 						)
 
 						||
 
 						(
-							b.row === row &&
-							b.col === col &&
-							a.row === row &&
-							a.col === col + 1
+							bRow === row &&
+							bCol === col &&
+							aRow === row &&
+							aCol === col + 1
 						)
 
 					);
@@ -210,19 +216,19 @@ export default function Grid(
 				return (
 
 					(
-						a.row === row &&
-						a.col === col &&
-						b.row === row + 1 &&
-						b.col === col
+						aRow === row &&
+						aCol === col &&
+						bRow === row + 1 &&
+						bCol === col
 					)
 
 					||
 
 					(
-						b.row === row &&
-						b.col === col &&
-						a.row === row + 1 &&
-						a.col === col
+						bRow === row &&
+						bCol === col &&
+						aRow === row + 1 &&
+						aCol === col
 					)
 
 				);
@@ -248,15 +254,9 @@ export default function Grid(
 
 			return {
 
-				neighborA: {
-					row,
-					col
-				},
+				neighborA: [row, col],
 
-				neighborB: {
-					row,
-					col: col + 1
-				}
+				neighborB: [row, col + 1]
 
 			};
 
@@ -266,15 +266,9 @@ export default function Grid(
 
 		return {
 
-			neighborA: {
-				row,
-				col
-			},
+			neighborA: [row, col],
 
-			neighborB: {
-				row: row + 1,
-				col
-			}
+			neighborB: [row + 1, col]
 
 		};
 
@@ -371,20 +365,20 @@ export default function Grid(
 
 
 			ctx.moveTo(
-				previous.col * cellSize +
+					previous[1] * cellSize +
 				cellSize / 2,
 
-				previous.row * cellSize +
+					previous[0] * cellSize +
 				cellSize / 2
 			);
 
 
 
 			ctx.lineTo(
-				current.col * cellSize +
+					current[1] * cellSize +
 				cellSize / 2,
 
-				current.row * cellSize +
+					current[0] * cellSize +
 				cellSize / 2
 			);
 
@@ -527,10 +521,14 @@ export default function Grid(
 
 
 								const waypoint =
-									getWaypoint(
+									getWaypointIndex(
 										row,
 										col
 									);
+
+
+								const hasWaypoint =
+									waypoint !== -1;
 
 
 
@@ -599,10 +597,10 @@ export default function Grid(
 											if (
 												editMode === "NUMBERS"
 											) {
-												onCellClick({
+												onCellClick([
 													row,
 													col
-												});
+												]);
 											}
 
 										}}
@@ -621,7 +619,7 @@ export default function Grid(
 
 
 										{
-											waypoint &&
+											hasWaypoint &&
 
 											<div
 
@@ -651,7 +649,7 @@ export default function Grid(
 											>
 
 												{
-													waypoint.number
+													waypoint + 1
 												}
 
 											</div>
