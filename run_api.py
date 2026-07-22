@@ -1,10 +1,22 @@
+"""Local dev bootstrapper.
+
+JsonInterpreter / InputValidator / SolverController are still MagicMock stand-ins until
+the concrete classes land. ArchitectureProvider is the real implementation — it has no
+dependency on the solver pipeline, so it can be wired for real today.
+
+Run from the repo root (not from backend/):
+    uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8090
+"""
+
 from unittest.mock import MagicMock
+
 from backend.api.BackendAPI import BackendAPI
+from backend.api.architecture_provider.ArchitectureProvider import ArchitectureProvider
+from backend.api.dtos.ValidationResult import ValidationResult
+from backend.api.solver_dtos.SolverMetrics import SolverMetrics
+from backend.api.solver_dtos.SolverStatus import SolverStatus
 from backend.puzzle_logic import Board, Position
 from backend.solution_path import SolutionPath
-from backend.api.solver_dtos.SolverStatus import SolverStatus
-from backend.api.solver_dtos.SolverMetrics import SolverMetrics
-from backend.api.dtos.ValidationResult import ValidationResult
 
 interp = MagicMock()
 interp.buildBoard.return_value = Board(6)
@@ -26,4 +38,13 @@ res.metrics = SolverMetrics(runtimeMs=142, steps=36, attempts=1)
 ctrl = MagicMock()
 ctrl.solve.return_value = res
 
-app = BackendAPI(interp, val, ctrl).app
+# Real provider — no solver/RL dependency, so no stub needed.
+arch = ArchitectureProvider()
+
+app = BackendAPI(
+    interp,
+    val,
+    ctrl,
+    arch,
+    model_loaded_provider=lambda: False,  # no artifact wired yet
+).app
