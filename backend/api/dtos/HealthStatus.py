@@ -13,4 +13,4 @@ class HealthStatus(BaseModel):
 
     status: str = "ok"
     api_version: str = Field(..., alias="apiVersion")
-    model_loaded: bool | None = Field(None, alias="modelLoaded")
+    model_loaded: bool | None = Field(default=None, alias="modelLoaded")
