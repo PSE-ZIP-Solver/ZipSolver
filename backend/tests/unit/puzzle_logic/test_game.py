@@ -1,4 +1,5 @@
 import pytest
+
 from backend.puzzle_logic.data_models import Position
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.game import Game
@@ -6,9 +7,15 @@ from backend.puzzle_logic.game import Game
 
 @pytest.fixture
 def board():
-    """Provides a fresh supported 6x6 board with a starting waypoint."""
+    """
+    Provides a fresh supported 6x6 board.
+
+    A separate final waypoint is required because the final waypoint
+    may only be entered when the complete board has been covered.
+    """
     board = Board(6)
     board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(5, 5), 2)
     return board
 
 
@@ -61,7 +68,7 @@ def test_game_init_without_start_waypoint_raises_error():
 
 
 def test_game_init_with_wrong_start_waypoint_order_raises_error():
-    """Test that Game initialization fails if waypoints exist but no order 1 waypoint exists."""
+    """Test that Game initialization fails if no waypoint with order 1 exists."""
     board = Board(6)
     board.addWaypoint(Position(0, 0), 2)
 
@@ -91,6 +98,21 @@ def test_is_valid_next_step_for_out_of_bounds_cell(game):
 def test_is_valid_next_step_blocked_by_wall(board, game):
     """Test that a step through a wall is not valid."""
     board.addWall(Position(0, 0), Position(1, 0))
+
+    assert not game.isValidNextStep(Position(1, 0))
+
+
+def test_cannot_leave_only_waypoint():
+    """
+    Test the endpoint rule when waypoint 1 is also the final waypoint.
+
+    If a board has only one waypoint, the game starts on the final waypoint
+    and no move away from it is permitted.
+    """
+    board = Board(6)
+    board.addWaypoint(Position(0, 0), 1)
+
+    game = Game(board)
 
     assert not game.isValidNextStep(Position(1, 0))
 
@@ -125,20 +147,28 @@ def test_step_invalid_move_does_not_update_state(game):
 
 def test_step_to_visited_cell_is_invalid(game):
     """Test that stepping back to an already visited cell is invalid."""
-    game.step(Position(1, 0))
+    assert game.step(Position(1, 0))
 
     result = game.step(Position(0, 0))
 
     assert result is False
     assert game.getState.getCurrentPosition == Position(1, 0)
-    assert game.getState.getPath == [Position(0, 0), Position(1, 0)]
+    assert game.getState.getPath == [
+        Position(0, 0),
+        Position(1, 0),
+    ]
 
 
 def test_step_to_next_waypoint_increments_next_waypoint_order():
-    """Test that reaching the next waypoint increments nextWaypointOrder."""
+    """
+    Test that reaching the next non-final waypoint increments the order.
+
+    Waypoint 3 is added so that waypoint 2 is not the final waypoint.
+    """
     board = Board(6)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(1, 0), 2)
+    board.addWaypoint(Position(5, 5), 3)
 
     game = Game(board)
 
@@ -149,10 +179,17 @@ def test_step_to_next_waypoint_increments_next_waypoint_order():
 
 
 def test_step_to_wrong_waypoint_order_is_invalid():
-    """Test that stepping onto a waypoint with the wrong order is invalid."""
+    """
+    Test that entering waypoint 3 before waypoint 2 is invalid.
+
+    A separate final waypoint is used so the failure specifically tests
+    waypoint order rather than the endpoint rule.
+    """
     board = Board(6)
     board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(0, 1), 2)
     board.addWaypoint(Position(1, 0), 3)
+    board.addWaypoint(Position(5, 5), 4)
 
     game = Game(board)
 
@@ -161,6 +198,22 @@ def test_step_to_wrong_waypoint_order_is_invalid():
     assert result is False
     assert game.getState.getNextWaypointOrder == 2
     assert game.getState.getCurrentPosition == Position(0, 0)
+    assert game.getState.getPath == [Position(0, 0)]
+
+
+def test_step_to_final_waypoint_too_early_is_invalid():
+    """Test that the final waypoint cannot be entered before the last move."""
+    board = Board(6)
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(1, 0), 2)
+
+    game = Game(board)
+
+    result = game.step(Position(1, 0))
+
+    assert result is False
+    assert game.getState.getCurrentPosition == Position(0, 0)
+    assert game.getState.getNextWaypointOrder == 2
 
 
 # ==========================================
@@ -173,7 +226,7 @@ def test_is_finished_initially_false(game):
 
 
 def test_is_finished_after_complete_valid_path():
-    """Test that the game is finished after following a complete valid solution path."""
+    """Test that the game is finished after following a complete solution path."""
     board = Board(6)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(5, 0), 2)
@@ -190,8 +243,8 @@ def test_is_finished_after_complete_valid_path():
 
 def test_is_finished_false_after_partial_path(game):
     """Test that the game is not finished after only a partial path."""
-    game.step(Position(1, 0))
-    game.step(Position(2, 0))
+    assert game.step(Position(1, 0))
+    assert game.step(Position(2, 0))
 
     assert not game.isFinished()
 
@@ -202,8 +255,8 @@ def test_is_finished_false_after_partial_path(game):
 
 def test_reset_after_steps(game):
     """Test that reset returns the game to the starting waypoint."""
-    game.step(Position(1, 0))
-    game.step(Position(2, 0))
+    assert game.step(Position(1, 0))
+    assert game.step(Position(2, 0))
 
     game.reset()
 
@@ -214,18 +267,25 @@ def test_reset_after_steps(game):
 
 
 def test_reset_after_reaching_waypoint():
-    """Test that reset also resets the next waypoint order after reaching a waypoint."""
+    """
+    Test that reset also resets the next waypoint order.
+
+    Waypoint 2 must not be the final waypoint, otherwise entering it early
+    would be prohibited by the endpoint rule.
+    """
     board = Board(6)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(1, 0), 2)
+    board.addWaypoint(Position(5, 5), 3)
 
     game = Game(board)
-    game.step(Position(1, 0))
 
+    assert game.step(Position(1, 0))
     assert game.getState.getNextWaypointOrder == 3
 
     game.reset()
 
     assert game.getState.getCurrentPosition == Position(0, 0)
     assert game.getState.getPath == [Position(0, 0)]
+    assert game.getState.getVisitedCells == {Position(0, 0)}
     assert game.getState.getNextWaypointOrder == 2

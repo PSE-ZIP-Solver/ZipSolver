@@ -1,7 +1,7 @@
 from typing import Optional
 
-from solver_status import SolverStatus
-from solver_metrics import SolverMetrics
+from .solver_status import SolverStatus
+from .solver_metrics import SolverMetrics
 from backend.solution_path import SolutionPath  
 
 class SolverResult:

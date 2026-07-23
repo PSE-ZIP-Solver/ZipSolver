@@ -4,10 +4,10 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict
 
-from solver import Solver
-from solver_result import SolverResult
-from solver_status import SolverStatus
-from solver_metrics import SolverMetrics
+from .solver import Solver
+from .solver_result import SolverResult
+from .solver_status import SolverStatus
+from .solver_metrics import SolverMetrics
 from backend.solution_path import SolutionPath
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position, Waypoint
