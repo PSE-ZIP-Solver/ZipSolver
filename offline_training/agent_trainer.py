@@ -159,20 +159,19 @@ class AgentTrainer:
             print("Creating new agent")
             agent = RLAgent(
                 trainEnv,
-                learning_rate=1e-4,
-                exploration_initial_eps=0.6,
-                exploration_final_eps=0.10,
-                exploration_fraction=0.8,
-                learning_starts=500,
-                buffer_size=50_000,
-                batch_size=64,
-                train_freq=(1, "step"),
-                gradient_steps=1,
-                target_update_interval=500,
-                gamma=0.95,
-                max_grad_norm=10,
-                seed=42,
-                tensorboard_log="./logs/zip_dqn/",
+                learning_rate=1e-4,              # Controls how strongly the network weights are changed during each gradient/network update.
+                exploration_initial_eps=1.0,     # Initial probability of choosing a random action.
+                exploration_final_eps=0.10,      # Final minimum probability of choosing a random action.
+                exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
+                learning_starts=500,             # Number of steps before the model starts learning.
+                buffer_size=50_000,              # Maximum number of transitions stored in the replay buffer.
+                batch_size=64,                   # Number of samples used for one training update.
+                train_freq=(1, "step"),          # Update nueral network (training) after every environment step.
+                gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
+                target_update_interval=500,      # Copy the learned network weights to the target network every 500 steps.
+                gamma=0.95,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
+                max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
+                seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
             )
 
         totalTimesteps = (
@@ -368,7 +367,7 @@ if __name__ == "__main__":
         boardSize=3,
         nrOfWalls=5,
         nrOfWaypoints=5,
-        modelPath="trained-model-300boards_1500k_95percentSucess.zip",
+        modelPath="trained-model-10boards-400k.zip",
 
         # Only relevant if you uncomment training again.
         nrTrainingBoards=300,
