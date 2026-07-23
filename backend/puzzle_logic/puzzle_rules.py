@@ -26,12 +26,18 @@ class PuzzleRules:
         if not self._preservesWaypointOrder(board, state, target):
             return False
 
+        # NEW: the highest waypoint must be the endpoint
+        if not self._preservesEndpointRule(board, state, target):
+            return False
+
         return True
 
     def isCompleteSolution(self, board: Board, path: List[Position]) -> bool:
         """Return True if the path is a complete valid solution."""
         return (
-            self._coversEveryCellExactlyOnce(board, path)
+            self._startsAtFirstWaypoint(board, path)
+            and self._endsAtLastWaypoint(board, path)
+            and self._coversEveryCellExactlyOnce(board, path)
             and self._containsOnlyValidMoves(board, path)
             and self._visitsWaypointsInCorrectOrder(board, path)
         )
@@ -86,3 +92,52 @@ class PuzzleRules:
         expected_orders = sorted([wp.getOrder for wp in board.getWaypoints])
 
         return expected_orders == waypoint_orders
+    
+    # NEW METHOD
+    def _preservesEndpointRule(self, board: Board, state: GameState, target: Position) -> bool:
+        waypoints = board.getWaypoints
+        if not waypoints:
+            return True
+
+        last_order = max(wp.getOrder for wp in waypoints)
+
+        current = state.getCurrentPosition
+        current_waypoint = board.getWaypointAt(current)
+        target_waypoint = board.getWaypointAt(target)
+
+        # If we are already on the final waypoint, we may not move away from it.
+        if current_waypoint is not None and current_waypoint.getOrder == last_order:
+            return False
+
+        # We may only enter the final waypoint if this move completes the whole board.
+        if target_waypoint is not None and target_waypoint.getOrder == last_order:
+            return len(state.getPath) + 1 == board.getCellCount()
+
+        return True
+    
+    def _startsAtFirstWaypoint(self, board: Board, path: List[Position]) -> bool:
+        if not path:
+            return False
+
+        first_waypoint = board.getWaypointByOrder(1)
+        if first_waypoint is None:
+            return False
+
+        return path[0] == first_waypoint.getPosition
+
+
+    def _endsAtLastWaypoint(self, board: Board, path: List[Position]) -> bool:
+        if not path:
+            return False
+
+        waypoints = board.getWaypoints
+        if not waypoints:
+            return False
+
+        last_order = max(wp.getOrder for wp in waypoints)
+        last_waypoint = board.getWaypointByOrder(last_order)
+
+        if last_waypoint is None:
+            return False
+
+        return path[-1] == last_waypoint.getPosition
