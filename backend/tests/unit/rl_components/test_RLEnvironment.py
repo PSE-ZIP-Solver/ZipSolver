@@ -1,9 +1,9 @@
-import pytest
-import numpy as np
 import gymnasium as gym
+import numpy as np
+import pytest
 
-from backend.puzzle_logic.data_models import Position
 from backend.puzzle_logic.board import Board
+from backend.puzzle_logic.data_models import Position
 from backend.rl_components.RLEnvironment import RLEnvironment
 
 
@@ -13,186 +13,244 @@ from backend.rl_components.RLEnvironment import RLEnvironment
 
 @pytest.fixture
 def real_board():
-    """Provides a real 6x6 Board instance."""
+    """
+    Provides a real 6x6 board.
+
+    Waypoint 1 is the start and waypoint 2 is the final waypoint.
+    The final waypoint is placed far away so ordinary adjacent moves
+    from the start remain valid.
+    """
     board = Board(6)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(5, 5), 2)
     return board
 
+
 @pytest.fixture
 def env(real_board):
+    """Create an RLEnvironment using real puzzle-logic objects."""
+    return RLEnvironment(real_board)
+
+
+def find_valid_action(environment: RLEnvironment):
     """
-    Creates an RLEnvironment using exclusively REAL objects.
-    No stubs and no mocked Game engines.
+    Find a move that is valid according to the complete puzzle logic.
+
+    Returns:
+        tuple[int, Position]: Action and corresponding target position.
     """
-    environment = RLEnvironment(real_board)
-    return environment
+    current = environment.game.getState.getCurrentPosition
+
+    for action in range(environment.action_space.n):
+        target = environment._get_target_position(current, action)
+
+        if environment.game.isValidNextStep(target):
+            return action, target
+
+    raise AssertionError("No valid action exists for the current test board.")
+
 
 # ==========================================
 # Gym API Contract & Spaces Tests
 # ==========================================
 
 def test_initialization(env):
-    """Test that spaces strictly match the Gym API and Config."""
+    """Test that the action and observation spaces match the Gym API."""
     assert isinstance(env.action_space, gym.spaces.Discrete)
     assert env.action_space.n == 4
-    
+
     assert isinstance(env.observation_space, gym.spaces.Box)
     assert env.observation_space.shape == (7, 6, 6)
     assert env.observation_space.dtype == np.float32
     assert env.observation_space.low.min() == 0.0
     assert env.observation_space.high.max() == 1.0
 
+
 def test_reset(env):
-    """Test that reset initializes the real Game and returns standard gym tuples."""
-    obs, info = env.reset(seed=42)
-    
-    assert obs.shape == (7, 6, 6)
+    """Test that reset returns a valid observation and info dictionary."""
+    observation, info = env.reset(seed=42)
+
+    assert observation.shape == (7, 6, 6)
+    assert observation.dtype == np.float32
     assert isinstance(info, dict)
-    assert np.all((obs >= 0.0) & (obs <= 1.0))
+    assert np.all((observation >= 0.0) & (observation <= 1.0))
+
+    assert env.game.getState.getCurrentPosition == Position(0, 0)
+    assert env.game.getState.getPath == [Position(0, 0)]
+
 
 # ==========================================
 # Action & Target Logic
 # ==========================================
 
-@pytest.mark.parametrize("action, offset_x, offset_y", [
-    (0, 0, -1), # UP
-    (1, 1, 0),  # RIGHT
-    (2, 0, 1),  # DOWN
-    (3, -1, 0), # LEFT
-])
+@pytest.mark.parametrize(
+    "action, offset_x, offset_y",
+    [
+        (0, 0, -1),  # UP
+        (1, 1, 0),   # RIGHT
+        (2, 0, 1),   # DOWN
+        (3, -1, 0),  # LEFT
+    ],
+)
 def test_get_target_position(env, action, offset_x, offset_y):
+    """Test mapping from an action to its target position."""
     current = Position(2, 2)
+
     target = env._get_target_position(current, action)
+
     assert target.getX == current.getX + offset_x
     assert target.getY == current.getY + offset_y
 
+
 def test_invalid_action_mapping_edge_case(env):
-    """Ensure the environment defends against out-of-bounds discrete actions."""
+    """Test that unsupported action numbers raise an exception."""
     current = Position(2, 2)
+
     with pytest.raises(ValueError, match="Invalid action: 99"):
         env._get_target_position(current, 99)
 
+
 # ==========================================
-# Step Logic, Terminations, & Rewards
+# Step Logic, Terminations & Rewards
 # ==========================================
 
 def test_step_invalid_move(env):
-    """Test penalty for invalid moves (hitting walls or bounds)."""
+    """Test the penalty and termination caused by an invalid move."""
     env.reset()
-    board = env.game.getBoard
-    current = env.game.getState.getCurrentPosition
-    
-    # We force an invalid move by placing a wall UP, or stepping UP if on the top edge
-    target_up = env._get_target_position(current, 0)
-    if board.isInside(target_up):
-        board.addWall(current, target_up)
-        
-    obs, reward, terminated, truncated, info = env.step(0) # 0 = UP
-    
+
+    # The game starts at (0, 0), so moving UP leaves the board.
+    observation, reward, terminated, truncated, info = env.step(0)
+
+    assert observation.shape == (7, 6, 6)
     assert reward == -100
     assert terminated is True
     assert truncated is False
     assert info.get("invalid_move") is True
 
+    # An invalid move must not modify the game state.
+    assert env.game.getState.getCurrentPosition == Position(0, 0)
+    assert env.game.getState.getPath == [Position(0, 0)]
+
+
 def test_step_valid_move_new_cell(env):
-    """Test standard exploration reward on the real game engine."""
+    """Test the normal reward for entering a new empty cell."""
     env.reset()
-    board = env.game.getBoard
-    current = env.game.getState.getCurrentPosition
-    
-    # Ensure there are no waypoints to accidentally trigger the waypoint reward
-    board._waypoints.clear() 
-    
-    # Dynamically find a valid action that doesn't hit a wall/boundary
-    valid_action = -1
-    for action in range(4):
-        target = env._get_target_position(current, action)
-        if board.isInside(target) and not board.hasWallBetween(current, target):
-            valid_action = action
-            break
-            
-    assert valid_action != -1, "The player spawned fully boxed in, invalid test setup."
-    
-    obs, reward, terminated, truncated, info = env.step(valid_action)
-    
+
+    valid_action, target = find_valid_action(env)
+
+    # The chosen adjacent cell must be empty, not a waypoint.
+    assert env.game.getBoard.getWaypointAt(target) is None
+
+    observation, reward, terminated, truncated, info = env.step(valid_action)
+
+    assert observation.shape == (7, 6, 6)
     assert reward == 1
     assert terminated is False
     assert truncated is False
     assert info.get("invalid_move") is False
 
-def test_step_valid_move_waypoint(env):
-    """Test reaching a correct waypoint dynamically."""
-    env.reset()
-    board = env.game.getBoard
-    current = env.game.getState.getCurrentPosition
-    
-    # Dynamically find an open adjacent cell
-    valid_action = -1
-    target = None
-    for action in range(4):
-        t = env._get_target_position(current, action)
-        if board.isInside(t) and not board.hasWallBetween(current, t):
-            valid_action = action
-            target = t
-            break
-            
-    # Figure out what waypoint order the real Game state is expecting next
-    expected_order = env.game.getState.getNextWaypointOrder
-    if expected_order is None:
-        expected_order = 1
-        
-    # Place the real waypoint on the board
-    board.addWaypoint(target, expected_order)
-    
-    obs, reward, terminated, truncated, info = env.step(valid_action)
+    assert env.game.getState.getCurrentPosition == target
+    assert target in env.game.getState.getVisitedCells
+
+
+def test_step_valid_move_waypoint():
+    """
+    Test the reward for reaching the next expected non-final waypoint.
+
+    Waypoint 3 is included so that waypoint 2 is not interpreted as
+    the final waypoint by the endpoint rule.
+    """
+    board = Board(6)
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(1, 0), 2)
+    board.addWaypoint(Position(5, 5), 3)
+
+    environment = RLEnvironment(board)
+    environment.reset()
+
+    # RIGHT: (0, 0) -> (1, 0), which contains waypoint 2.
+    observation, reward, terminated, truncated, info = environment.step(1)
+
+    assert observation.shape == (7, 6, 6)
     assert reward == 10
     assert terminated is False
+    assert truncated is False
+    assert info.get("invalid_move") is False
 
-def test_step_valid_move_finished(env):
+    assert environment.game.getState.getCurrentPosition == Position(1, 0)
+    assert environment.game.getState.getNextWaypointOrder == 3
+
+
+def test_step_final_waypoint_too_early_is_invalid():
     """
-    Test episode success conditions. 
-    Since solving the real puzzle takes 36 perfectly calculated steps, 
-    we dynamically override the instance's isFinished method just for this one assertion.
+    Test the new endpoint rule.
+
+    The final waypoint cannot be entered before all board cells
+    have been covered.
+    """
+    board = Board(6)
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(1, 0), 2)
+
+    environment = RLEnvironment(board)
+    environment.reset()
+
+    # RIGHT would enter the final waypoint immediately.
+    observation, reward, terminated, truncated, info = environment.step(1)
+
+    assert observation.shape == (7, 6, 6)
+    assert reward == -100
+    assert terminated is True
+    assert truncated is False
+    assert info.get("invalid_move") is True
+
+    assert environment.game.getState.getCurrentPosition == Position(0, 0)
+    assert environment.game.getState.getNextWaypointOrder == 2
+
+
+def test_step_valid_move_finished(env, monkeypatch):
+    """
+    Test the completion reward and termination flag.
+
+    The test replaces only the completion check because manually following
+    a complete 36-cell path is outside the purpose of this unit test.
     """
     env.reset()
-    current = env.game.getState.getCurrentPosition
-    
-    # Find a valid move
-    valid_action = -1
-    for action in range(4):
-        t = env._get_target_position(current, action)
-        if env.game.getBoard.isInside(t):
-            valid_action = action
-            break
 
-    # Trick the real environment into thinking this step is the last one
-    env.game.isFinished = lambda: True
-    
-    obs, reward, terminated, truncated, info = env.step(valid_action)
+    valid_action, target = find_valid_action(env)
+
+    monkeypatch.setattr(env.game, "isFinished", lambda: True)
+
+    observation, reward, terminated, truncated, info = env.step(valid_action)
+
+    assert observation.shape == (7, 6, 6)
     assert reward == 100
     assert terminated is True
+    assert truncated is False
+    assert info.get("invalid_move") is False
+
+    assert env.game.getState.getCurrentPosition == target
+
 
 def test_step_truncation_edge_case(env):
-    """Test that max_steps properly raises the 'truncated' flag."""
+    """Test that reaching the configured step limit sets truncated."""
     env.reset()
-    current = env.game.getState.getCurrentPosition
-    
-    valid_action = -1
-    for action in range(4):
-        t = env._get_target_position(current, action)
-        if env.game.getBoard.isInside(t):
-            valid_action = action
-            break
-            
-    # Artificially lower the configuration's max step budget so the VERY NEXT move triggers it
+
+    valid_action, target = find_valid_action(env)
+
     current_path_length = len(env.game.getState.getPath)
-    env.config.max_steps = current_path_length 
-    
-    obs, reward, terminated, truncated, info = env.step(valid_action)
-    
+
+    # The next valid move should exceed or reach the configured limit.
+    env.config.max_steps = current_path_length
+
+    observation, reward, terminated, truncated, info = env.step(valid_action)
+
+    assert observation.shape == (7, 6, 6)
     assert terminated is False
     assert truncated is True
+    assert info.get("invalid_move") is False
+
+    assert env.game.getState.getCurrentPosition == target
 
 
 # ==========================================
@@ -200,78 +258,102 @@ def test_step_truncation_edge_case(env):
 # ==========================================
 
 def test_get_observation_zero_waypoints_edge_case(env):
-    """Verify division by zero is safely avoided if no waypoints exist on the real board."""
+    """Test that a board without waypoints does not cause division by zero."""
     env.reset()
+
     env.game.getBoard._waypoints.clear()
-    
-    obs = env._get_observation()
-    assert np.all(obs[2] == 0.0) # Channel 2 should be completely empty
+
+    observation = env._get_observation()
+
+    assert observation.shape == (7, 6, 6)
+    assert np.all(observation[2] == 0.0)
+
 
 def test_get_observation_channels(env):
-    """Ensure all 7 channels accurately represent the true board state."""
+    """Test that all seven observation channels represent the board state."""
     env.reset()
+
     board = env.game.getBoard
     state = env.game.getState
-    
+
     current = state.getCurrentPosition
-    x, y = current.getX, current.getY
-    
-    # Place real waypoints on the board
-    #board.addWaypoint(Position(4, 4), 1)
-    #board.addWaypoint(Position(5, 5), 2)
-    
-    # Surround the player with walls (respecting boundaries so we don't hit OOB errors)
-    if y > 0: board.addWall(current, Position(x, y - 1)) # Above
-    if x < 5: board.addWall(current, Position(x + 1, y)) # Right
-    if y < 5: board.addWall(current, Position(x, y + 1)) # Below
-    if x > 0: board.addWall(current, Position(x - 1, y)) # Left
-    
-    obs = env._get_observation()
-    
-    # C0: Current Pos
-    assert obs[0, x, y] == 1.0
-    assert np.sum(obs[0]) == 1.0 
-    
-    # C1: Visited (The start position should instantly be marked visited)
-    assert obs[1, x, y] == 1.0
-    
-    # C2: Waypoints (Scaled 1/2 and 2/2)
-    assert obs[2, 0, 0] == 0.5
-    assert obs[2, 5, 5] == 1.0
-    
-    # C3-C6: Walls dynamically checked based on where the player spawned
-    if y > 0: assert obs[3, x, y] == 1.0
-    if x < 5: assert obs[4, x, y] == 1.0
-    if y < 5: assert obs[5, x, y] == 1.0
-    if x > 0: assert obs[6, x, y] == 1.0
+    x = current.getX
+    y = current.getY
+
+    # Surround the current position with walls wherever the neighboring
+    # cell lies inside the board.
+    if y > 0:
+        board.addWall(current, Position(x, y - 1))
+
+    if x < board.getSize - 1:
+        board.addWall(current, Position(x + 1, y))
+
+    if y < board.getSize - 1:
+        board.addWall(current, Position(x, y + 1))
+
+    if x > 0:
+        board.addWall(current, Position(x - 1, y))
+
+    observation = env._get_observation()
+
+    assert observation.shape == (7, 6, 6)
+    assert observation.dtype == np.float32
+
+    # Channel 0: current position
+    assert observation[0, x, y] == 1.0
+    assert np.sum(observation[0]) == 1.0
+
+    # Channel 1: visited cells
+    assert observation[1, x, y] == 1.0
+    assert np.sum(observation[1]) == 1.0
+
+    # Channel 2: waypoint values scaled using the highest order
+    assert observation[2, 0, 0] == 0.5
+    assert observation[2, 5, 5] == 1.0
+
+    # Channels 3–6: walls in the four directions
+    if y > 0:
+        assert observation[3, x, y] == 1.0
+
+    if x < board.getSize - 1:
+        assert observation[4, x, y] == 1.0
+
+    if y < board.getSize - 1:
+        assert observation[5, x, y] == 1.0
+
+    if x > 0:
+        assert observation[6, x, y] == 1.0
+
 
 # ==========================================
 # Rendering Tests
 # ==========================================
 
 def test_render_ansi_mode(env):
-    """Test string return generation for ansi mode using real objects."""
+    """Test rendering the environment as a string."""
     env.reset()
-    
+
     output = env.render(mode="ansi")
-    
+
     assert isinstance(output, str)
-    assert "@" in output  # The current position MUST be rendered
+    assert "@" in output
+
 
 def test_render_human_mode(env, capsys):
-    """Test standard output printing via human mode."""
+    """Test rendering the environment to standard output."""
     env.reset()
-    
-    # Render human should return None and print to stdout
+
     result = env.render(mode="human")
+
     assert result is None
-    
-    # Capture standard output printed by the environment
+
     captured = capsys.readouterr()
     assert "@" in captured.out
 
+
 def test_render_invalid_mode(env):
-    """Test that unsupported render modes throw an exception."""
+    """Test that unsupported render modes raise an exception."""
     env.reset()
+
     with pytest.raises(ValueError, match="Unsupported render mode"):
         env.render(mode="unsupported_mode")
