@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from backend.puzzle_logic.board import Board
-from solver_result import SolverResult
+from .solver_result import SolverResult
  
 class Solver(ABC):
     """

@@ -3,10 +3,10 @@ import logging
 from typing import Optional
 
 # Core solver imports
-from solver import Solver
-from solver_result import SolverResult
-from solver_status import SolverStatus
-from solver_metrics import SolverMetrics
+from .solver import Solver
+from .solver_result import SolverResult
+from .solver_status import SolverStatus
+from .solver_metrics import SolverMetrics
 from backend.solution_path import SolutionPath
 
 # Puzzle Logic and RL components
