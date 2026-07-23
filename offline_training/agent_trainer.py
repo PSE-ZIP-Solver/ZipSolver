@@ -162,9 +162,9 @@ class AgentTrainer:
                 learning_rate=1e-4,
                 exploration_initial_eps=0.6,
                 exploration_final_eps=0.10,
-                exploration_fraction=0.8,
-                learning_starts=500,
-                buffer_size=50_000,
+                exploration_fraction=0.9,
+                learning_starts=3_000,
+                buffer_size=300_000,
                 batch_size=64,
                 train_freq=(1, "step"),
                 gradient_steps=1,
@@ -365,46 +365,46 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     trainer = AgentTrainer(
-        boardSize=3,
-        nrOfWalls=5,
-        nrOfWaypoints=5,
-        modelPath="trained-model-300boards_1500k_95percentSucess.zip",
+        boardSize=6,
+        nrOfWalls=20,
+        nrOfWaypoints=16,
+        modelPath="6x6Number1",
 
         # Only relevant if you uncomment training again.
-        nrTrainingBoards=300,
+        nrTrainingBoards=3000,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=1000,
 
         # Only relevant for training.
-        timestepsPerBoard=300_000,
+        timestepsPerBoard=6_000_000,
 
-        loadExistingModel=True,
-        resetModel=False,
+        loadExistingModel=False,
+        resetModel=True,
     )
 
     # ==========================
     # Option 1: Only evaluate saved model
     # ==========================
-    result = trainer.evaluate_saved_model(showExamples=True)
+    #result = trainer.evaluate_saved_model(showExamples=True)
 
-    print("\nEvaluation result:")
-    print("Solved:", result.getSolveCount)
-    print("Total Boards:", result.getTotalBoards)
-    print("Average reward:", result.getAverageReward)
-    print("Success rate:", result.getSuccessRate)
+    #print("\nEvaluation result:")
+    #print("Solved:", result.getSolveCount)
+    #print("Total Boards:", result.getTotalBoards)
+    #print("Average reward:", result.getAverageReward)
+    #print("Success rate:", result.getSuccessRate)
 
     # ==========================
     # Option 2: Continue training
     # Uncomment this block if you want to train again.
     # ==========================
-    # trainedAgent = trainer.train()
-    # trainer.save(trainedAgent)
-    #
-    # result = trainer.evaluate(trainedAgent)
-    #
-    # print("\nEvaluation result after training:")
-    # print("Solved:", result.getSolveCount)
-    # print("Total Boards:", result.getTotalBoards)
-    # print("Average reward:", result.getAverageReward)
-    # print("Success rate:", result.getSuccessRate)
+    trainedAgent = trainer.train()
+    trainer.save(trainedAgent)
+
+    result = trainer.evaluate(trainedAgent)
+
+    print("\nEvaluation result after training:")
+    print("Solved:", result.getSolveCount)
+    print("Total Boards:", result.getTotalBoards)
+    print("Average reward:", result.getAverageReward)
+    print("Success rate:", result.getSuccessRate)
