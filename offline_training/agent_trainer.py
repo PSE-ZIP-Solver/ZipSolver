@@ -367,7 +367,7 @@ if __name__ == "__main__":
         boardSize=3,
         nrOfWalls=5,
         nrOfWaypoints=5,
-        modelPath="trained-model-300boards_1500k_95percentSucess.zip",
+        modelPath="offline_training/trained_models/3x3/trained-model-300boards_1500k_95percentSucess.zip",
 
         # Only relevant if you uncomment training again.
         nrTrainingBoards=300,
