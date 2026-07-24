@@ -7,6 +7,15 @@ from backend.puzzle_logic.data_models import Position
 from backend.rl_components.RLEnvironment import RLEnvironment
 
 
+BOARD_SIZE = 6
+OBSERVATION_CHANNELS = 8
+OBSERVATION_SHAPE = (
+    OBSERVATION_CHANNELS,
+    BOARD_SIZE,
+    BOARD_SIZE,
+)
+
+
 # ==========================================
 # Setup & Fixtures
 # ==========================================
@@ -14,15 +23,16 @@ from backend.rl_components.RLEnvironment import RLEnvironment
 @pytest.fixture
 def real_board():
     """
-    Provides a real 6x6 board.
+    Provide a real 6x6 board.
 
-    Waypoint 1 is the start and waypoint 2 is the final waypoint.
-    The final waypoint is placed far away so ordinary adjacent moves
-    from the start remain valid.
+    Waypoint 1 is the starting waypoint.
+    Waypoint 2 is the final waypoint and is placed far away so that
+    ordinary adjacent moves from the start remain valid.
     """
-    board = Board(6)
+    board = Board(BOARD_SIZE)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(5, 5), 2)
+
     return board
 
 
@@ -60,23 +70,30 @@ def test_initialization(env):
     assert env.action_space.n == 4
 
     assert isinstance(env.observation_space, gym.spaces.Box)
-    assert env.observation_space.shape == (7, 6, 6)
+    assert env.observation_space.shape == OBSERVATION_SHAPE
     assert env.observation_space.dtype == np.float32
     assert env.observation_space.low.min() == 0.0
     assert env.observation_space.high.max() == 1.0
+
+    assert env.config.size == BOARD_SIZE
 
 
 def test_reset(env):
     """Test that reset returns a valid observation and info dictionary."""
     observation, info = env.reset(seed=42)
 
-    assert observation.shape == (7, 6, 6)
+    assert observation.shape == OBSERVATION_SHAPE
     assert observation.dtype == np.float32
     assert isinstance(info, dict)
     assert np.all((observation >= 0.0) & (observation <= 1.0))
 
+    assert env.current_step_count == 0
     assert env.game.getState.getCurrentPosition == Position(0, 0)
     assert env.game.getState.getPath == [Position(0, 0)]
+
+    # Channel 7 contains the next expected waypoint.
+    assert observation[7, 5, 5] == 1.0
+    assert np.sum(observation[7]) == 1.0
 
 
 # ==========================================
@@ -121,11 +138,13 @@ def test_step_invalid_move(env):
     # The game starts at (0, 0), so moving UP leaves the board.
     observation, reward, terminated, truncated, info = env.step(0)
 
-    assert observation.shape == (7, 6, 6)
-    assert reward == -100
+    assert observation.shape == OBSERVATION_SHAPE
+    assert reward == env.config.invalid_move_penalty
     assert terminated is True
     assert truncated is False
+
     assert info.get("invalid_move") is True
+    assert info.get("step_count") == 1
 
     # An invalid move must not modify the game state.
     assert env.game.getState.getCurrentPosition == Position(0, 0)
@@ -138,16 +157,24 @@ def test_step_valid_move_new_cell(env):
 
     valid_action, target = find_valid_action(env)
 
-    # The chosen adjacent cell must be empty, not a waypoint.
+    # The selected adjacent cell must be empty, not a waypoint.
     assert env.game.getBoard.getWaypointAt(target) is None
 
     observation, reward, terminated, truncated, info = env.step(valid_action)
 
-    assert observation.shape == (7, 6, 6)
-    assert reward == 1
+    expected_reward = (
+        env.config.step_penalty
+        + env.config.new_cell_reward
+    )
+
+    assert observation.shape == OBSERVATION_SHAPE
+    assert reward == expected_reward
     assert terminated is False
     assert truncated is False
+
     assert info.get("invalid_move") is False
+    assert info.get("step_count") == 1
+    assert info.get("is_finished") is False
 
     assert env.game.getState.getCurrentPosition == target
     assert target in env.game.getState.getVisitedCells
@@ -160,7 +187,7 @@ def test_step_valid_move_waypoint():
     Waypoint 3 is included so that waypoint 2 is not interpreted as
     the final waypoint by the endpoint rule.
     """
-    board = Board(6)
+    board = Board(BOARD_SIZE)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(1, 0), 2)
     board.addWaypoint(Position(5, 5), 3)
@@ -171,24 +198,36 @@ def test_step_valid_move_waypoint():
     # RIGHT: (0, 0) -> (1, 0), which contains waypoint 2.
     observation, reward, terminated, truncated, info = environment.step(1)
 
-    assert observation.shape == (7, 6, 6)
-    assert reward == 10
+    expected_reward = (
+        environment.config.step_penalty
+        + environment.config.next_waypoint_reward
+    )
+
+    assert observation.shape == OBSERVATION_SHAPE
+    assert reward == expected_reward
     assert terminated is False
     assert truncated is False
+
     assert info.get("invalid_move") is False
+    assert info.get("step_count") == 1
+    assert info.get("is_finished") is False
 
     assert environment.game.getState.getCurrentPosition == Position(1, 0)
     assert environment.game.getState.getNextWaypointOrder == 3
 
+    # Waypoint 3 must now be marked as the next expected waypoint.
+    assert observation[7, 5, 5] == 1.0
+    assert np.sum(observation[7]) == 1.0
+
 
 def test_step_final_waypoint_too_early_is_invalid():
     """
-    Test the new endpoint rule.
+    Test the endpoint rule.
 
     The final waypoint cannot be entered before all board cells
     have been covered.
     """
-    board = Board(6)
+    board = Board(BOARD_SIZE)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(1, 0), 2)
 
@@ -198,11 +237,13 @@ def test_step_final_waypoint_too_early_is_invalid():
     # RIGHT would enter the final waypoint immediately.
     observation, reward, terminated, truncated, info = environment.step(1)
 
-    assert observation.shape == (7, 6, 6)
-    assert reward == -100
+    assert observation.shape == OBSERVATION_SHAPE
+    assert reward == environment.config.invalid_move_penalty
     assert terminated is True
     assert truncated is False
+
     assert info.get("invalid_move") is True
+    assert info.get("step_count") == 1
 
     assert environment.game.getState.getCurrentPosition == Position(0, 0)
     assert environment.game.getState.getNextWaypointOrder == 2
@@ -212,7 +253,7 @@ def test_step_valid_move_finished(env, monkeypatch):
     """
     Test the completion reward and termination flag.
 
-    The test replaces only the completion check because manually following
+    Only the completion check is replaced because manually following
     a complete 36-cell path is outside the purpose of this unit test.
     """
     env.reset()
@@ -223,11 +264,19 @@ def test_step_valid_move_finished(env, monkeypatch):
 
     observation, reward, terminated, truncated, info = env.step(valid_action)
 
-    assert observation.shape == (7, 6, 6)
-    assert reward == 100
+    expected_reward = (
+        env.config.step_penalty
+        + env.config.completion_reward
+    )
+
+    assert observation.shape == OBSERVATION_SHAPE
+    assert reward == expected_reward
     assert terminated is True
     assert truncated is False
+
     assert info.get("invalid_move") is False
+    assert info.get("step_count") == 1
+    assert info.get("is_finished") is True
 
     assert env.game.getState.getCurrentPosition == target
 
@@ -238,17 +287,18 @@ def test_step_truncation_edge_case(env):
 
     valid_action, target = find_valid_action(env)
 
-    current_path_length = len(env.game.getState.getPath)
-
-    # The next valid move should exceed or reach the configured limit.
-    env.config.max_steps = current_path_length
+    # The first valid move reaches the configured limit.
+    env.config.max_steps = 1
 
     observation, reward, terminated, truncated, info = env.step(valid_action)
 
-    assert observation.shape == (7, 6, 6)
+    assert observation.shape == OBSERVATION_SHAPE
     assert terminated is False
     assert truncated is True
+
     assert info.get("invalid_move") is False
+    assert info.get("step_count") == 1
+    assert info.get("is_finished") is False
 
     assert env.game.getState.getCurrentPosition == target
 
@@ -265,12 +315,18 @@ def test_get_observation_zero_waypoints_edge_case(env):
 
     observation = env._get_observation()
 
-    assert observation.shape == (7, 6, 6)
+    assert observation.shape == OBSERVATION_SHAPE
+    assert observation.dtype == np.float32
+
+    # Channel 2 contains normalized waypoint orders.
     assert np.all(observation[2] == 0.0)
+
+    # Channel 7 contains the next expected waypoint.
+    assert np.all(observation[7] == 0.0)
 
 
 def test_get_observation_channels(env):
-    """Test that all seven observation channels represent the board state."""
+    """Test that all eight observation channels represent the board state."""
     env.reset()
 
     board = env.game.getBoard
@@ -296,7 +352,7 @@ def test_get_observation_channels(env):
 
     observation = env._get_observation()
 
-    assert observation.shape == (7, 6, 6)
+    assert observation.shape == OBSERVATION_SHAPE
     assert observation.dtype == np.float32
 
     # Channel 0: current position
@@ -307,22 +363,32 @@ def test_get_observation_channels(env):
     assert observation[1, x, y] == 1.0
     assert np.sum(observation[1]) == 1.0
 
-    # Channel 2: waypoint values scaled using the highest order
-    assert observation[2, 0, 0] == 0.5
-    assert observation[2, 5, 5] == 1.0
+    # Channel 2: waypoint values normalized by waypoint order
+    assert observation[2, 0, 0] == pytest.approx(0.5)
+    assert observation[2, 5, 5] == pytest.approx(1.0)
 
-    # Channels 3–6: walls in the four directions
-    if y > 0:
-        assert observation[3, x, y] == 1.0
+    # Channel 3: wall or boundary above
+    assert observation[3, x, y] == 1.0
 
-    if x < board.getSize - 1:
-        assert observation[4, x, y] == 1.0
+    # Channel 4: wall or boundary to the right
+    assert observation[4, x, y] == 1.0
 
-    if y < board.getSize - 1:
-        assert observation[5, x, y] == 1.0
+    # Channel 5: wall or boundary below
+    assert observation[5, x, y] == 1.0
 
-    if x > 0:
-        assert observation[6, x, y] == 1.0
+    # Channel 6: wall or boundary to the left
+    assert observation[6, x, y] == 1.0
+
+    # Channel 7: next expected waypoint
+    assert observation[7, 5, 5] == 1.0
+    assert np.sum(observation[7]) == 1.0
+
+
+def test_observation_is_contained_in_observation_space(env):
+    """Test that the generated observation satisfies the declared Gym space."""
+    observation, _ = env.reset()
+
+    assert env.observation_space.contains(observation)
 
 
 # ==========================================
