@@ -1,9 +1,9 @@
 import {
 	useEffect,
+	useMemo,
 	useRef,
 	useState
 } from "react";
-
 
 import {
 	type BoardConfig,
@@ -19,792 +19,372 @@ import {
 	type EditMode
 } from "../types/grid";
 
-
-
 interface GridProps {
-
 	board: BoardConfig;
-
 	solution: SolutionPath | null;
-
 	editMode: EditMode;
-
-
-	onCellClick:
-	(position: Position) => void;
-
-
-	onWallClick:
-	(wall: Wall) => void;
+	onCellClick: (position: Position) => void;
+	onWallClick: (wall: Wall) => void;
 }
-
-
 
 const MAX_GRID_PIXELS = 600;
 const MIN_GRID_PIXELS = 300;
+const GRID_GAP_PX = 1;
+const WALL_THICKNESS_PX = 6;
 
+function isBefore(a: Position, b: Position) {
+	if (a[0] !== b[0]) return a[0] < b[0];
+	return a[1] < b[1];
+}
 
+function getWallKey(a: Position, b: Position) {
+	const [first, second] = isBefore(a, b) ? [a, b] : [b, a];
+	return `${first[0]},${first[1]}|${second[0]},${second[1]}`;
+}
 
-export default function Grid(
-	{
-		board,
-		solution,
-		editMode,
-		onCellClick,
-		onWallClick
-	}: GridProps
-) {
+function createWall(a: Position, b: Position): Wall {
+	return {
+		neighborA: a,
+		neighborB: b
+	};
+}
 
+export default function Grid({
+	board,
+	solution,
+	editMode,
+	onCellClick,
+	onWallClick
+}: GridProps) {
 
-	const canvasRef =
-		useRef<HTMLCanvasElement | null>(null);
+	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const containerRef = useRef<HTMLDivElement | null>(null);
 
-
-	const containerRef =
-		useRef<HTMLDivElement | null>(null);
-
-
-
-	const [containerWidth, setContainerWidth] =
-		useState(0);
-
-
-
-	const [hoveredCell, setHoveredCell] =
-		useState<number | null>(null);
-
-
-
-	/*
-	 * ============================
-	 * Resize handling
-	 * ============================
-	 */
+	const [containerWidth, setContainerWidth] = useState(0);
+	const [hoveredCell, setHoveredCell] = useState<number | null>(null);
 
 	useEffect(() => {
+		const element = containerRef.current;
+		if (!element) return;
 
-
-		function measure() {
-
-			if (!containerRef.current)
-				return;
-
-
-			const width =
-				containerRef.current
-					.offsetWidth;
-
-
+		const measure = () => {
+			const width = element.offsetWidth;
 			setContainerWidth(
-				Math.max(
-					MIN_GRID_PIXELS,
-					width - 48
-				)
+				Math.max(MIN_GRID_PIXELS, width - 48)
 			);
-		}
-
-
+		};
 
 		measure();
 
+		if (typeof ResizeObserver !== "undefined") {
+			const observer = new ResizeObserver(measure);
+			observer.observe(element);
+			return () => observer.disconnect();
+		}
 
-		window.addEventListener(
-			"resize",
-			measure
-		);
-
-
-		return () =>
-			window.removeEventListener(
-				"resize",
-				measure
-			);
-
-
+		window.addEventListener("resize", measure);
+		return () => window.removeEventListener("resize", measure);
 	}, []);
 
-
-
-
-	const gridPixels =
-		Math.min(
-			containerWidth,
-			MAX_GRID_PIXELS
-		);
-
-
-	const cellSize =
-		gridPixels / board.boardSize;
-
-
-
-
-
-	/*
-	 * ============================
-	 * Helpers
-	 * ============================
-	 */
-
-
-	function getWaypointIndex(
-		row: number,
-		col: number
-	) {
-
-		return board.waypoints.findIndex(
-			([waypointRow, waypointCol]) =>
-				waypointRow === row &&
-				waypointCol === col
-		);
-
-	}
-
-
-
-
-	function hasWall(
-		row: number,
-		col: number,
-		direction: "RIGHT" | "BOTTOM"
-	) {
-
-
-		return board.walls.some(
-			wall => {
-
-
-				const a =
-					wall.neighborA;
-
-
-				const b =
-					wall.neighborB;
-
-
-				const [aRow, aCol] = a;
-				const [bRow, bCol] = b;
-
-
-
-				if (direction === "RIGHT") {
-
-					return (
-
-						(
-							aRow === row &&
-							aCol === col &&
-							bRow === row &&
-							bCol === col + 1
-						)
-
-						||
-
-						(
-							bRow === row &&
-							bCol === col &&
-							aRow === row &&
-							aCol === col + 1
-						)
-
-					);
-
-				}
-
-
-
-				return (
-
-					(
-						aRow === row &&
-						aCol === col &&
-						bRow === row + 1 &&
-						bCol === col
-					)
-
-					||
-
-					(
-						bRow === row &&
-						bCol === col &&
-						aRow === row + 1 &&
-						aCol === col
-					)
-
-				);
-
-
-			}
-		);
-
-	}
-
-
-
-
-
-	function createWall(
-		row: number,
-		col: number,
-		direction: "RIGHT" | "BOTTOM"
-	): Wall {
-
-
-		if (direction === "RIGHT") {
-
-			return {
-
-				neighborA: [row, col],
-
-				neighborB: [row, col + 1]
-
-			};
-
-		}
-
-
-
-		return {
-
-			neighborA: [row, col],
-
-			neighborB: [row + 1, col]
-
-		};
-
-	}
-
-
-
-
-
-	/*
-	 * ============================
-	 * Solution drawing
-	 * ============================
-	 */
-
+	const gridPixels = Math.min(containerWidth, MAX_GRID_PIXELS);
+	const cellSize = useMemo(() => {
+		if (gridPixels <= 0) return 0;
+		return (gridPixels - GRID_GAP_PX * (board.boardSize - 1)) / board.boardSize;
+	}, [board.boardSize, gridPixels]);
+
+	const stride = cellSize + GRID_GAP_PX;
+
+	const waypointIndexByCell = useMemo(() => {
+		const map = new Map<string, number>();
+		board.waypoints.forEach((position, index) => {
+			map.set(`${position[0]},${position[1]}`, index);
+		});
+		return map;
+	}, [board.waypoints]);
+
+	const wallSet = useMemo(() => {
+		const set = new Set<string>();
+		board.walls.forEach((wall) => {
+			set.add(getWallKey(wall.neighborA, wall.neighborB));
+		});
+		return set;
+	}, [board.walls]);
 
 	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!canvas || !gridPixels) return;
 
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
 
-		const canvas =
-			canvasRef.current;
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = Math.round(gridPixels * dpr);
+		canvas.height = Math.round(gridPixels * dpr);
+		canvas.style.width = `${gridPixels}px`;
+		canvas.style.height = `${gridPixels}px`;
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, gridPixels, gridPixels);
 
-
-		if (!canvas || gridPixels === 0)
+		if (!solution || solution.length < 2) {
 			return;
-
-
-
-		const ctx =
-			canvas.getContext("2d");
-
-
-		if (!ctx)
-			return;
-
-
-
-		canvas.width =
-			gridPixels;
-
-
-		canvas.height =
-			gridPixels;
-
-
-
-		ctx.clearRect(
-			0,
-			0,
-			gridPixels,
-			gridPixels
-		);
-
-
-
-		if (!solution || solution.length < 2)
-			return;
-
-
-
-		ctx.lineWidth =
-			Math.max(
-				2,
-				cellSize * 0.15
-			);
-
-
-		ctx.lineCap =
-			"round";
-
-
-		ctx.lineJoin =
-			"round";
-
-
-
-		for (
-			let i = 1;
-			i < solution.length;
-			i++
-		) {
-
-
-			const previous =
-				solution[i - 1];
-
-
-			const current =
-				solution[i];
-
-
-
-			ctx.beginPath();
-
-
-			ctx.moveTo(
-					previous[1] * cellSize +
-				cellSize / 2,
-
-					previous[0] * cellSize +
-				cellSize / 2
-			);
-
-
-
-			ctx.lineTo(
-					current[1] * cellSize +
-				cellSize / 2,
-
-					current[0] * cellSize +
-				cellSize / 2
-			);
-
-
-
-			const progress =
-				i / solution.length;
-
-
-
-			const hue =
-				50 - progress * 40;
-
-
-
-			ctx.strokeStyle =
-				`hsl(${hue},100%,60%)`;
-
-
-
-			ctx.stroke();
-
 		}
 
+		const duration = 650;
+		let raf = 0;
+		const startedAt = performance.now();
 
-	},
-		[
-			solution,
-			gridPixels,
-			cellSize
-		]);
+		const draw = (now: number) => {
+			const animationProgress = Math.min(1, (now - startedAt) / duration);
+			const visibleSegments = animationProgress * (solution.length - 1);
 
+			ctx.clearRect(0, 0, gridPixels, gridPixels);
 
+			ctx.lineWidth = Math.max(2, cellSize * 0.16);
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.shadowColor = "rgba(249, 115, 22, 0.28)";
+			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
 
+			for (let i = 1; i < solution.length; i += 1) {
+				if (i > Math.ceil(visibleSegments)) break;
 
+				const previous = solution[i - 1];
+				const current = solution[i];
+				const segmentProgress = Math.max(
+					0,
+					Math.min(1, visibleSegments - (i - 1))
+				);
 
-	/*
-	 * ============================
-	 * Render
-	 * ============================
-	 */
+				const prevX = previous[1] * stride + cellSize / 2;
+				const prevY = previous[0] * stride + cellSize / 2;
+				const currX = current[1] * stride + cellSize / 2;
+				const currY = current[0] * stride + cellSize / 2;
 
+				const currentX = prevX + (currX - prevX) * segmentProgress;
+				const currentY = prevY + (currY - prevY) * segmentProgress;
+
+				const tintProgress = i / solution.length;
+				const hue = 48 - tintProgress * 36;
+				const lightness = 66 - tintProgress * 12;
+
+				ctx.beginPath();
+				ctx.moveTo(prevX, prevY);
+				ctx.lineTo(currentX, currentY);
+				ctx.strokeStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+				ctx.stroke();
+			}
+
+			if (animationProgress < 1) {
+				raf = requestAnimationFrame(draw);
+			}
+		};
+
+		raf = requestAnimationFrame(draw);
+
+		return () => cancelAnimationFrame(raf);
+	}, [cellSize, gridPixels, solution, stride]);
+
+	const boardBackgroundColor = "#f8fafc";
+	const cellBackgroundColor = "#ffffff";
+	const cellHoverColor = "rgba(249, 115, 22, 0.06)";
+	const wallColor = "#0f172a";
+	const borderColor = "#e5e7eb";
 
 	return (
-
 		<div
 			ref={containerRef}
-			className="
-                flex
-                justify-center
-                w-full
-            "
+			className="flex w-full justify-center select-none"
 		>
-
-
 			<div
-
-				className="
-                    relative
-                    rounded-xl
-                    overflow-hidden
-                    shadow-lg
-                    border
-                    border-border
-                    bg-surface
-                "
-
+				className="relative overflow-hidden rounded-2xl border shadow-xl transition-colors duration-200"
 				style={{
 					width: gridPixels,
-					height: gridPixels
+					height: gridPixels,
+					backgroundColor: boardBackgroundColor,
+					borderColor,
+					backgroundImage:
+						"radial-gradient(circle at top left, rgba(249,115,22,0.06), transparent 40%)"
 				}}
-
 			>
-
-
-
-				{/* Solution layer */}
-
 				<canvas
-
 					ref={canvasRef}
-
-					className="
-                        absolute
-                        inset-0
-                        z-20
-                        pointer-events-none
-                    "
-
+					className="pointer-events-none absolute inset-0 z-20"
 				/>
 
-
-
-
-
-				{/* Grid cells */}
-
 				<div
-
-					className="
-                        grid
-                        w-full
-                        h-full
-                    "
-
+					className="absolute inset-0 z-10 grid"
 					style={{
-						gridTemplateColumns:
-							`repeat(${board.boardSize},1fr)`,
-
-						gridTemplateRows:
-							`repeat(${board.boardSize},1fr)`
+						gap: `${GRID_GAP_PX}px`,
+						gridTemplateColumns: `repeat(${board.boardSize}, minmax(0, 1fr))`,
+						gridTemplateRows: `repeat(${board.boardSize}, minmax(0, 1fr))`
 					}}
-
 				>
+					{Array.from({ length: board.boardSize * board.boardSize }).map((_, index) => {
+						const row = Math.floor(index / board.boardSize);
+						const col = index % board.boardSize;
+						const key = `${row},${col}`;
+						const waypointIndex = waypointIndexByCell.get(key);
+						const isWaypoint = waypointIndex !== undefined;
+						const isHovered = hoveredCell === index;
 
+						const rightWallExists =
+							col < board.boardSize - 1
+								? wallSet.has(getWallKey([row, col], [row, col + 1]))
+								: false;
 
+						const bottomWallExists =
+							row < board.boardSize - 1
+								? wallSet.has(getWallKey([row, col], [row + 1, col]))
+								: false;
 
-					{
-						Array.from(
-							{
-								length:
-									board.boardSize *
-									board.boardSize
-							}
-						)
-							.map((_, index) => {
-
-
-								const row =
-									Math.floor(
-										index /
-										board.boardSize
-									);
-
-
-								const col =
-									index %
-									board.boardSize;
-
-
-
-								const waypoint =
-									getWaypointIndex(
-										row,
-										col
-									);
-
-
-								const hasWaypoint =
-									waypoint !== -1;
-
-
-
-								const hovered =
-									hoveredCell === index;
-
-
-
-								const rightWall =
-									hasWall(
-										row,
-										col,
-										"RIGHT"
-									);
-
-
-								const bottomWall =
-									hasWall(
-										row,
-										col,
-										"BOTTOM"
-									);
-
-
-
-								return (
-
+						return (
+							<div
+								key={index}
+								className={[
+									"relative flex items-center justify-center",
+									"transition-colors duration-150",
+									editMode === "WALLS"
+										? "cursor-default"
+										: "cursor-pointer"
+								].join(" ")}
+								style={{
+									backgroundColor:
+										editMode === "NUMBERS" && isHovered
+											? cellHoverColor
+											: cellBackgroundColor
+								}}
+								onMouseEnter={() => setHoveredCell(index)}
+								onMouseLeave={() => setHoveredCell(null)}
+								onClick={() => {
+									if (editMode === "NUMBERS") {
+										onCellClick([row, col]);
+									}
+								}}
+							>
+								{isWaypoint && (
 									<div
-
-										key={index}
-
-										className={`
-                                        relative
-                                        flex
-                                        items-center
-                                        justify-center
-                                        border
-                                        border-border
-                                        cursor-pointer
-                                        transition-colors
-                                        duration-150
-
-                                        ${hovered &&
-												editMode === "NUMBERS"
-												?
-												"bg-orange-50"
-												:
-												"bg-white"
-											}
-                                    `}
-
-
-										onMouseEnter={() =>
-											setHoveredCell(index)
-										}
-
-
-										onMouseLeave={() =>
-											setHoveredCell(null)
-										}
-
-
-
-										onClick={() => {
-
-											if (
-												editMode === "NUMBERS"
-											) {
-												onCellClick([
-													row,
-													col
-												]);
-											}
-
-										}}
-
-
+										className="flex items-center justify-center rounded-full bg-primary text-white shadow-lg"
 										style={{
-
-											width: cellSize,
-											height: cellSize
-
+											width: Math.round(cellSize * 0.58),
+											height: Math.round(cellSize * 0.58),
+											fontSize: Math.round(cellSize * 0.28),
+											animation: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
 										}}
-
 									>
-
-
-
-
-										{
-											hasWaypoint &&
-
-											<div
-
-												className="
-                                                rounded-full
-                                                bg-primary
-                                                text-white
-                                                flex
-                                                items-center
-                                                justify-center
-                                                font-semibold
-                                            "
-
-												style={{
-
-													width:
-														cellSize * 0.58,
-
-													height:
-														cellSize * 0.58,
-
-													fontSize:
-														cellSize * 0.28
-
-												}}
-
-											>
-
-												{
-													waypoint + 1
-												}
-
-											</div>
-										}
-
-
-
-
-
-
-										{/* Right wall zone */}
-
-										{
-											editMode === "WALLS" &&
-											col < board.boardSize - 1 &&
-
-											<div
-
-												className="
-                                                absolute
-                                                top-0
-                                                bottom-0
-                                                -right-2
-                                                w-4
-                                                z-40
-                                                cursor-pointer
-                                            "
-
-												onClick={(event) => {
-
-													event.stopPropagation();
-
-													onWallClick(
-														createWall(
-															row,
-															col,
-															"RIGHT"
-														)
-													);
-
-												}}
-
-											/>
-
-										}
-
-
-
-
-
-
-										{/* Bottom wall zone */}
-
-										{
-											editMode === "WALLS" &&
-											row < board.boardSize - 1 &&
-
-											<div
-
-												className="
-                                                absolute
-                                                left-0
-                                                right-0
-                                                -bottom-2
-                                                h-4
-                                                z-40
-                                                cursor-pointer
-                                            "
-
-												onClick={(event) => {
-
-													event.stopPropagation();
-
-													onWallClick(
-														createWall(
-															row,
-															col,
-															"BOTTOM"
-														)
-													);
-
-												}}
-
-											/>
-
-										}
-
-
-
-
-
-
-										{/* Wall visuals */}
-
-										{
-											rightWall &&
-
-											<div
-
-												className="
-                                                absolute
-                                                top-0
-                                                bottom-0
-                                                right-0
-                                                w-1
-                                                bg-gray-950
-                                                z-30
-                                            "
-
-											/>
-
-										}
-
-
-
-										{
-											bottomWall &&
-
-											<div
-
-												className="
-                                                absolute
-                                                left-0
-                                                right-0
-                                                bottom-0
-                                                h-1
-                                                bg-gray-950
-                                                z-30
-                                            "
-
-											/>
-
-										}
-
-
-
+										{waypointIndex + 1}
 									</div>
+								)}
 
-								);
+								{editMode === "WALLS" && col < board.boardSize - 1 && !rightWallExists && (
+									<button
+										type="button"
+										aria-label={`Add a wall to the right of cell ${row + 1}, ${col + 1}`}
+										className="absolute right-0 top-0 h-full w-4 cursor-pointer appearance-none border-0 bg-transparent p-0"
+										onClick={(event) => {
+											event.stopPropagation();
+											onWallClick(createWall([row, col], [row, col + 1]));
+										}}
+									>
+										<span
+											className="
+												absolute right-0 top-1/2 h-[52%] w-1.5
+												-translate-y-1/2 translate-x-1/2 rounded-full
+												bg-primary/20 opacity-70
+												shadow-[0_0_12px_rgba(249,115,22,0.18)]
+												transition-opacity duration-200
+												animate-pulse hover:bg-primary/35
+											"
+										/>
+									</button>
+								)}
 
-
-							})
-					}
-
-
-
+								{editMode === "WALLS" && row < board.boardSize - 1 && !bottomWallExists && (
+									<button
+										type="button"
+										aria-label={`Add a wall below cell ${row + 1}, ${col + 1}`}
+										className="absolute bottom-0 left-0 h-4 w-full cursor-pointer appearance-none border-0 bg-transparent p-0"
+										onClick={(event) => {
+											event.stopPropagation();
+											onWallClick(createWall([row, col], [row + 1, col]));
+										}}
+									>
+										<span
+											className="
+												absolute bottom-0 left-1/2 h-1.5 w-[52%]
+												-translate-x-1/2 translate-y-1/2 rounded-full
+												bg-primary/20 opacity-70
+												shadow-[0_0_12px_rgba(249,115,22,0.18)]
+												transition-opacity duration-200
+												animate-pulse hover:bg-primary/35
+											"
+										/>
+									</button>
+								)}
+							</div>
+						);
+					})}
 				</div>
 
+				<div className="pointer-events-none absolute inset-0 z-30">
+					{board.walls.map((wall, index) => {
+						const [aRow, aCol] = wall.neighborA;
+						const [bRow, bCol] = wall.neighborB;
+						const isVertical = aRow === bRow;
+						const renderKey = `${getWallKey(wall.neighborA, wall.neighborB)}-${index}`;
 
+						if (isVertical) {
+							const row = aRow;
+							const leftCell = Math.min(aCol, bCol);
+							const x =
+								leftCell * stride +
+								cellSize -
+								WALL_THICKNESS_PX / 2 +
+								GRID_GAP_PX / 2;
 
+							const y = row * stride + cellSize * 0.12;
+
+							return (
+								<div
+									key={renderKey}
+									className="absolute rounded-full shadow-[0_0_12px_rgba(0,0,0,0.25)]"
+									style={{
+										left: x,
+										top: y,
+										width: WALL_THICKNESS_PX,
+										height: cellSize * 0.76,
+										backgroundColor: wallColor,
+										animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`
+									}}
+								/>
+							);
+						}
+
+						const topCell = Math.min(aRow, bRow);
+						const col = aCol;
+						const x = col * stride + cellSize * 0.12;
+						const y =
+							topCell * stride +
+							cellSize -
+							WALL_THICKNESS_PX / 2 +
+							GRID_GAP_PX / 2;
+
+						return (
+							<div
+								key={renderKey}
+								className="absolute rounded-full shadow-[0_0_12px_rgba(0,0,0,0.25)]"
+								style={{
+									left: x,
+									top: y,
+									width: cellSize * 0.76,
+									height: WALL_THICKNESS_PX,
+									backgroundColor: wallColor,
+									animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`
+								}}
+							/>
+						);
+					})}
+				</div>
 			</div>
-
-
 		</div>
-
 	);
-
 }
