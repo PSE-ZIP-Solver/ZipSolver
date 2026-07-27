@@ -16,16 +16,7 @@ export default function ActionPanel({
 }: ActionPanelProps) {
   return (
     <section
-      className="
-        rounded-2xl
-        border
-        border-gray-200
-        bg-background
-        p-4
-        shadow-sm
-        ring-1
-        ring-black/5
-      "
+      className="panel-card rounded-2xl p-4"
     >
       <div className="flex flex-col gap-3">
 
@@ -73,8 +64,8 @@ export default function ActionPanel({
               gap-2
               rounded-xl
               border
-              border-red-200
-              bg-white
+              border-rose-200
+              bg-white/80
               px-4
               py-3
               text-sm
@@ -82,8 +73,8 @@ export default function ActionPanel({
               text-red-600
               transition-colors
 
-              hover:bg-red-50
-              hover:border-red-300
+              hover:bg-rose-50
+              hover:border-rose-300
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
@@ -104,17 +95,17 @@ export default function ActionPanel({
               gap-2
               rounded-xl
               border
-              border-gray-200
-              bg-white
+              border-board-border
+              bg-white/75
               px-4
               py-3
               text-sm
               font-medium
-              text-gray-700
+              text-text
               transition-colors
 
-              hover:bg-gray-100
-              hover:border-gray-300
+              hover:bg-background
+              hover:border-primary/20
               disabled:cursor-not-allowed
               disabled:opacity-50
             "

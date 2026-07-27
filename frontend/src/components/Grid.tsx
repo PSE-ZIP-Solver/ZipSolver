@@ -184,26 +184,16 @@ export default function Grid({
 		return () => cancelAnimationFrame(raf);
 	}, [cellSize, gridPixels, solution, stride]);
 
-	const boardBackgroundColor = "#f8fafc";
-	const cellBackgroundColor = "#ffffff";
-	const cellHoverColor = "rgba(249, 115, 22, 0.06)";
-	const wallColor = "#0f172a";
-	const borderColor = "#e5e7eb";
-
 	return (
 		<div
 			ref={containerRef}
 			className="flex w-full justify-center select-none"
 		>
 			<div
-				className="relative overflow-hidden rounded-2xl border shadow-xl transition-colors duration-200"
+				className="grid-board relative overflow-hidden rounded-2xl border transition-colors duration-200"
 				style={{
 					width: gridPixels,
 					height: gridPixels,
-					backgroundColor: boardBackgroundColor,
-					borderColor,
-					backgroundImage:
-						"radial-gradient(circle at top left, rgba(249,115,22,0.06), transparent 40%)"
 				}}
 			>
 				<canvas
@@ -212,7 +202,7 @@ export default function Grid({
 				/>
 
 				<div
-					className="absolute inset-0 z-10 grid"
+					className="grid-lines absolute inset-0 z-10 grid"
 					style={{
 						gap: `${GRID_GAP_PX}px`,
 						gridTemplateColumns: `repeat(${board.boardSize}, minmax(0, 1fr))`,
@@ -241,18 +231,16 @@ export default function Grid({
 							<div
 								key={index}
 								className={[
-									"relative flex items-center justify-center",
+									"grid-cell relative flex items-center justify-center",
 									"transition-colors duration-150",
 									editMode === "WALLS"
 										? "cursor-default"
 										: "cursor-pointer"
+									,
+									editMode === "NUMBERS" && isHovered
+										? "grid-cell--hovered"
+										: ""
 								].join(" ")}
-								style={{
-									backgroundColor:
-										editMode === "NUMBERS" && isHovered
-											? cellHoverColor
-											: cellBackgroundColor
-								}}
 								onMouseEnter={() => setHoveredCell(index)}
 								onMouseLeave={() => setHoveredCell(null)}
 								onClick={() => {
@@ -263,7 +251,7 @@ export default function Grid({
 							>
 								{isWaypoint && (
 									<div
-										className="flex items-center justify-center rounded-full bg-primary text-white shadow-lg"
+										className="grid-waypoint flex items-center justify-center rounded-full text-white"
 										style={{
 											width: Math.round(cellSize * 0.58),
 											height: Math.round(cellSize * 0.58),
@@ -346,13 +334,12 @@ export default function Grid({
 							return (
 								<div
 									key={renderKey}
-									className="absolute rounded-full shadow-[0_0_12px_rgba(0,0,0,0.25)]"
+									className="grid-wall absolute rounded-full"
 									style={{
 										left: x,
 										top: y,
 										width: WALL_THICKNESS_PX,
 										height: cellSize * 0.76,
-										backgroundColor: wallColor,
 										animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`
 									}}
 								/>
@@ -371,13 +358,12 @@ export default function Grid({
 						return (
 							<div
 								key={renderKey}
-								className="absolute rounded-full shadow-[0_0_12px_rgba(0,0,0,0.25)]"
+								className="grid-wall absolute rounded-full"
 								style={{
 									left: x,
 									top: y,
 									width: cellSize * 0.76,
 									height: WALL_THICKNESS_PX,
-									backgroundColor: wallColor,
 									animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`
 								}}
 							/>

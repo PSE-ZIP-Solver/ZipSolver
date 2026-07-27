@@ -1,18 +1,93 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
-  --color-primary: #f97316;
-  --color-primary-hover: #ea580c;
+  --color-primary: #ea6a1a;
+  --color-primary-hover: #d85c12;
 
-  --color-background: #ffffff;
-  --color-surface: #f9fafb;
+  --color-background: #fff8ef;
+  --color-surface: #f7ede2;
+  --color-chrome: #f3e3d1;
 
-  --color-text: #111827;
+  --color-text: #2d241b;
 
-  --color-footer-border: #e5e7eb;
-  --color-footer-text: #4a5565;
+  --color-footer-border: #ead8c8;
+  --color-footer-text: #7b6656;
+
+  --color-board-border: #e6d7c6;
+  --color-board-gridline: #e4d1bd;
+  --color-board-cell: #fffdf8;
+  --color-board-cell-hover: #fbe7d3;
+  --color-board-wall: #9f5d30;
+}
+
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.7), transparent 24%),
+    linear-gradient(180deg, #fbf3e8 0%, #f4e8da 100%);
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.grid-board {
+  background-color: var(--color-background);
+  border-color: var(--color-board-border);
+  background-image:
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(251, 244, 236, 0.98));
+  box-shadow: 0 24px 60px rgba(102, 63, 24, 0.11);
+}
+
+.grid-lines {
+  background-color: var(--color-board-gridline);
+}
+
+.grid-cell {
+  background-color: rgba(255, 251, 244, 0.94);
+}
+
+.grid-cell--hovered {
+  background-color: var(--color-board-cell-hover);
+}
+
+.grid-waypoint {
+  background: linear-gradient(180deg, #fb923c, #ea580c);
+  box-shadow: 0 14px 28px rgba(234, 88, 12, 0.24);
+}
+
+.grid-wall {
+  background: linear-gradient(180deg, #c17a43, var(--color-board-wall));
+  box-shadow: 0 0 14px rgba(124, 67, 27, 0.2);
+}
+
+.panel-card {
+  background: rgba(255, 250, 244, 0.86);
+  border: 1px solid rgba(230, 215, 198, 0.9);
+  box-shadow: 0 12px 32px rgba(102, 63, 24, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.panel-card-strong {
+  background: rgba(255, 250, 244, 0.95);
+  border: 1px solid rgba(230, 215, 198, 0.95);
+  box-shadow: 0 24px 64px rgba(102, 63, 24, 0.16);
+  backdrop-filter: blur(14px);
 }
 
 

@@ -57,14 +57,12 @@ export default function HelpModal({
 
           rounded-2xl
           border
-          bg-white
-          shadow-xl
+          panel-card-strong
 
           flex
           flex-col
         "
       >
-        {/* Header */}
         <div
           className="
             flex items-center justify-between
@@ -94,7 +92,7 @@ export default function HelpModal({
               flex items-center justify-center
 
               text-xl
-              hover:bg-gray-100
+              hover:bg-primary/10
               transition-colors
             "
           >
@@ -102,7 +100,6 @@ export default function HelpModal({
           </button>
         </div>
 
-        {/* Content */}
         <div
           className="
             flex-1
@@ -135,7 +132,6 @@ export default function HelpModal({
           ))}
         </div>
 
-        {/* Footer */}
         <div
           className="
             border-t

@@ -1,6 +1,6 @@
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-background 
+    <footer className="bg-chrome 
     border-t border-footer-border 
     py-6 mt-12">
 

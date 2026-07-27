@@ -16,10 +16,11 @@ export default function Navbar({
   return (
     <nav
       className="
-                bg-background
-                shadow-md
+                bg-chrome/90
+                shadow-[0_12px_32px_rgba(102,63,24,0.08)]
                 border-b
                 border-footer-border
+                backdrop-blur-md
             "
     >
 
@@ -128,10 +129,7 @@ export default function Navbar({
             </span>
           </button>
 
-
-
-          {/* TODO: Implement theme context integration */}
-
+          {/* Theme placeholder for future theme switching logic */}
           <button
             className="
                             p-2
@@ -146,7 +144,6 @@ export default function Navbar({
               🌙
             </span>
           </button>
-
         </div>
 
       </div>

@@ -41,96 +41,8 @@ export default function ControlPanel({
 
     return (
         <section
-            className="
-                flex
-                flex-col
-                gap-4
-                rounded-xl
-                bg-surface
-                p-4
-                shadow-sm
-            "
+            className="panel-card flex flex-col gap-4 rounded-xl p-4"
         >
-
-            {/* Grid size selection */}
-
-            <div
-                className="
-                    flex
-                    flex-col
-                    gap-2
-                "
-            >
-
-                <h2
-                    className="
-                        text-sm
-                        font-semibold
-                        text-text
-                    "
-                >
-                    Grid size
-                </h2>
-
-
-                <div
-                    className="
-                        flex
-                        gap-2
-                    "
-                >
-
-                    {availableSizes.map((size) => (
-
-                        <button
-                            key={size}
-                            type="button"
-                            disabled={isSolving}
-                            onClick={() =>
-                                onGridSizeChange(size)
-                            }
-
-                            className={`
-                                rounded-lg
-                                px-4
-                                py-2
-                                text-sm
-                                font-medium
-                                transition-colors
-
-                                ${boardSize === size
-
-                                    ? `
-                                        bg-primary
-                                        text-white
-                                    `
-
-                                    : `
-                                        bg-surface
-                                        text-text
-                                        ring-1
-                                        ring-gray-300
-                                        hover:bg-primary-hover
-                                        hover:text-white
-                                    `
-                                }
-
-                                disabled:cursor-not-allowed
-                                disabled:opacity-50
-                            `}
-                        >
-                            {size}×{size}
-
-                        </button>
-
-                    ))}
-
-                </div>
-
-            </div>
-
-
-
             {/* Edit mode selection */}
 
             <div
@@ -158,7 +70,7 @@ export default function ControlPanel({
                         overflow-hidden
                         rounded-lg
                         ring-1
-                        ring-gray-300
+                        ring-board-border
                     "
                 >
 
@@ -188,7 +100,7 @@ export default function ControlPanel({
                                     `
 
                                     : `
-                                        bg-surface
+                                        bg-background/80
                                         text-text
                                         hover:bg-primary-hover
                                         hover:text-white
@@ -204,6 +116,73 @@ export default function ControlPanel({
                                     ? "Numbers"
                                     : "Walls"
                             }
+
+                        </button>
+
+                    ))}
+
+                </div>
+
+            </div>
+
+
+
+            <div
+                className="
+                    flex
+                    justify-center
+                "
+            >
+
+                <div
+                    className="
+                        flex
+                        gap-2
+                        flex-wrap
+                        justify-center
+                    "
+                >
+
+                    {availableSizes.map((size) => (
+
+                        <button
+                            key={size}
+                            type="button"
+                            disabled={isSolving}
+                            onClick={() =>
+                                onGridSizeChange(size)
+                            }
+
+                            className={`
+                                rounded-lg
+                                px-4
+                                py-2
+                                text-sm
+                                font-medium
+                                transition-colors
+
+                                ${boardSize === size
+
+                                    ? `
+                                        bg-primary
+                                        text-white
+                                    `
+
+                                    : `
+                                        bg-background/80
+                                        text-text
+                                        ring-1
+                                        ring-board-border
+                                        hover:bg-primary-hover
+                                        hover:text-white
+                                    `
+                                }
+
+                                disabled:cursor-not-allowed
+                                disabled:opacity-50
+                            `}
+                        >
+                            {size}×{size}
 
                         </button>
 
