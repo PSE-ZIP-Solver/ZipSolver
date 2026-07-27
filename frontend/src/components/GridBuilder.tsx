@@ -554,7 +554,7 @@ export default function GridBuilder({
 
             {/* --- LEFT COLUMN (Desktop) --- */}
 
-            {/* Grid (top right) */}
+            {/* Grid (top left) */}
             <div className="order-3 lg:order-1 lg:col-start-1">
                 <Grid
                     board={board}
