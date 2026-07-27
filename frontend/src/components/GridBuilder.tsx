@@ -5,6 +5,7 @@ import ControlPanel from "./ControlPanel";
 import DialogPanel from "./DialogPanel";
 import ActionPanel from "./ActionPanel";
 import MetricsPanel from "./MetricsPanel";
+import ExamplesSection from "./ExamplesSection"; // 1. NEUER IMPORT
 
 import {
     type EditMode,
@@ -491,6 +492,19 @@ export default function GridBuilder({
     }
 
 
+    /* 2. NEUE HANDLER-FUNKTION FÜR BEISPIEL-SELEKTION */
+    function handleSelectExample(exampleBoard: BoardConfig, name: string) {
+        setBoard(exampleBoard);
+        setSolution(null);
+        setMetrics(null);
+
+        showMessage(
+            "SUCCESS",
+            `Loaded example: ${name}`
+        );
+    }
+
+
     function showMessage(
         type: AppMessage["type"],
         text: string
@@ -518,6 +532,7 @@ export default function GridBuilder({
      * Grid
      * Actions
      * Metrics
+     * Examples
      *
      */
 
@@ -591,7 +606,7 @@ export default function GridBuilder({
                     order-3
 
                     lg:order-1
-                    lg:row-span-4
+                    lg:col-start-1
                 "
             >
 
@@ -660,6 +675,22 @@ export default function GridBuilder({
                     </div>
                 )
             }
+
+
+            {/* 3. EXAMPLES SECTION */}
+            <div
+                className="
+                    order-6
+
+                    lg:order-5
+                    lg:col-start-1
+                "
+            >
+                <ExamplesSection
+                    currentBoardSize={board.boardSize}
+                    onSelectExample={handleSelectExample}
+                />
+            </div>
 
 
         </div>
