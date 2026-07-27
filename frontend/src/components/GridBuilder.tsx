@@ -550,148 +550,75 @@ export default function GridBuilder({
                 lg:w-[70%]
 
                 lg:grid-cols-[2fr_1fr]
+                lg:items-start
             "
         >
 
+            {/* --- LINKE SPALTE (Desktop) --- */}
 
-            {/* Controls */}
-
-            <div
-                className="
-                    order-1
-                    lg:order-2
-                "
-            >
-
-                <ControlPanel
-                    boardSize={board.boardSize}
-                    editMode={editMode}
-                    isSolving={isSolving}
-
-                    onGridSizeChange={
-                        handleGridSizeChange
-                    }
-
-                    onEditModeChange={
-                        setEditMode
-                    }
-                />
-
-            </div>
-
-
-
-            {/* Dialog */}
-
-            <div
-                className="
-                    order-2
-
-                    lg:order-2
-                "
-            >
-
-                <DialogPanel
-                    message={message}
-                />
-
-            </div>
-
-
-
-            {/* Grid */}
-
-            <div
-                className="
-                    order-3
-
-                    lg:order-1
-                    lg:col-start-1
-                "
-            >
-
+            {/* Grid (Oben links) */}
+            <div className="order-3 lg:order-1 lg:col-start-1">
                 <Grid
                     board={board}
                     solution={solution}
                     editMode={editMode}
-
-                    onCellClick={
-                        handleCellClick
-                    }
-
-                    onWallClick={
-                        handleWallClick
-                    }
+                    onCellClick={handleCellClick}
+                    onWallClick={handleWallClick}
                 />
-
             </div>
 
-
-
-            {/* Actions */}
-
-            <div
-                className="
-                    order-4
-
-                    lg:order-3
-                "
-            >
-
-                <ActionPanel
-                    canSolve={board.waypoints.length >= 2}
-
-                    isSolving={isSolving}
-
-                    onSolve={
-                        handleSolve
-                    }
-
-                    onReset={
-                        handleReset
-                    }
-
-                    onShare={
-                        handleShare
-                    }
-                />
-
-            </div>
-
-
-            {/* Metrics */}
-
-            {
-                advancedMode && (
-                    <div
-                        className="
-                order-5
-                lg:order-4
-            "
-                    >
-                        <MetricsPanel
-                            metrics={metrics}
-                        />
-                    </div>
-                )
-            }
-
-
-            {/* 3. EXAMPLES SECTION */}
-            <div
-                className="
-                    order-6
-
-                    lg:order-5
-                    lg:col-start-1
-                "
-            >
+            {/* Examples Section (Unten links, direkt unter dem Grid) */}
+            <div className="order-6 lg:order-2 lg:col-start-1">
                 <ExamplesSection
                     currentBoardSize={board.boardSize}
                     onSelectExample={handleSelectExample}
                 />
             </div>
 
+
+            {/* --- RECHTE SPALTE (Desktop Wrapper) --- */}
+            
+            {/* 
+                Auf Desktop (lg) fassen wir alle rechten Panels in einer Spalte zusammen.
+                Dadurch rücken Dialog, Actions & Metrics direkt unter das ControlPanel!
+            */}
+            <div className="contents lg:flex lg:flex-col lg:gap-4 lg:col-start-2 lg:row-span-2 lg:order-1">
+
+                {/* Controls */}
+                <div className="order-1">
+                    <ControlPanel
+                        boardSize={board.boardSize}
+                        editMode={editMode}
+                        isSolving={isSolving}
+                        onGridSizeChange={handleGridSizeChange}
+                        onEditModeChange={setEditMode}
+                    />
+                </div>
+
+                {/* Dialog (Rückt jetzt direkt unter das ControlPanel) */}
+                <div className="order-2">
+                    <DialogPanel message={message} />
+                </div>
+
+                {/* Actions */}
+                <div className="order-4 lg:order-3">
+                    <ActionPanel
+                        canSolve={board.waypoints.length >= 2}
+                        isSolving={isSolving}
+                        onSolve={handleSolve}
+                        onReset={handleReset}
+                        onShare={handleShare}
+                    />
+                </div>
+
+                {/* Metrics */}
+                {advancedMode && (
+                    <div className="order-5 lg:order-4">
+                        <MetricsPanel metrics={metrics} />
+                    </div>
+                )}
+
+            </div>
 
         </div>
     );
