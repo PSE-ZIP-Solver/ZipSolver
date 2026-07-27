@@ -4,8 +4,7 @@ interface ActionPanelProps {
 
   onSolve: () => void;
   onReset: () => void;
-  onImport: () => void;
-  onExport: () => void;
+  onShare: () => void;
 }
 
 export default function ActionPanel({
@@ -13,100 +12,43 @@ export default function ActionPanel({
   isSolving,
   onSolve,
   onReset,
-  onImport,
-  onExport,
+  onShare,
 }: ActionPanelProps) {
   return (
     <section
       className="
-        rounded-xl
+        rounded-2xl
         border
-        border-gray-300
-        bg-white
+        border-gray-200
+        bg-background
         p-4
         shadow-sm
+        ring-1
+        ring-black/5
       "
     >
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={onImport}
-          disabled={isSolving}
-          className="
-            rounded-lg
-            border
-            border-gray-300
-            px-4
-            py-2
-            text-sm
-            font-medium
-            transition-colors
-
-            hover:bg-gray-100
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          Import
-        </button>
-
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={isSolving}
-          className="
-            rounded-lg
-            border
-            border-gray-300
-            px-4
-            py-2
-            text-sm
-            font-medium
-            transition-colors
-
-            hover:bg-gray-100
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          Export
-        </button>
-
-        <button
-          type="button"
-          onClick={onReset}
-          disabled={isSolving}
-          className="
-            rounded-lg
-            border
-            border-red-300
-            px-4
-            py-2
-            text-sm
-            font-medium
-            text-red-600
-            transition-colors
-
-            hover:bg-red-50
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
-        >
-          Reset
-        </button>
+      <div className="flex flex-col gap-3">
 
         <button
           type="button"
           onClick={onSolve}
           disabled={!canSolve || isSolving}
           className="
-            rounded-lg
+            flex
+            min-h-14
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
             bg-primary
-            px-4
-            py-2
-            text-sm
+            px-5
+            py-4
+            text-base
             font-semibold
             text-white
+            shadow-sm
+            shadow-orange-500/20
             transition-colors
 
             hover:bg-primary-hover
@@ -114,9 +56,129 @@ export default function ActionPanel({
             disabled:opacity-50
           "
         >
+          <SolveIcon />
           {isSolving ? "Solving..." : "Solve"}
         </button>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={isSolving}
+            className="
+              flex
+              w-full
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              border
+              border-red-200
+              bg-white
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-red-600
+              transition-colors
+
+              hover:bg-red-50
+              hover:border-red-300
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
+          >
+            <ResetIcon />
+            Reset
+          </button>
+
+          <button
+            type="button"
+            onClick={onShare}
+            disabled={isSolving}
+            className="
+              flex
+              w-full
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              border
+              border-gray-200
+              bg-white
+              px-4
+              py-3
+              text-sm
+              font-medium
+              text-gray-700
+              transition-colors
+
+              hover:bg-gray-100
+              hover:border-gray-300
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
+          >
+            <ShareIcon />
+            Share
+          </button>
+        </div>
+
       </div>
     </section>
+  );
+}
+
+function SolveIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z" />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+      <path d="M16 6l-4-4-4 4" />
+      <path d="M12 2v14" />
+    </svg>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Grid from "./Grid";
 import ControlPanel from "./ControlPanel";
@@ -29,6 +29,12 @@ import {
 import {
     solvePuzzle,
 } from "../api/apiCalls";
+
+import {
+    clearSharedBoardFromUrl,
+    createShareUrl,
+    loadBoardFromSearch,
+} from "../utils/boardShareService";
 
 
 interface GridBuilderProps {
@@ -84,6 +90,43 @@ export default function GridBuilder({
         useState(false);
 
 
+    const sharedBoardLoadedRef =
+        useRef(false);
+
+    useEffect(() => {
+
+        if (sharedBoardLoadedRef.current)
+            return;
+
+        sharedBoardLoadedRef.current = true;
+
+
+        const sharedBoard =
+            loadBoardFromSearch(
+                window.location.search
+            );
+
+
+        if (!sharedBoard)
+            return;
+
+
+        setBoard(sharedBoard);
+
+        setSolution(null);
+        setMetrics(null);
+
+
+        clearSharedBoardFromUrl();
+
+
+        showMessage(
+            "SUCCESS",
+            "Board loaded from shared link"
+        );
+
+    }, []);
+
 
     /*
      * ============================
@@ -108,7 +151,6 @@ export default function GridBuilder({
             `Grid size changed to ${size}`
         );
     }
-
 
 
     function handleCellClick(
@@ -381,11 +423,11 @@ export default function GridBuilder({
 
     function handleReset() {
 
-        setBoard({
-            boardSize: 6,
+        setBoard(previous => ({
+            boardSize: previous.boardSize,
             waypoints: [],
             walls: []
-        });
+        }));
 
 
         setSolution(null);
@@ -399,15 +441,54 @@ export default function GridBuilder({
 
     }
 
-    function handleImport() {
-        // TODO
+
+    async function handleShare() {
+
+        if (
+            board.waypoints.length === 0 &&
+            board.walls.length === 0
+        ) {
+
+            showMessage(
+                "WARNING",
+                "Nothing to share"
+            );
+
+            return;
+        }
+
+        const shareUrl = createShareUrl(board);
+
+        try {
+
+            await navigator.clipboard.writeText(
+                shareUrl
+            );
+
+            showMessage(
+                "SUCCESS",
+                "Share link copied to clipboard"
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            window.prompt(
+                "Copy this share link:",
+                shareUrl
+            );
+
+            showMessage(
+                "WARNING",
+                "Clipboard access denied. Share link opened manually."
+            );
+
+        }
+
     }
-
-
-    function handleExport() {
-        // TODO
-    }
-
 
 
     function showMessage(
@@ -555,12 +636,8 @@ export default function GridBuilder({
                         handleReset
                     }
 
-                    onImport={
-                        handleImport
-                    }
-
-                    onExport={
-                        handleExport
+                    onShare={
+                        handleShare
                     }
                 />
 
