@@ -39,11 +39,11 @@ export default function ExampleCard({
     );
 }
 
-// Hilfskomponente für das Vorschau-Gitter inklusive Wände
+// Helper for displaying the mini grid
 function MiniGridPreview({ config }: { config: BoardConfig }) {
     const size = config.boardSize;
 
-    // Prüft, ob eine Wand existiert
+    // checks if a wall exists
     const hasWall = (r: number, c: number, direction: 'right' | 'bottom') => {
         const nextR = direction === 'bottom' ? r + 1 : r;
         const nextC = direction === 'right' ? c + 1 : c;
@@ -62,7 +62,7 @@ function MiniGridPreview({ config }: { config: BoardConfig }) {
         });
     };
 
-    // Dynamische Klassen je nach Grid-Größe für perfekte Lesbarkeit
+    // The size of the waypoints gets adjusted dynamically for the preview
     const badgeSizeClass = size === 8 
         ? "w-2.5 h-2.5 text-[7px]" 
         : size === 7 
@@ -91,17 +91,17 @@ function MiniGridPreview({ config }: { config: BoardConfig }) {
                 return (
                     <div key={idx} className="bg-white relative flex items-center justify-center">
                         
-                        {/* Rechte Wand */}
+                        {/* right wall */}
                         {wallRight && (
                             <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-slate-800 z-20 translate-x-1/2 pointer-events-none" />
                         )}
 
-                        {/* Untere Wand */}
+                        {/* bottom wall */}
                         {wallBottom && (
                             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-slate-800 z-20 translate-y-1/2 pointer-events-none" />
                         )}
 
-                        {/* Waypoint Badge (Skaliert jetzt dynamisch) */}
+                        {/* Waypoint Badge */}
                         {wpIndex !== -1 && (
                             <span 
                                 className={`

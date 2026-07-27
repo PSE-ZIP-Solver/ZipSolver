@@ -5,7 +5,7 @@ import ControlPanel from "./ControlPanel";
 import DialogPanel from "./DialogPanel";
 import ActionPanel from "./ActionPanel";
 import MetricsPanel from "./MetricsPanel";
-import ExamplesSection from "./ExamplesSection"; // 1. NEUER IMPORT
+import ExamplesSection from "./ExamplesSection"; 
 
 import {
     type EditMode,
@@ -492,7 +492,7 @@ export default function GridBuilder({
     }
 
 
-    /* 2. NEUE HANDLER-FUNKTION FÜR BEISPIEL-SELEKTION */
+    
     function handleSelectExample(exampleBoard: BoardConfig, name: string) {
         setBoard(exampleBoard);
         setSolution(null);
@@ -535,8 +535,6 @@ export default function GridBuilder({
      * Examples
      *
      */
-
-
     return (
 
         <div
@@ -554,9 +552,9 @@ export default function GridBuilder({
             "
         >
 
-            {/* --- LINKE SPALTE (Desktop) --- */}
+            {/* --- LEFT COLUMN (Desktop) --- */}
 
-            {/* Grid (Oben links) */}
+            {/* Grid (top right) */}
             <div className="order-3 lg:order-1 lg:col-start-1">
                 <Grid
                     board={board}
@@ -567,7 +565,7 @@ export default function GridBuilder({
                 />
             </div>
 
-            {/* Examples Section (Unten links, direkt unter dem Grid) */}
+            {/* Examples Section (bottom left, under grid) */}
             <div className="order-6 lg:order-2 lg:col-start-1">
                 <ExamplesSection
                     currentBoardSize={board.boardSize}
@@ -576,12 +574,8 @@ export default function GridBuilder({
             </div>
 
 
-            {/* --- RECHTE SPALTE (Desktop Wrapper) --- */}
+            {/* --- RIGHT COLUMN (Desktop Wrapper) --- */}
             
-            {/* 
-                Auf Desktop (lg) fassen wir alle rechten Panels in einer Spalte zusammen.
-                Dadurch rücken Dialog, Actions & Metrics direkt unter das ControlPanel!
-            */}
             <div className="contents lg:flex lg:flex-col lg:gap-4 lg:col-start-2 lg:row-span-2 lg:order-1">
 
                 {/* Controls */}
@@ -595,7 +589,7 @@ export default function GridBuilder({
                     />
                 </div>
 
-                {/* Dialog (Rückt jetzt direkt unter das ControlPanel) */}
+                {/* Dialog */}
                 <div className="order-2">
                     <DialogPanel message={message} />
                 </div>
