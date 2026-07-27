@@ -5,6 +5,7 @@ import ControlPanel from "./ControlPanel";
 import DialogPanel from "./DialogPanel";
 import ActionPanel from "./ActionPanel";
 import MetricsPanel from "./MetricsPanel";
+import ExamplesSection from "./ExamplesSection"; 
 
 import {
     type EditMode,
@@ -491,6 +492,19 @@ export default function GridBuilder({
     }
 
 
+    
+    function handleSelectExample(exampleBoard: BoardConfig, name: string) {
+        setBoard(exampleBoard);
+        setSolution(null);
+        setMetrics(null);
+
+        showMessage(
+            "SUCCESS",
+            `Loaded example: ${name}`
+        );
+    }
+
+
     function showMessage(
         type: AppMessage["type"],
         text: string
@@ -518,10 +532,9 @@ export default function GridBuilder({
      * Grid
      * Actions
      * Metrics
+     * Examples
      *
      */
-
-
     return (
 
         <div
@@ -535,132 +548,71 @@ export default function GridBuilder({
                 lg:w-[70%]
 
                 lg:grid-cols-[2fr_1fr]
+                lg:items-start
             "
         >
 
+            {/* --- LEFT COLUMN (Desktop) --- */}
 
-            {/* Controls */}
-
-            <div
-                className="
-                    order-1
-                    lg:order-2
-                "
-            >
-
-                <ControlPanel
-                    boardSize={board.boardSize}
-                    editMode={editMode}
-                    isSolving={isSolving}
-
-                    onGridSizeChange={
-                        handleGridSizeChange
-                    }
-
-                    onEditModeChange={
-                        setEditMode
-                    }
-                />
-
-            </div>
-
-
-
-            {/* Dialog */}
-
-            <div
-                className="
-                    order-2
-
-                    lg:order-2
-                "
-            >
-
-                <DialogPanel
-                    message={message}
-                />
-
-            </div>
-
-
-
-            {/* Grid */}
-
-            <div
-                className="
-                    order-3
-
-                    lg:order-1
-                    lg:row-span-4
-                "
-            >
-
+            {/* Grid (top left) */}
+            <div className="order-3 lg:order-1 lg:col-start-1">
                 <Grid
                     board={board}
                     solution={solution}
                     editMode={editMode}
-
-                    onCellClick={
-                        handleCellClick
-                    }
-
-                    onWallClick={
-                        handleWallClick
-                    }
+                    onCellClick={handleCellClick}
+                    onWallClick={handleWallClick}
                 />
+            </div>
 
+            {/* Examples Section (bottom left, under grid) */}
+            <div className="order-6 lg:order-2 lg:col-start-1">
+                <ExamplesSection
+                    currentBoardSize={board.boardSize}
+                    onSelectExample={handleSelectExample}
+                />
             </div>
 
 
+            {/* --- RIGHT COLUMN (Desktop Wrapper) --- */}
+            
+            <div className="contents lg:flex lg:flex-col lg:gap-4 lg:col-start-2 lg:row-span-2 lg:order-1">
 
-            {/* Actions */}
+                {/* Controls */}
+                <div className="order-1">
+                    <ControlPanel
+                        boardSize={board.boardSize}
+                        editMode={editMode}
+                        isSolving={isSolving}
+                        onGridSizeChange={handleGridSizeChange}
+                        onEditModeChange={setEditMode}
+                    />
+                </div>
 
-            <div
-                className="
-                    order-4
+                {/* Dialog */}
+                <div className="order-2">
+                    <DialogPanel message={message} />
+                </div>
 
-                    lg:order-3
-                "
-            >
+                {/* Actions */}
+                <div className="order-4 lg:order-3">
+                    <ActionPanel
+                        canSolve={board.waypoints.length >= 2}
+                        isSolving={isSolving}
+                        onSolve={handleSolve}
+                        onReset={handleReset}
+                        onShare={handleShare}
+                    />
+                </div>
 
-                <ActionPanel
-                    canSolve={board.waypoints.length >= 2}
-
-                    isSolving={isSolving}
-
-                    onSolve={
-                        handleSolve
-                    }
-
-                    onReset={
-                        handleReset
-                    }
-
-                    onShare={
-                        handleShare
-                    }
-                />
-
-            </div>
-
-
-            {/* Metrics */}
-
-            {
-                advancedMode && (
-                    <div
-                        className="
-                order-5
-                lg:order-4
-            "
-                    >
-                        <MetricsPanel
-                            metrics={metrics}
-                        />
+                {/* Metrics */}
+                {advancedMode && (
+                    <div className="order-5 lg:order-4">
+                        <MetricsPanel metrics={metrics} />
                     </div>
-                )
-            }
+                )}
 
+            </div>
 
         </div>
     );
