@@ -128,7 +128,7 @@ class BackendAPI:
 
         solved = result.status == SolverStatus.SOLVED
         path = (
-            [(p.getX, p.getY) for p in result.path.getPostions]
+            [(p.getX, p.getY) for p in result.path.getPositions]
             if (solved and result.path is not None)
             else None
         )
