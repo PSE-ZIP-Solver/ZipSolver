@@ -1,12 +1,11 @@
 import pytest
 from unittest.mock import MagicMock
-# Adjust these imports according to your actual project structure
 from backend.puzzle_logic.board import Board
-from solution_path import SolutionPath
+from backend.solution_path import SolutionPath
 from backend.solving_process.solver_status import SolverStatus
 from backend.solving_process.solver_metrics import SolverMetrics
 from backend.solving_process.solver_result import SolverResult
-from validation_result import ValidationResult
+from backend.validation_result import ValidationResult
 from backend.solving_process.solver_controller import SolverController
 
 
