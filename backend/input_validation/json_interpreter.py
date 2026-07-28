@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, Union
 
 
 from backend.puzzle_logic.board import Board
@@ -181,14 +181,3 @@ class JsonInterpreter:
             seen_walls.add(key)
 
         return True
-
-
-test = JsonInterpreter()
-print(test.verifySyntax("/Users/vincent/Library/Application Support/JetBrains/PyCharm2026.1/scratches/scratch.json"))
-board = test.buildBoard("/Users/vincent/Library/Application Support/JetBrains/PyCharm2026.1/scratches/scratch.json")
-print(board.getSize)
-for wp in board.getWaypoints:
-    print(wp.getPosition.getX, wp.getPosition.getY, wp.getOrder)
-
-for wall in board.getWalls:
-    print(wall.getCellA.getX, wall.getCellA.getY, "+",wall.getCellB.getX, wall.getCellB.getY)
