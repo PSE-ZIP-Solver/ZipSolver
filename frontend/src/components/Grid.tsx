@@ -318,7 +318,13 @@ export default function Grid({
 						const [aRow, aCol] = wall.neighborA;
 						const [bRow, bCol] = wall.neighborB;
 						const isVertical = aRow === bRow;
-						const renderKey = `${getWallKey(wall.neighborA, wall.neighborB)}-${index}`;
+						const renderKey = getWallKey(
+							wall.neighborA,
+							wall.neighborB
+						);
+						const wallLabel = isVertical
+							? `Remove the wall between cells ${aRow + 1}, ${Math.min(aCol, bCol) + 1} and ${aRow + 1}, ${Math.max(aCol, bCol) + 1}`
+							: `Remove the wall between cells ${Math.min(aRow, bRow) + 1}, ${aCol + 1} and ${Math.max(aRow, bRow) + 1}, ${aCol + 1}`;
 
 						if (isVertical) {
 							const row = aRow;
@@ -334,13 +340,21 @@ export default function Grid({
 							return (
 								<div
 									key={renderKey}
-									className="grid-wall absolute rounded-full"
+									role="button"
+									aria-label={wallLabel}
+									className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-200"
 									style={{
 										left: x,
 										top: y,
 										width: WALL_THICKNESS_PX,
 										height: cellSize * 0.76,
-										animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`
+										animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`,
+										pointerEvents: editMode === "WALLS" ? "auto" : "none"
+									}}
+									onClick={() => {
+										if (editMode === "WALLS") {
+											onWallClick(wall);
+										}
 									}}
 								/>
 							);
@@ -358,13 +372,21 @@ export default function Grid({
 						return (
 							<div
 								key={renderKey}
-								className="grid-wall absolute rounded-full"
+								role="button"
+								aria-label={wallLabel}
+								className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-200"
 								style={{
 									left: x,
 									top: y,
 									width: cellSize * 0.76,
 									height: WALL_THICKNESS_PX,
-									animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`
+									animation: `zip-wall-in 180ms ease-out ${index * 18}ms both`,
+									pointerEvents: editMode === "WALLS" ? "auto" : "none"
+								}}
+								onClick={() => {
+									if (editMode === "WALLS") {
+										onWallClick(wall);
+									}
 								}}
 							/>
 						);
