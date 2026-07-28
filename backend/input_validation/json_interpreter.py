@@ -32,7 +32,9 @@ class JsonInterpreter:
     """
 
     ALLOWED_BOARD_SIZES = (6, 7, 8)
-
+    
+    
+    @staticmethod
     def verifySyntax(self, file: Union[str, dict, Any]) -> bool:
         """
         Takes a json file (path, open file object, or already-parsed dict)
@@ -71,7 +73,8 @@ class JsonInterpreter:
             return False
 
         return True
-
+    
+    @staticmethod
     def buildBoard(self, file: Union[str, dict, Any]) -> Board:
         """
         Takes a json file (path, open file object, or already-parsed dict),
@@ -95,8 +98,8 @@ class JsonInterpreter:
 
         return board
 
-    # ---------- internal helpers ----------
 
+    @staticmethod
     def _load(self, arg: Union[str, dict, Any]) -> Dict[str, Any]:
         """Accepts a file path (str), an open file-like object, or a dict."""
         if isinstance(arg, dict):
@@ -108,10 +111,12 @@ class JsonInterpreter:
             content = arg.read()
             return json.loads(content)
         raise TypeError(f"Unsupported argument type for json file: {type(arg)}")
-
+    
+    @staticmethod
     def _validate_board_size(self, board_size: Any) -> bool:
         return board_size in self.ALLOWED_BOARD_SIZES
-
+    
+    @staticmethod
     def _is_valid_point(self, point: Any, board_size: int) -> bool:
         if not isinstance(point, (list, tuple)) or len(point) != 2:
             return False
@@ -121,6 +126,7 @@ class JsonInterpreter:
             return False
         return 0 <= x < board_size-1 and 0 <= y < board_size-1
 
+    @staticmethod
     def _validate_waypoints(self, waypoints: Any, board_size: int) -> bool:
         if not isinstance(waypoints, list):
             return False
@@ -140,6 +146,7 @@ class JsonInterpreter:
 
         return True
 
+    @staticmethod
     def _validate_walls(self, walls: Any, board_size: int) -> bool:
         if not isinstance(walls, list):
             return False
