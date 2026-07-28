@@ -465,7 +465,7 @@ class TestInternalToApiConsistency:
         for x, y in [(0, 0), (1, 0), (1, 1)]:
             path.add(Position(x, y))
 
-        assert [(p.getX, p.getY) for p in path.getPostions] == [(0, 0), (1, 0), (1, 1)]
+        assert [(p.getX, p.getY) for p in path.getPositions] == [(0, 0), (1, 0), (1, 1)]
 
 
 if __name__ == "__main__":

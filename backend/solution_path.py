@@ -9,5 +9,5 @@ class SolutionPath:
         self._positions.append(position)
 
     @property
-    def getPostions(self) -> List[Position]:
+    def getPositions(self) -> List[Position]:
         return self._positions

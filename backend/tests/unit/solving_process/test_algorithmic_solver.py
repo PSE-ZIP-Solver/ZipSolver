@@ -33,7 +33,7 @@ def verify_valid_hamiltonian_path(board: Board, path_obj: SolutionPath) -> bool:
     Validates length, uniqueness, adjacency, walls, and waypoints
     using the provided SolutionPath.getPostions property.
     """
-    positions = path_obj.getPostions
+    positions = path_obj.getPositions
     
     if not positions:
         return False
