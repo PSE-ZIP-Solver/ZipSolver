@@ -33,53 +33,65 @@ class AlgorithmicSolver(Solver):
 
     def _heuristic(self, current: Position, waypoints: List[Waypoint], next_wp_idx: int) -> int:
         if next_wp_idx < len(waypoints):
+            # 1. Distance to the immediate next waypoint
             target_pos = waypoints[next_wp_idx].getPosition
-            return abs(current.getX - target_pos.getX) + abs(current.getY - target_pos.getY)
+            h = abs(current.getX - target_pos.getX) + abs(current.getY - target_pos.getY)
+            
+            # [CRITICAL FIX]: Add Manhattan distances of all subsequent waypoints.
+            # This prevents the f-score from suddenly spiking when reaching a subgoal,
+            # which would cause the Priority Queue to abandon the correct path.
+            for i in range(next_wp_idx, len(waypoints) - 1):
+                p1 = waypoints[i].getPosition
+                p2 = waypoints[i+1].getPosition
+                h += abs(p1.getX - p2.getX) + abs(p1.getY - p2.getY)
+                
+            return h
         return 0
-
+    
     def _is_viable_state(self, visited_mask: int, board_size: int, total_cells: int, adj_list: Dict[Position, List[Position]]) -> bool:
         """
         Optimized Flood-Fill and Dead-End Detection using O(1) Adjacency Lookups.
         """
+        # [CRITICAL FIX]: Use native C-level bit_count() instead of bin().count()
+        # Eliminates massive string-allocation garbage collection overhead in the A* loop.
+        expected_unvisited = total_cells - visited_mask.bit_count()
+        
+        if expected_unvisited == 0:
+            return True
+
         start_node = None
         dead_end_count = 0
         
-        # 1. Global dead-end evaluation
-        for y in range(board_size):
-            for x in range(board_size):
-                p = Position(x, y)
-                bit_idx = self._get_bit_index(p, board_size)
-                
-                if (visited_mask & (1 << bit_idx)) == 0:
-                    if not start_node:
-                        start_node = p
+        for p, neighbors in adj_list.items():
+            bit_idx = self._get_bit_index(p, board_size)
+            
+            if (visited_mask & (1 << bit_idx)) == 0:
+                if not start_node:
+                    start_node = p
+                    
+                exits = 0
+                for n in neighbors:
+                    if (visited_mask & (1 << self._get_bit_index(n, board_size))) == 0:
+                        exits += 1
                         
-                    exits = 0
-                    # Uses precomputed adjacency list for O(1) speed
-                    for n in adj_list[p]:
-                        if (visited_mask & (1 << self._get_bit_index(n, board_size))) == 0:
-                            exits += 1
-                            
-                    if exits == 0:
-                        return False
-                    if exits == 1:
-                        dead_end_count += 1
+                if exits == 0 and expected_unvisited > 1:
+                    return False
+                
+                if exits == 1:
+                    dead_end_count += 1
 
         if not start_node:
             return True
             
-        # CRITICAL FIX: A valid unvisited path can have up to TWO ends.
-        # If it has 3 or more dead ends (e.g. a T-Junction), it's impossible.
         if dead_end_count > 2:
             return False
 
-        # 2. Flood Fill using high-performance Deque
         queue = deque([start_node])
         reachable_mask = (1 << self._get_bit_index(start_node, board_size))
         reachable_count = 1
         
         while queue:
-            curr = queue.popleft() # O(1) pop
+            curr = queue.popleft() 
             for neighbor in adj_list[curr]:
                 n_idx = self._get_bit_index(neighbor, board_size)
                 if (visited_mask & (1 << n_idx)) == 0 and (reachable_mask & (1 << n_idx)) == 0:
@@ -87,9 +99,8 @@ class AlgorithmicSolver(Solver):
                     reachable_count += 1
                     queue.append(neighbor)
 
-        expected_unvisited = total_cells - bin(visited_mask).count('1')
         return reachable_count == expected_unvisited
-
+    
     def _reconstruct_path(self, end_node: SearchNode) -> SolutionPath:
         positions = []
         curr = end_node
