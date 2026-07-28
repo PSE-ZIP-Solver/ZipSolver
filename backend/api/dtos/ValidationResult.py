@@ -7,7 +7,7 @@ class ValidationError(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     error_code: str = Field(..., alias="errorCode")
-    affected_field: str | None = Field(None, alias="affectedField")
+    affected_field: str | None = Field(default=None, alias="affectedField")
     message: str
 
 

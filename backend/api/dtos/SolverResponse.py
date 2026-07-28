@@ -18,7 +18,7 @@ class SolverResponse(BaseModel):
 
     status: SolverStatus
     success: bool
-    solution_path: list[Coordinate] | None = Field(None, alias="solutionPath")
-    solver_used: str | None = Field(None, alias="solverUsed")  # "RL" | "DFS" | None
+    solution_path: list[Coordinate] | None = Field(default=None, alias="solutionPath")
+    solver_used: str | None = Field(default=None, alias="solverUsed")  # "RL" | "DFS" | None
     message: str = ""
     metrics: SolverMetrics
