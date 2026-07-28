@@ -23,7 +23,7 @@ import pytest
 from backend.api.dtos.ValidationResult import ValidationError
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 
-from .conftest import VALID_BODY, make_path, make_solver_result, make_validation_result
+from backend.tests.api.conftest import VALID_BODY, make_path, make_solver_result, make_validation_result
 
 ERROR_ENVELOPE_KEYS = {"status", "code", "message", "details", "timestamp"}
 ENDPOINTS = [("POST", "/api/solve"), ("POST", "/api/import")]
@@ -448,3 +448,14 @@ def test_solver_status_non_results_are_never_http_errors(client, solver_controll
         response = client.post("/api/solve", json=VALID_BODY)
         assert response.status_code == 200, f"{status.value} must not be an HTTP error"
         assert set(response.json()) != ERROR_ENVELOPE_KEYS
+
+
+if __name__ == "__main__":
+    # Running this file directly (e.g. VS Code's "Run Python File" button) would
+    # otherwise define the test functions and exit without executing anything.
+    # Delegate to pytest so the play button behaves as expected.
+    import sys
+
+    import pytest
+
+    sys.exit(pytest.main([__file__, "-v"]))

@@ -466,3 +466,14 @@ class TestInternalToApiConsistency:
             path.add(Position(x, y))
 
         assert [(p.getX, p.getY) for p in path.getPostions] == [(0, 0), (1, 0), (1, 1)]
+
+
+if __name__ == "__main__":
+    # Running this file directly (e.g. VS Code's "Run Python File" button) would
+    # otherwise define the test functions and exit without executing anything.
+    # Delegate to pytest so the play button behaves as expected.
+    import sys
+
+    import pytest
+
+    sys.exit(pytest.main([__file__, "-v"]))

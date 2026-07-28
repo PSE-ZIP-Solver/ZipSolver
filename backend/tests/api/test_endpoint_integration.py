@@ -15,7 +15,7 @@ import pytest
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 from backend.api.version import API_VERSION
 
-from .conftest import (
+from backend.tests.api.conftest import (
     REFERENCE_BOARD,
     VALID_BODY,
     make_path,

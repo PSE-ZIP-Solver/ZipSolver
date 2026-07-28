@@ -20,7 +20,7 @@ import pytest
 
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 
-from .conftest import (
+from backend.tests.api.conftest import (
     VALID_BODY,
     make_path,
     make_solver_result,
@@ -292,3 +292,14 @@ def test_architecture_is_read_only_across_repeated_calls(client, architecture_pr
 
     assert first == second
     assert architecture_provider.collect.call_count == 2
+
+
+if __name__ == "__main__":
+    # Running this file directly (e.g. VS Code's "Run Python File" button) would
+    # otherwise define the test functions and exit without executing anything.
+    # Delegate to pytest so the play button behaves as expected.
+    import sys
+
+    import pytest
+
+    sys.exit(pytest.main([__file__, "-v"]))
