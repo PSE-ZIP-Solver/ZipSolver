@@ -52,7 +52,7 @@ class RLAgent:
         )
 
         if model_path is not None:
-            self._model = self.load(model_path)
+            self._model = self.load(model_path, **dqn_kwargs)
         else:
             dqn_kwargs.setdefault("exploration_initial_eps", 1.0)
             dqn_kwargs.setdefault("exploration_final_eps", 0.05)
@@ -110,7 +110,7 @@ class RLAgent:
         """Save the trained model to disk."""
         self._model.save(path)
 
-    def load(self, path: str) -> sb.DQN:
+    def load(self, path: str, **dqn_kwargs) -> sb.DQN:
         """Load a trained model from disk."""
         custom_objects = {
             "policy_kwargs": self.policy_kwargs,
@@ -121,6 +121,7 @@ class RLAgent:
             env=self._env,
             custom_objects=custom_objects,
             device="auto",
+            **dqn_kwargs,
         )
 
     def solve(

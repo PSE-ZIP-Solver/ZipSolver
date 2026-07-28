@@ -15,7 +15,6 @@ class BoardSamplingEnv(gym.Env):
 
     def __init__(self, boards: list[Board]):
         super().__init__()
-
         if not boards:
             raise ValueError("BoardSamplingEnv needs at least one board.")
 
@@ -23,14 +22,12 @@ class BoardSamplingEnv(gym.Env):
         # This is faster than creating a new RLEnvironment on every reset.
         self.envs = [RLEnvironment(board) for board in boards]
         self.env = random.choice(self.envs)
-
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
     def reset(self, seed: int | None = None, options=None):
         """Reset with a randomly selected existing environment."""
         super().reset(seed=seed)
-
         self.env = random.choice(self.envs)
         return self.env.reset(seed=seed, options=options)
 
@@ -62,6 +59,7 @@ class AgentTrainer:
         timestepsPerBoard: int | None = None,
         loadExistingModel: bool = True,
         resetModel: bool = False,
+        randomizeBoardComplexity: bool = True,
     ):
         """
         Creates a trainer configured with training and evaluation board sets.
@@ -79,31 +77,35 @@ class AgentTrainer:
                 It is now interpreted as total training timesteps.
             loadExistingModel: If True, loads modelPath if it exists.
             resetModel: If True, deletes modelPath before training and starts fresh.
+            randomizeBoardComplexity: If True, randomly selects waypoint and wall
+                counts between zero and the configured values. If False, uses the
+                configured values as exact counts.
         """
         self.modelPath = modelPath
         self._totalTimesteps = timestepsPerBoard
         self.loadExistingModel = loadExistingModel
         self.resetModel = resetModel
-
+        self.randomizeBoardComplexity = randomizeBoardComplexity
         self.trainingBoards = (
             trainingBoards
             if trainingBoards is not None
             else self._generate_random_boards(
-                boardSize=boardSize,
-                maxIntermediateWaypoints=nrOfWaypoints,
-                maxWalls=nrOfWalls,
-                numberBoards=nrTrainingBoards,
+                boardSize,
+                nrOfWaypoints,
+                nrOfWalls,
+                nrTrainingBoards,
+                self.randomizeBoardComplexity,
             )
         )
-
         self.evaluationBoards = (
             evaluationBoards
             if evaluationBoards is not None
             else self._generate_random_boards(
-                boardSize=boardSize,
-                maxIntermediateWaypoints=nrOfWaypoints,
-                maxWalls=nrOfWalls,
-                numberBoards=nrEvaluationBoards,
+                boardSize,
+                nrOfWaypoints,
+                nrOfWalls,
+                nrEvaluationBoards,
+                self.randomizeBoardComplexity,
             )
         )
 
@@ -113,22 +115,31 @@ class AgentTrainer:
         maxIntermediateWaypoints: int,
         maxWalls: int,
         numberBoards: int,
+        randomizeBoardComplexity: bool,
     ) -> list[Board]:
-        """Generate random boards with random numbers of waypoints and walls."""
+        """Generate random boards with fixed or random waypoint and wall counts."""
         boards: list[Board] = []
 
         for _ in range(numberBoards):
-            intermediateWaypoints = random.randint(0, maxIntermediateWaypoints)
-            walls = random.randint(0, maxWalls)
+            nrOfWaypoints = (
+                random.randint(0, maxIntermediateWaypoints)
+                if randomizeBoardComplexity
+                else maxIntermediateWaypoints
+            )
+            nrOfWalls = (
+                random.randint(0, maxWalls)
+                if randomizeBoardComplexity
+                else maxWalls
+            )
 
-            board = BoardGenerator.generate(
-                boardSize,
-                intermediateWaypoints,
-                walls,
-                1,
-            )[0]
-
-            boards.append(board)
+            boards.append(
+                BoardGenerator.generate(
+                    boardSize,
+                    nrOfWaypoints,
+                    nrOfWalls,
+                    1,
+                )[0]
+            )
 
         return boards
 
@@ -138,21 +149,22 @@ class AgentTrainer:
             raise ValueError("Cannot train without at least one training board.")
 
         modelFile = Path(self.modelPath)
-
         if self.resetModel and modelFile.exists():
             print(f"Resetting model: deleting {self.modelPath}")
             modelFile.unlink()
 
         trainEnv = Monitor(BoardSamplingEnv(self.trainingBoards))
-
         if self.loadExistingModel and modelFile.exists():
             print(f"Loading existing model from {self.modelPath}")
-            agent = RLAgent(trainEnv, model_path=self.modelPath, tensorboard_log="./logs/zip_dqn/6x6/")
-        
+            agent = RLAgent(
+                trainEnv,
+                model_path=self.modelPath,
+                tensorboard_log="./logs/zip_dqn/6x6/",
+            )
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.4,
+                initial_eps=0.6,
                 final_eps=0.1,
                 fraction=0.8,
             )
@@ -167,7 +179,7 @@ class AgentTrainer:
                 learning_starts=500,             # Number of steps before the model starts learning.
                 buffer_size=50_000,              # Maximum number of transitions stored in the replay buffer.
                 batch_size=64,                   # Number of samples used for one training update.
-                train_freq=(1, "step"),          # Update nueral network (training) after every environment step.
+                train_freq=(1, "step"),          # Update neural network (training) after every completed episode.
                 gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
                 target_update_interval=500,      # Copy the learned network weights to the target network every 500 steps.
                 gamma=0.95,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
@@ -181,232 +193,222 @@ class AgentTrainer:
             if self._totalTimesteps is not None
             else 100_000
         )
-
         print(f"Training on {len(self.trainingBoards)} boards.")
         print(f"Total timesteps: {totalTimesteps}")
 
         # True resets only the SB3 step counter / exploration schedule.
         # It does not delete the loaded model weights.
-        agent.learn(
-            total_timesteps=totalTimesteps,
-            reset_num_timesteps=True,
-        )
-
+        agent.learn(total_timesteps=totalTimesteps, reset_num_timesteps=True)
         return agent
 
-    def evaluate(self, agent: RLAgent) -> TrainingResult:
-        """Evaluate a trained RLAgent on all configured evaluation boards."""
-        totalBoards = len(self.evaluationBoards)
+    def load_saved_agent(self) -> RLAgent:
+        """Load a saved model without further training."""
+        if not Path(self.modelPath).exists():
+            raise FileNotFoundError(f"Model file not found: {self.modelPath}")
 
-        if totalBoards == 0:
+        boards = self.evaluationBoards or self.trainingBoards
+        if not boards:
+            raise ValueError("At least one board is required to load the model.")
+
+        # The loaded model needs one compatible environment.
+        # During evaluation, evaluate() switches the environment for every board.
+        return RLAgent(RLEnvironment(boards[0]), model_path=self.modelPath)
+
+    def evaluate(
+        self,
+        agent: RLAgent,
+        boards: list[Board] | None = None,
+        showExamples: bool = False,
+        boardType: str = "evaluation",
+    ) -> TrainingResult:
+        """Evaluate a trained RLAgent on the provided boards."""
+        boards = self.evaluationBoards if boards is None else boards
+        if not boards:
             return TrainingResult(0, 0, 0.0, 0.0)
 
         solveCount = 0
         rewards = 0.0
+        firstSolvedBoard = None
+        firstFailedBoard = None
 
-        for board in self.evaluationBoards:
-            env = RLEnvironment(board)
-            agent.set_env(env)
-
-            observation, _ = env.reset()
-
-            terminated = False
-            truncated = False
-            boardReward = 0.0
-
-            while not terminated and not truncated:
-                action = agent.predict(observation, deterministic=True)
-                observation, reward, terminated, truncated, _ = env.step(int(action))
-                boardReward += float(reward)
-
+        for board in boards:
+            solved, boardReward = self._run_board(agent, board)
             rewards += boardReward
+            solveCount += int(solved)
 
-            if terminated and env.game.isFinished():
-                solveCount += 1
+            if solved and firstSolvedBoard is None:
+                firstSolvedBoard = board
+            elif not solved and firstFailedBoard is None:
+                firstFailedBoard = board
 
-        averageReward = rewards / totalBoards
-        successRate = solveCount / totalBoards
+        if showExamples:
+            self._show_example(
+                agent,
+                firstSolvedBoard,
+                f"Example solved {boardType} board",
+                f"No solved {boardType} board found.",
+            )
+            self._show_example(
+                agent,
+                firstFailedBoard,
+                f"Example failed {boardType} board",
+                f"No failed {boardType} board found. The agent solved all boards.",
+            )
 
+        totalBoards = len(boards)
         return TrainingResult(
             solveCount,
             totalBoards,
-            averageReward,
-            successRate,
+            rewards / totalBoards,
+            solveCount / totalBoards,
         )
 
     def evaluate_saved_model(self, showExamples: bool = False) -> TrainingResult:
         """Load a saved model and evaluate it without further training."""
-        if not self.evaluationBoards:
-            return TrainingResult(0, 0, 0.0, 0.0)
-
-        modelFile = Path(self.modelPath)
-
-        if not modelFile.exists():
-            raise FileNotFoundError(f"Model file not found: {self.modelPath}")
-
-        # The loaded model needs one compatible environment.
-        # During evaluation, evaluate() switches the environment for every board.
-        env = RLEnvironment(self.evaluationBoards[0])
-        agent = RLAgent(env, model_path=self.modelPath)
-
-        if showExamples:
-            return self.evaluate_with_examples(agent)
-
-        return self.evaluate(agent)
+        return self.evaluate(self.load_saved_agent(), showExamples=showExamples)
 
     def evaluate_with_examples(self, agent: RLAgent) -> TrainingResult:
         """Evaluate the agent and afterwards show one solved and one failed example."""
-        totalBoards = len(self.evaluationBoards)
+        return self.evaluate(agent, showExamples=True)
 
-        if totalBoards == 0:
-            return TrainingResult(0, 0, 0.0, 0.0)
+    def _run_board(self, agent: RLAgent, board: Board) -> tuple[bool, float]:
+        """Run one deterministic evaluation episode."""
+        env = RLEnvironment(board)
+        agent.set_env(env)
+        observation, _ = env.reset()
+        terminated = truncated = False
+        rewardSum = 0.0
 
-        solveCount = 0
-        rewards = 0.0
+        while not terminated and not truncated:
+            action = agent.predict(observation, deterministic=True)
+            observation, reward, terminated, truncated, _ = env.step(int(action))
+            rewardSum += float(reward)
 
-        firstSolvedBoard: Board | None = None
-        firstFailedBoard: Board | None = None
+        solved = terminated and env.game.isFinished()
+        env.close()
+        return solved, rewardSum
 
-        for board in self.evaluationBoards:
-            env = RLEnvironment(board)
-            agent.set_env(env)
-
-            observation, _ = env.reset()
-
-            terminated = False
-            truncated = False
-            boardReward = 0.0
-
-            while not terminated and not truncated:
-                action = agent.predict(observation, deterministic=True)
-                observation, reward, terminated, truncated, _ = env.step(int(action))
-                boardReward += float(reward)
-
-            rewards += boardReward
-
-            solved = terminated and env.game.isFinished()
-
-            if solved:
-                solveCount += 1
-
-                if firstSolvedBoard is None:
-                    firstSolvedBoard = board
-            else:
-                if firstFailedBoard is None:
-                    firstFailedBoard = board
-
-        averageReward = rewards / totalBoards
-        successRate = solveCount / totalBoards
-
-        result = TrainingResult(
-            solveCount,
-            totalBoards,
-            averageReward,
-            successRate,
-        )
-
-        if firstSolvedBoard is not None:
-            self._show_agent_run(
-                agent,
-                firstSolvedBoard,
-                "Example solved evaluation board",
-            )
-        else:
-            print("\nNo solved evaluation board found.")
-
-        if firstFailedBoard is not None:
-            self._show_agent_run(
-                agent,
-                firstFailedBoard,
-                "Example failed evaluation board",
-            )
-        else:
-            print("\nNo failed evaluation board found. The agent solved all boards.")
-
-        return result
+    def _show_example(
+        self,
+        agent: RLAgent,
+        board: Board | None,
+        title: str,
+        missingMessage: str,
+    ):
+        """Show an example board if one is available."""
+        if board is None:
+            print(f"\n{missingMessage}")
+            return
+        self._show_agent_run(agent, board, title)
 
     def _show_agent_run(self, agent: RLAgent, board: Board, title: str):
         """Render one deterministic agent run on a given board."""
         print(f"\n{title}:")
         env = RLEnvironment(board)
         agent.set_env(env)
-
-        runResult = agent.solve(
+        result = agent.solve(
+            deterministic=True,
             max_steps=env.config.max_steps,
             render=True,
         )
+        print("\nRun result:")
+        print(result)
+        env.close()
 
-        print(runResult)
+    def show_first_training_board_run(self, agent: RLAgent):
+        """Render a deterministic run on the first board used during training."""
+        if not self.trainingBoards:
+            print("\nNo training board available.")
+            return
+
+        self._show_agent_run(
+            agent,
+            self.trainingBoards[0],
+            "Deterministic run on first training board after training",
+        )
+
+    def print_boards(self, boards: list[Board], title: str):
+        """Print the initial state of the provided boards."""
+        print(f"\n{title}:")
+        for index, board in enumerate(boards, start=1):
+            print(f"\nBoard {index}:")
+            env = RLEnvironment(board)
+            env.reset()
+            renderedBoard = env.render("ansi")
+            if renderedBoard is not None:
+                print(renderedBoard)
+            env.close()
+
+    @staticmethod
+    def print_result(title: str, result: TrainingResult):
+        """Print one evaluation result."""
+        print(f"\n{title}:")
+        print("Solved:", result.getSolveCount)
+        print("Total Boards:", result.getTotalBoards)
+        print("Average reward:", result.getAverageReward)
+        print("Success rate:", result.getSuccessRate)
 
     def save(self, agent: RLAgent, modelPath: str | None = None):
         """Save the trained agent to the provided model path."""
         path = modelPath if modelPath else self.modelPath
-
         if not path:
             raise ValueError("A valid model path is required.")
-
         agent.save(path)
-
-    def _can_solve_board(self, agent: RLAgent, board: Board) -> bool:
-        """Check whether the agent can solve the board deterministically."""
-        env = RLEnvironment(board)
-        agent.set_env(env)
-
-        observation, _ = env.reset()
-
-        terminated = False
-        truncated = False
-
-        while not terminated and not truncated:
-            action = agent.predict(observation, deterministic=True)
-            observation, reward, terminated, truncated, _ = env.step(int(action))
-
-        return terminated and env.game.isFinished()
 
 
 if __name__ == "__main__":
+    RANDOMIZE_BOARD_COMPLEXITY = True
+    NR_OF_WALLS = 30
+    NR_OF_WAYPOINTS = 36
+
+    TRAIN_MODEL = True
+    PRINT_TRAINING_BOARDS = True 
+    SHOW_FIRST_TRAINING_RUN = True
+    EVALUATE_TRAINING_BOARDS = True
+    EVALUATE_EVALUATION_BOARDS = True
+    SHOW_EVALUATION_EXAMPLES = False
+
     trainer = AgentTrainer(
-        boardSize=6 ,
-        nrOfWalls=30,
-        nrOfWaypoints=15,
+        boardSize=6,
+        nrOfWalls=NR_OF_WALLS,
+        nrOfWaypoints=NR_OF_WAYPOINTS,
         modelPath="offline_training/trained_models/trained-model.zip",
 
-        # Only relevant if you uncomment training again.
-        nrTrainingBoards=1,
+        # number of training boards in the training pool
+        nrTrainingBoards=5,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=100,
+        nrEvaluationBoards=1000,
 
-        # Only relevant for training.
-        timestepsPerBoard=200_000,
+        # Total time steps
+        timestepsPerBoard=300_000,
 
-        loadExistingModel=False,
-        resetModel=True,
-    )   
+        loadExistingModel=True,
+        resetModel=False,
+        randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
+    )
 
-    # ==========================
-    # Option 1: Only evaluate saved model
-    # ==========================
-    # result = trainer.evaluate_saved_model(showExamples=True)
+    agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
+    if TRAIN_MODEL:
+        trainer.save(agent)
 
-    # print("\nEvaluation result:")
-    # print("Solved:", result.getSolveCount)
-    # print("Total Boards:", result.getTotalBoards)
-    # print("Average reward:", result.getAverageReward)
-    # print("Success rate:", result.getSuccessRate)
+        if SHOW_FIRST_TRAINING_RUN:
+            trainer.show_first_training_board_run(agent)
 
+    if PRINT_TRAINING_BOARDS:
+        trainer.print_boards(trainer.trainingBoards, "Boards used during training")
 
-    # ==========================
-    # Option 2: Continue training
-    # Uncomment this block if you want to train again.
-    # ==========================
-    trainedAgent = trainer.train()
-    trainer.save(trainedAgent)
-    
-    result = trainer.evaluate(trainedAgent)
-    
-    print("\nEvaluation result after training:")
-    print("Solved:", result.getSolveCount)
-    print("Total Boards:", result.getTotalBoards)
-    print("Average reward:", result.getAverageReward)
-    print("Success rate:", result.getSuccessRate)
+    if EVALUATE_TRAINING_BOARDS:
+        trainingResult = trainer.evaluate(agent, trainer.trainingBoards)
+        trainer.print_result("Evaluation result on training boards", trainingResult)
+
+    if EVALUATE_EVALUATION_BOARDS:
+        evaluationResult = trainer.evaluate(
+            agent,
+            trainer.evaluationBoards,
+            showExamples=SHOW_EVALUATION_EXAMPLES,
+        )
+        trainer.print_result(
+            "Evaluation result on unseen evaluation boards",
+            evaluationResult,
+        )
