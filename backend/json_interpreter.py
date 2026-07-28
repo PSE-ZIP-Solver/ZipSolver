@@ -34,8 +34,9 @@ class JsonInterpreter:
     ALLOWED_BOARD_SIZES = (6, 7, 8)
     
     
+    # TODO remove if not used!
     @staticmethod
-    def verifySyntax(self, file: Union[str, dict, Any]) -> bool:
+    def verifySyntax(file: Union[str, dict, Any]) -> bool:
         """
         Takes a json file (path, open file object, or already-parsed dict)
         and returns True if it matches the expected syntax and constraints,
@@ -43,7 +44,7 @@ class JsonInterpreter:
         results in False.
         """
         try:
-            data = self._load(file)
+            data = JsonInterpreter._load(file)
         except Exception:
             return False
 
@@ -55,15 +56,15 @@ class JsonInterpreter:
             return False
 
         board_size = data["boardSize"]
-        if not self._validate_board_size(board_size):
+        if not JsonInterpreter._validate_board_size(board_size):
             return False
 
         waypoints = data["waypoints"]
-        if not self._validate_waypoints(waypoints, board_size):
+        if not JsonInterpreter._validate_waypoints(waypoints, board_size):
             return False
 
         walls = data["walls"]
-        if not self._validate_walls(walls, board_size):
+        if not JsonInterpreter._validate_walls(walls, board_size):
             return False
 
         solution_path = data["solutionPath"]
@@ -75,16 +76,16 @@ class JsonInterpreter:
         return True
     
     @staticmethod
-    def buildBoard(self, file: Union[str, dict, Any]) -> Board:
+    def buildBoard(file: Union[str, dict, Any]) -> Board:
         """
         Takes a json file (path, open file object, or already-parsed dict),
         validates it, and returns a populated Board instance.
         Raises ValueError if the json does not match the expected syntax.
         """
-        if not self.verifySyntax(file):
+        if not JsonInterpreter.verifySyntax(file):
             raise ValueError("Invalid puzzle JSON: failed syntax/constraint checks.")
 
-        data = self._load(file)
+        data = JsonInterpreter._load(file)
 
         board = Board(data["boardSize"])
 
@@ -100,7 +101,7 @@ class JsonInterpreter:
 
 
     @staticmethod
-    def _load(self, arg: Union[str, dict, Any]) -> Dict[str, Any]:
+    def _load(arg: Union[str, dict, Any]) -> Dict[str, Any]:
         """Accepts a file path (str), an open file-like object, or a dict."""
         if isinstance(arg, dict):
             return arg
@@ -113,21 +114,22 @@ class JsonInterpreter:
         raise TypeError(f"Unsupported argument type for json file: {type(arg)}")
     
     @staticmethod
-    def _validate_board_size(self, board_size: Any) -> bool:
-        return board_size in self.ALLOWED_BOARD_SIZES
+    def _validate_board_size(board_size: Any) -> bool:
+        return board_size in JsonInterpreter.ALLOWED_BOARD_SIZES
     
     @staticmethod
-    def _is_valid_point(self, point: Any, board_size: int) -> bool:
+    def _is_valid_point(point: Any, board_size: int) -> bool:
         if not isinstance(point, (list, tuple)) or len(point) != 2:
             return False
         x, y = point
         if not (isinstance(x, int) and isinstance(y, int)) \
                 or isinstance(x, bool) or isinstance(y, bool):
             return False
-        return 0 <= x < board_size-1 and 0 <= y < board_size-1
+        
+        return 0 <= x < board_size and 0 <= y < board_size
 
     @staticmethod
-    def _validate_waypoints(self, waypoints: Any, board_size: int) -> bool:
+    def _validate_waypoints(waypoints: Any, board_size: int) -> bool:
         if not isinstance(waypoints, list):
             return False
 
@@ -137,7 +139,7 @@ class JsonInterpreter:
 
         seen = set()
         for point in waypoints:
-            if not self._is_valid_point(point, board_size):
+            if not JsonInterpreter._is_valid_point(point, board_size):
                 return False
             key = (point[0], point[1])
             if key in seen:
@@ -147,7 +149,7 @@ class JsonInterpreter:
         return True
 
     @staticmethod
-    def _validate_walls(self, walls: Any, board_size: int) -> bool:
+    def _validate_walls(walls: Any, board_size: int) -> bool:
         if not isinstance(walls, list):
             return False
 
@@ -165,9 +167,9 @@ class JsonInterpreter:
             a = wall["neighborA"]
             b = wall["neighborB"]
 
-            if not self._is_valid_point(a, board_size):
+            if not JsonInterpreter._is_valid_point(a, board_size):
                 return False
-            if not self._is_valid_point(b, board_size):
+            if not JsonInterpreter._is_valid_point(b, board_size):
                 return False
 
             ax, ay = a
