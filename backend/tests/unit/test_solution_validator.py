@@ -11,7 +11,10 @@ def validator():
 @pytest.fixture
 def board_2x2():
     # A 2x2 board has 4 cells in total
-    return Board(size=2)
+    board = Board(2)
+    board.addWaypoint(Position(0, 0), 1)
+    board.addWaypoint(Position(0, 1), 2)
+    return board
 
 @pytest.fixture
 def empty_path():

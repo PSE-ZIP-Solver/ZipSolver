@@ -46,7 +46,7 @@ class SolutionValidator:
         if not self._checkPathExists(path):
             return False
             
-        return len(path.getPositions) == board.getCellCount()
+        return len(path.getPositions) == (board.getSize ** 2)
 
     def validate(self, board: Board, path: SolutionPath) -> ValidationResult:
         """
