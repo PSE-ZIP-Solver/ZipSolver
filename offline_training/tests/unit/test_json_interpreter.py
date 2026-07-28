@@ -68,9 +68,9 @@ def test_load_file_not_found(interpreter):
 # Tests for _validate_board_size
 # ===================================================================
 @pytest.mark.parametrize("size, expected", [
-    (6, True), (7, True), (8, True),
+    (6, True), (7, True), (8, True), (6.0, True),
     (5, False), (9, False), (0, False), (-6, False),
-    ("6", False), (6.0, False), (None, False)
+    ("6", False), (None, False)
 ])
 def test_validate_board_size(interpreter, size, expected):
     assert call(interpreter._validate_board_size, size) is expected
