@@ -1,13 +1,11 @@
 class EnvironmentConfig:
     """Environment configuration for the Zip RL environment."""
 
-    def __init__(self, size: int = 3):
+    def __init__(self, size: int = 6):
         self.size = size
-
-        # Limit episode length.
-        # A valid solution needs exactly size^2 - 1 moves after the start cell.
-        # We allow a bit more so the agent can recover from small mistakes.
-        self.max_steps = self.size ** 2 * 4
+        
+        # The start cell is already visited after reset, so only size^2 - 1 moves are needed.
+        self.max_steps = self.size ** 2 - 1
 
         # Rewards / penalties
         self.invalid_move_penalty = -10.0
