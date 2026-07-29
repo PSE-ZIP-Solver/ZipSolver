@@ -4,7 +4,7 @@ import pytest
 
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position
-from backend.rl_components.RLEnvironment import RLEnvironment
+from backend.rl_components.rl_environment import RLEnvironment
 
 
 # ==========================================

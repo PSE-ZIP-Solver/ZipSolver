@@ -1,8 +1,8 @@
 from .EnvironmentConfig import EnvironmentConfig
-from .RLEnvironment import RLEnvironment
-from .RLAgent import RLAgent
+from .rl_environment import RLEnvironment
+from .rl_agent import RLAgent
 
 __all__ = ['EnvironmentConfig',
-           'RLEnvironment',
-           'RLAgent',
+           'rl_environment',
+           'rl_agent',
             ]
