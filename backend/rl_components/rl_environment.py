@@ -1,6 +1,6 @@
 import gymnasium as gym
 import numpy as np
-from backend.rl_components.EnvironmentConfig import EnvironmentConfig
+from backend.rl_components.environment_config import EnvironmentConfig
 from backend.puzzle_logic.game import Game
 from backend.puzzle_logic.data_models import Position
 from backend.puzzle_logic.board import Board
