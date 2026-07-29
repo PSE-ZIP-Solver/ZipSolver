@@ -1,0 +1,3 @@
+This is the file where the weights of the agent are stored.
+
+If you want to MOVE THIS file, PLEASE ADDJUST THE DEFAULT PATH in RLSolver.__init__(model_path="...")   <-- rl_solver.py.
