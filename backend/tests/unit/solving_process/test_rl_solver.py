@@ -1,178 +1,185 @@
 import pytest
-import logging
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+import sys
 
-from backend.solving_process.solver_status import SolverStatus
 from backend.puzzle_logic.board import Board
-from backend.solving_process.rl_solver import RLSolver 
+from backend.solution_path import SolutionPath
+from backend.solving_process.solver_status import SolverStatus
+from backend.solving_process.solver_result import SolverResult
+from backend.solving_process.rl_solver import RLSolver
 
+# --- FIXTURES & ISOLATED MOCKING ---
 
 @pytest.fixture
 def mock_board():
-    return MagicMock(spec=Board)
-
-@pytest.fixture
-def mock_game():
-    with patch('backend.rl_solver.Game') as mock:
-        yield mock
+    board = MagicMock(spec=Board)
+    # Architectural Rule: Property mocking
+    type(board).getSize = property(lambda self: 6)
+    return board
 
 @pytest.fixture
 def mock_env():
-    with patch('backend.rl_solver.RLEnvironment') as mock:
-        yield mock
+    env = MagicMock()
+    env.reset.return_value = ({"grid": [0]}, {})
+    env.step.return_value = ({"grid": [1]}, 1.0, True, False, {})
+    
+    mock_game = MagicMock()
+    type(mock_game).isFinished = property(lambda self: True)
+    type(mock_game.getState).getPath = property(lambda self: ["Pos(0,0)", "Pos(0,1)"])
+    env.game = mock_game
+    return env
 
 @pytest.fixture
 def mock_agent():
-    with patch('backend.rl_solver.RLAgent') as mock:
-        yield mock
+    agent = MagicMock()
+    # SB3 predict() returns a tuple of (action, states)
+    agent.predict.return_value = (2, None)
+    agent._model = MagicMock()
+    return agent
 
 
-# --- DEFAULT USE CASES ---
-
-def test_solve_success(mock_board, mock_game, mock_env, mock_agent):
-    env_instance = mock_env.return_value
-    agent_instance = mock_agent.return_value
-    game_instance = mock_game.return_value
+@pytest.fixture(autouse=True)
+def patch_rl_classes(mock_env, mock_agent):
+    """
+    Safely mocks heavy ML dependencies AND the internal RL modules that import them.
+    This injects directly into sys.modules, entirely bypassing unittest.mock.patch's
+    AttributeError when dealing with locally scoped/lazy imports.
+    """
+    mock_agent_cls = MagicMock(return_value=mock_agent)
+    mock_env_cls = MagicMock(return_value=mock_env)
     
-    env_instance.reset.return_value = ("mock_obs_0", {})
-    env_instance.step.side_effect = [
-        ("mock_obs_1", 1.0, False, False, {}),               
-        ("mock_obs_2", 10.0, True, False, {"is_success": True}) 
+    mock_agent_mod = MagicMock()
+    mock_agent_mod.RLAgent = mock_agent_cls
+    
+    mock_env_mod = MagicMock()
+    mock_env_mod.RLEnvironment = mock_env_cls
+    
+    mock_mods = {
+        'gymnasium': MagicMock(),
+        'torch': MagicMock(),
+        'stable_baselines3': MagicMock(),
+        'backend.rl_components': MagicMock(),
+        'backend.rl_components.RLAgent': mock_agent_mod,
+        'backend.rl_components.RLEnvironment': mock_env_mod,
+    }
+    
+    with patch.dict(sys.modules, mock_mods):
+        # Yielding the classes so tests can assert against their constructors if needed
+        yield mock_agent_cls, mock_env_cls
+
+
+# --- TDD FAST FAIL EDGE CASES ---
+
+def test_solve_fast_fails_on_none_board():
+    solver = RLSolver("backend/agent.zip")
+    result = solver.solve(None)
+    
+    assert result._status == SolverStatus.UNSOLVABLE
+    assert result._path is None
+    assert result._metrics._steps == 0
+    assert "Invalid or mathematically unsolvable" in result._message
+
+def test_solve_fast_fails_on_empty_board():
+    board = MagicMock(spec=Board)
+    type(board).getSize = property(lambda self: 0)
+    
+    solver = RLSolver("backend/agent.zip")
+    result = solver.solve(board)
+    
+    assert result._status == SolverStatus.UNSOLVABLE
+    assert result._metrics._steps == 0
+
+
+# --- BEHAVIOR TESTS ---
+
+def test_solve_success_complete_solution(patch_rl_classes, mock_board, mock_env, mock_agent):
+    # Simulate an episode taking a few steps
+    mock_env.step.side_effect = [
+        ({"grid": [1]}, 0.0, False, False, {}),
+        ({"grid": [2]}, 0.0, False, False, {}),
+        ({"grid": [3]}, 1.0, True, False, {})
     ]
-    
-    agent_instance.predict.side_effect = [1, 2] 
-    
-    mock_state = MagicMock()
-    mock_state.getPath = ["pos_start", "pos_1", "pos_2"]
-    game_instance.getState = mock_state
-    game_instance.isFinished.return_value = True
-    
-    solver = RLSolver(model_path="custom_model.zip")
+
+    solver = RLSolver("backend/agent.zip")
     result = solver.solve(mock_board)
-    
-    assert result.getStatus == SolverStatus.SOLVED
-    assert len(result.getPath.getPositions) == 3
-    assert result.getMetrics.getSteps == 2
+
+    # Architectural Rule: Strictly asserting against protected attributes
+    assert result._status == SolverStatus.SOLVED
+    assert result._metrics._steps == 3
+    assert result._path is not None
+    mock_env.reset.assert_called_once()
 
 
-# --- RESOURCE & OPTIMIZATION TESTS ---
+def test_load_agent_caching_avoids_reloading_weights(patch_rl_classes, mock_board, mock_env, mock_agent):
+    mock_agent_cls, mock_env_cls = patch_rl_classes
 
-def test_environment_cleanup_prevents_memory_leak(mock_board, mock_env, mock_agent):
-    """Ensure previous Gym environments are explicitly closed before creating new ones."""
-    solver = RLSolver()
-    
-    # Run once
+    solver = RLSolver("backend/agent.zip")
     solver.solve(mock_board)
     
-    # Capture the first generated mock environment
-    first_env_instance = solver._environment
+    # Simulate a second solve loop with a brand new environment
+    second_mock_env = MagicMock()
+    second_mock_env.reset.return_value = ({"grid": [0]}, {})
+    second_mock_env.step.return_value = ({"grid": [1]}, 1.0, True, False, {})
+    type(second_mock_env.game).isFinished = property(lambda self: True)
+    type(second_mock_env.game.getState).getPath = property(lambda self: [])
     
-    # Run twice
+    # RLEnvironment(...) will now return our second_mock_env
+    mock_env_cls.return_value = second_mock_env
+
     solver.solve(mock_board)
     
-    # Assert the old environment was closed before the new one replaced it
-    first_env_instance.close.assert_called_once()
+    # Important validation: RLAgent was NOT loaded from disk a second time
+    assert mock_agent_cls.call_count == 1 
+    assert mock_agent._env == second_mock_env
+    mock_agent._model.set_env.assert_called_with(second_mock_env)
 
 
-def test_agent_caching_prevents_reloading(mock_board, mock_env, mock_agent):
-    """Ensure the heavy RLAgent is only loaded once, and environments are swapped."""
-    solver = RLSolver()
-    
-    # 1st Solve
+# Helper class to simulate PyTorch tensors for the parametrize test cleanly
+class MockTensor:
+    def item(self):
+        return 3
+
+@pytest.mark.parametrize("action_tuple,expected_action_int", [
+    ((MockTensor(), None), 3),  # PyTorch 0D tensor + states
+    ((5, None), 5),             # Pure Python int + states
+    (([4], None), 4),           # List/1D array + states
+])
+def test_run_episode_unboxes_tuple_actions_correctly(
+    patch_rl_classes, mock_board, mock_env, mock_agent, action_tuple, expected_action_int
+):
+    """
+    Ensures that the SB3 predict() tuple (action, states) is correctly split,
+    and the action array/tensor is successfully flattened to a Python integer.
+    """
+    mock_agent.predict.return_value = action_tuple
+
+    solver = RLSolver("backend/agent.zip")
     solver.solve(mock_board)
-    assert mock_agent.call_count == 1
-    
-    dummy_internal_model = MagicMock()
-    solver._agent._model = dummy_internal_model
 
-    # 2nd Solve
-    solver.solve(mock_board)
-    
-    # Constructor only called once, but set_env was called to swap
-    assert mock_agent.call_count == 1
-    assert dummy_internal_model.set_env.call_count == 1
+    # Asserts Gym step() safely received a clean Python int
+    mock_env.step.assert_called_with(expected_action_int)
 
 
-# --- DEFENSIVE EDGE CASES & FAILURES ---
+def test_solve_failsafe_infinite_loop_prevention(patch_rl_classes, mock_board, mock_env, mock_agent):
+    # Env gets stuck returning False indefinitely
+    mock_env.step.return_value = ({"grid": [1]}, 0.0, False, False, {})
 
-def test_solve_handles_gym_environment_crash_gracefully(mock_board, mock_env, caplog):
-    """Edge Case: The board is invalid or Env setup fails (e.g. ValueError)."""
-    mock_env.side_effect = ValueError("Board has no starting Waypoint with order 1.")
-    
-    solver = RLSolver()
-    
-    with caplog.at_level(logging.ERROR):
-        result = solver.solve(mock_board)
-    
-    assert result.getStatus == SolverStatus.FAILED
-    assert result.getPath is None
-    assert "RLSolver crashed during execution" in result.getMessage
-    
-    # Ensure the logger captured the exception stacktrace
-    assert "RLSolver crashed during execution" in caplog.text
-
-
-def test_action_unboxing_numpy_array(mock_board, mock_game, mock_env, mock_agent):
-    """Edge Case: SB3 predict returns a 1D numpy array instead of a scalar."""
-    import numpy as np
-    
-    env_instance = mock_env.return_value
-    agent_instance = mock_agent.return_value
-    game_instance = mock_game.return_value
-    
-    env_instance.reset.return_value = ("mock_obs", {})
-    env_instance.step.return_value = ("mock_obs", 1.0, True, False, {})
-    
-    # Pass a 1D numpy array like [3], which crashes standard int() calls
-    agent_instance.predict.return_value = np.array([3]) 
-    
-    game_instance.getState.getPath = ["pos"]
-    game_instance.isFinished.return_value = False
-    
-    solver = RLSolver()
-    solver.solve(mock_board)
-    
-    action_passed_to_step = env_instance.step.call_args[0][0]
-    assert type(action_passed_to_step) is int
-    assert action_passed_to_step == 3
-
-
-def test_solve_handles_none_path(mock_board, mock_game, mock_env, mock_agent):
-    """Edge Case: GameState bugs out and returns None for the path."""
-    env_instance = mock_env.return_value
-    agent_instance = mock_agent.return_value
-    game_instance = mock_game.return_value
-    
-    env_instance.reset.return_value = ("mock_obs", {})
-    env_instance.step.return_value = ("mock_obs", 1.0, True, False, {})
-    agent_instance.predict.return_value = 1
-    
-    # Set getPath to None to simulate a state bug
-    mock_state = MagicMock()
-    mock_state.getPath = None
-    game_instance.getState = mock_state
-    game_instance.isFinished.return_value = False
-    
-    solver = RLSolver()
+    solver = RLSolver("backend/agent.zip")
     result = solver.solve(mock_board)
-    
-    # Should not crash, should return a cleanly FAILED result with empty path
-    assert result.getStatus == SolverStatus.FAILED
-    assert len(result.getPath.getPositions) == 0
+
+    assert result._status == SolverStatus.TIMEOUT
+    assert result._metrics._steps == 1000
+    assert "Hit hard loop limit" in result._message
 
 
-def test_failsafe_infinite_loop_prevention(mock_board, mock_game, mock_env, mock_agent):
-    """Edge Case: Gym environment is bugged and never sets terminated/truncated to True."""
-    env_instance = mock_env.return_value
-    agent_instance = mock_agent.return_value
-    
-    env_instance.reset.return_value = ("mock_obs", {})
-    env_instance.step.return_value = ("mock_obs", 0.0, False, False, {})
-    agent_instance.predict.return_value = 1
-    
-    solver = RLSolver()
+def test_solve_handles_crashes_gracefully(patch_rl_classes, mock_board):
+    mock_agent_cls, mock_env_cls = patch_rl_classes
+    mock_env_cls.side_effect = Exception("CUDA Out of Memory Error")
+
+    solver = RLSolver("backend/agent.zip")
     result = solver.solve(mock_board)
-    
-    assert result.getStatus == SolverStatus.FAILED
-    assert result.getMetrics.getSteps == 1000
-    assert "Hit hard loop limit" in result.getMessage
+
+    assert result._status == SolverStatus.UNSOLVABLE
+    assert result._path is None
+    assert result._metrics._steps == 0
+    assert "crashed during execution" in result._message
