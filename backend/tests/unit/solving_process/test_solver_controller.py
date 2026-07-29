@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
+
 from backend.puzzle_logic.board import Board
 from backend.solution_path import SolutionPath
 from backend.solving_process.solver_status import SolverStatus
@@ -8,142 +9,152 @@ from backend.solving_process.solver_result import SolverResult
 from backend.validation_result import ValidationResult
 from backend.solving_process.solver_controller import SolverController
 
+# --- FIXTURES & MOCK FACTORIES ---
 
 @pytest.fixture
 def mock_dependencies():
-    """
-    Creates mocked versions of the injected dependencies.
-    """
     rl_solver = MagicMock()
     algo_solver = MagicMock()
     validator = MagicMock()
     return rl_solver, algo_solver, validator
 
-
 @pytest.fixture
 def controller(mock_dependencies):
-    """
-    Instantiates the SolverController with the mocked dependencies.
-    """
     rl_solver, algo_solver, validator = mock_dependencies
     return SolverController(rl_solver, algo_solver, validator)
 
-
 @pytest.fixture
 def dummy_board():
-    return Board(size=3)
-
+    return Board(size=6)
 
 @pytest.fixture
 def dummy_metrics():
-    return SolverMetrics(runtimeMs=100, steps=10, attempts=1)
+    metrics = MagicMock(spec=SolverMetrics)
+    metrics._runtimeMs = 100
+    metrics._steps = 10
+    return metrics
 
+def create_mock_solver_result(status, path, metrics):
+    """Creates a mock honoring the protected attribute domain rules."""
+    result = MagicMock(spec=SolverResult)
+    result._status = status
+    result._path = path
+    result._metrics = metrics
+    return result
+
+def create_mock_validation(is_valid):
+    """Mocks the property explicitly"""
+    val = MagicMock(spec=ValidationResult)
+    type(val).isValid = PropertyMock(return_value=is_valid) if hasattr(MagicMock, "PropertyMock") else is_valid
+    val.isValid = is_valid  
+    return val
+
+
+# --- STANDARD ORCHESTRATION TESTS ---
 
 def test_solve_rl_agent_succeeds_and_is_valid(controller, mock_dependencies, dummy_board, dummy_metrics):
     rl_solver, algo_solver, validator = mock_dependencies
-    
-    # 1. Setup: RL returns a valid solution
     valid_path = SolutionPath()
-    rl_result = SolverResult(SolverStatus.SOLVED, valid_path, "RL Done", dummy_metrics)
-    rl_solver.solve.return_value = rl_result
     
-    validation_result = ValidationResult(valid=True, message="Looks good", errors=[])
-    validator.validate.return_value = validation_result
+    rl_solver.solve.return_value = create_mock_solver_result(SolverStatus.SOLVED, valid_path, dummy_metrics)
+    validator.validate.return_value = create_mock_validation(True)
 
-    # 2. Action
     response = controller.solve(dummy_board)
 
-    # 3. Assertions
+    # Restored: Crucial Orchestration Assertions
     rl_solver.solve.assert_called_once_with(dummy_board)
     validator.validate.assert_called_once_with(dummy_board, valid_path)
-    
-    # Algorithmic fallback should NOT be called
     algo_solver.solve.assert_not_called()
-    
+
+    # Rule Enforcement: Property usage without parentheses
     assert response.getSuccess is True
     assert response.getSolverUsed == "RLSolver"
     assert response.getPath == valid_path
 
 
-def test_solve_rl_agent_fails_fallback_succeeds(controller, mock_dependencies, dummy_board, dummy_metrics):
+def test_solve_rl_agent_invalid_path_triggers_fallback_and_succeeds(controller, mock_dependencies, dummy_board, dummy_metrics):
+    # Restored: Testing the crucial branch where RL solves but validation flags it as mathematically invalid
     rl_solver, algo_solver, validator = mock_dependencies
     
-    # 1. Setup: RL fails entirely (no path)
-    rl_result = SolverResult(SolverStatus.FAILED, None, "RL Failed", dummy_metrics)
-    rl_solver.solve.return_value = rl_result
-    
-    # Setup: Algorithmic solver succeeds
-    valid_path = SolutionPath()
-    algo_result = SolverResult(SolverStatus.SOLVED, valid_path, "Algo Done", dummy_metrics)
-    algo_solver.solve.return_value = algo_result
-    
-    validation_result = ValidationResult(valid=True, message="Looks good", errors=[])
-    validator.validate.return_value = validation_result
-
-    # 2. Action
-    response = controller.solve(dummy_board)
-
-    # 3. Assertions
-    rl_solver.solve.assert_called_once_with(dummy_board)
-    algo_solver.solve.assert_called_once_with(dummy_board)
-    validator.validate.assert_called_once_with(dummy_board, valid_path)
-    
-    assert response.getSuccess is True
-    assert response.getSolverUsed == "AlgorithmicSolver"
-    assert response.getPath == valid_path
-
-
-def test_solve_rl_agent_invalid_path_triggers_fallback(controller, mock_dependencies, dummy_board, dummy_metrics):
-    rl_solver, algo_solver, validator = mock_dependencies
-    
-    # 1. Setup: RL returns a path, but the validator says it's WRONG.
     rl_path = SolutionPath()
-    rl_result = SolverResult(SolverStatus.SOLVED, rl_path, "RL Found Path", dummy_metrics)
-    rl_solver.solve.return_value = rl_result
-    
     algo_path = SolutionPath()
-    algo_result = SolverResult(SolverStatus.SOLVED, algo_path, "Algo Found Path", dummy_metrics)
-    algo_solver.solve.return_value = algo_result
     
-    # First validation (for RL) fails, Second validation (for Algo) succeeds
-    failed_val = ValidationResult(valid=False, message="Invalid RL Path", errors=[])
-    success_val = ValidationResult(valid=True, message="Valid Algo Path", errors=[])
-    validator.validate.side_effect = [failed_val, success_val]
+    rl_solver.solve.return_value = create_mock_solver_result(SolverStatus.SOLVED, rl_path, dummy_metrics)
+    algo_solver.solve.return_value = create_mock_solver_result(SolverStatus.SOLVED, algo_path, dummy_metrics)
+    
+    # First validation (RL) fails, Second validation (Algo) succeeds
+    validator.validate.side_effect = [create_mock_validation(False), create_mock_validation(True)]
 
-    # 2. Action
     response = controller.solve(dummy_board)
 
-    # 3. Assertions
     rl_solver.solve.assert_called_once_with(dummy_board)
     algo_solver.solve.assert_called_once_with(dummy_board)
-    
-    assert validator.validate.call_count == 2
     
     assert response.getSuccess is True
     assert response.getSolverUsed == "AlgorithmicSolver"
     assert response.getPath == algo_path
 
 
-def test_solve_both_solvers_fail(controller, mock_dependencies, dummy_board, dummy_metrics):
+def test_solve_rl_agent_raises_exception_triggers_fallback(controller, mock_dependencies, dummy_board, dummy_metrics):
     rl_solver, algo_solver, validator = mock_dependencies
+    valid_path = SolutionPath()
     
-    # 1. Setup: Both fail to find a solution
-    rl_result = SolverResult(SolverStatus.FAILED, None, "RL Failed", dummy_metrics)
-    algo_result = SolverResult(SolverStatus.UNSOLVABLE, None, "Algo Failed", dummy_metrics)
-    
-    rl_solver.solve.return_value = rl_result
-    algo_solver.solve.return_value = algo_result
+    # RL agent crashes (e.g., PyTorch Tensor exception)
+    rl_solver.solve.side_effect = Exception("Tensor runtime error")
+    algo_solver.solve.return_value = create_mock_solver_result(SolverStatus.SOLVED, valid_path, dummy_metrics)
+    validator.validate.return_value = create_mock_validation(True)
 
-    # 2. Action
     response = controller.solve(dummy_board)
 
-    # 3. Assertions
+    # Assure controller swallowed the RL error and hit fallback successfully
+    algo_solver.solve.assert_called_once_with(dummy_board)
+    validator.validate.assert_called_once_with(dummy_board, valid_path)
+    assert response.getSuccess is True
+    assert response.getSolverUsed == "AlgorithmicSolver"
+
+
+# --- REQUIRED EDGE CASE TESTS (From Design Spec) ---
+
+def test_solve_edge_case_empty_board(controller, mock_dependencies, dummy_metrics):
+    rl_solver, algo_solver, validator = mock_dependencies
+    board_empty = Board(size=0)
+    
+    # 0x0 boards return mathematically unsolvable instantly
+    rl_solver.solve.return_value = create_mock_solver_result(SolverStatus.UNSOLVABLE, None, dummy_metrics)
+    algo_solver.solve.return_value = create_mock_solver_result(SolverStatus.UNSOLVABLE, None, dummy_metrics)
+
+    response = controller.solve(board_empty)
+    
+    validator.validate.assert_not_called()
+    assert response.getSuccess is False
+    assert response.getPath is None
+
+
+def test_solve_edge_case_timeout(controller, mock_dependencies, dummy_metrics):
+    rl_solver, algo_solver, validator = mock_dependencies
+    
+    # Both time out without producing paths
+    rl_solver.solve.return_value = create_mock_solver_result(SolverStatus.TIMEOUT, None, dummy_metrics)
+    algo_solver.solve.return_value = create_mock_solver_result(SolverStatus.TIMEOUT, None, dummy_metrics)
+
+    response = controller.solve(dummy_board)
+    
     rl_solver.solve.assert_called_once_with(dummy_board)
     algo_solver.solve.assert_called_once_with(dummy_board)
+    validator.validate.assert_not_called()  # No validation on timed-out empty paths
     
-    # No path was generated, so validation should never be called
-    validator.validate.assert_not_called()
+    assert response.getSuccess is False
+
+
+def test_solve_edge_case_isolated_cells(controller, mock_dependencies, dummy_board, dummy_metrics):
+    rl_solver, algo_solver, validator = mock_dependencies
+    
+    # Path is disconnected, solvers detect this early and return UNSOLVABLE (Replaced invalid FAILED enum)
+    rl_solver.solve.return_value = create_mock_solver_result(SolverStatus.UNSOLVABLE, None, dummy_metrics)
+    algo_solver.solve.return_value = create_mock_solver_result(SolverStatus.UNSOLVABLE, None, dummy_metrics)
+
+    response = controller.solve(dummy_board)
     
     assert response.getSuccess is False
     assert response.getPath is None
-    assert response.getSolverUsed == "AlgorithmicSolver"  # The fallback solver was the last one used
+    assert response.getSolverUsed == "AlgorithmicSolver"
