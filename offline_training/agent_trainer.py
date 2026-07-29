@@ -374,13 +374,13 @@ if __name__ == "__main__":
         nrTrainingBoards=3000,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=1000,
+        nrEvaluationBoards=5000,
 
         # Only relevant for training.
         timestepsPerBoard=6_000_000,
 
-        loadExistingModel=False,
-        resetModel=True,
+        loadExistingModel=True,
+        resetModel=False,
     )
 
     # ==========================
