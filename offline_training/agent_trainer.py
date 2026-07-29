@@ -151,7 +151,7 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.2,
+                initial_eps=0.6,
                 final_eps=0.05,
                 fraction=0.8,
             )
