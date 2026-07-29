@@ -10,8 +10,8 @@ from backend.solution_path import SolutionPath
 from backend.puzzle_logic.board import Board
 
 if TYPE_CHECKING:
-    from backend.rl_components.rl_agent import RLAgent
-    from backend.rl_components.rl_environment import RLEnvironment
+    from backend.rl_components.RLAgent import RLAgent
+    from backend.rl_components.RLEnvironment import RLEnvironment
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,12 @@ class RLSolver(Solver):
             raise RuntimeError("Environment must be created before loading the RLAgent.")
 
         if self._agent is None:
-            from backend.rl_components.rl_agent import RLAgent
+            # Fallback handling for both PascalCase and snake_case file names
+            try:
+                from backend.rl_components.rl_agent import RLAgent
+            except ImportError:
+                from backend.rl_components.RLAgent import RLAgent
+                
             self._agent = RLAgent(env=self._environment, model_path=self._model_path)
         else:
             self._agent._env = self._environment
@@ -74,7 +79,7 @@ class RLSolver(Solver):
             )
 
         game = self._environment.game
-        raw_path = game.getState.getPath
+        raw_path = getattr(game, 'getState', game).getPath
         
         solution_path = SolutionPath()
         if raw_path is not None:
@@ -127,7 +132,12 @@ class RLSolver(Solver):
                 pass
         
         try:
-            from backend.rl_components.rl_environment import RLEnvironment
+            # Fallback handling for both PascalCase and snake_case file names
+            try:
+                from backend.rl_components.rl_environment import RLEnvironment
+            except ImportError:
+                from backend.rl_components.RLEnvironment import RLEnvironment
+                
             self._environment = RLEnvironment(board)
             self.loadAgent()
             

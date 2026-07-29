@@ -13,7 +13,7 @@ from backend.solving_process.rl_solver import RLSolver
 @pytest.fixture
 def mock_board():
     board = MagicMock(spec=Board)
-    # Architectural Rule: Property mocking
+    # Architectural Rule: Property mocking without parentheses
     type(board).getSize = property(lambda self: 6)
     return board
 
@@ -41,9 +41,9 @@ def mock_agent():
 @pytest.fixture(autouse=True)
 def patch_rl_classes(mock_env, mock_agent):
     """
-    Safely mocks heavy ML dependencies AND the internal RL modules that import them.
-    This injects directly into sys.modules, entirely bypassing unittest.mock.patch's
-    AttributeError when dealing with locally scoped/lazy imports.
+    Safely mocks heavy ML dependencies. 
+    Crucially: We do NOT mock the parent 'backend.rl_components' package, 
+    so Python can successfully resolve the dot-notation without raising "not a package".
     """
     mock_agent_cls = MagicMock(return_value=mock_agent)
     mock_env_cls = MagicMock(return_value=mock_env)
@@ -58,13 +58,17 @@ def patch_rl_classes(mock_env, mock_agent):
         'gymnasium': MagicMock(),
         'torch': MagicMock(),
         'stable_baselines3': MagicMock(),
-        'backend.rl_components': MagicMock(),
+        
+        # PascalCase variants
         'backend.rl_components.RLAgent': mock_agent_mod,
         'backend.rl_components.RLEnvironment': mock_env_mod,
+        
+        # snake_case variants (To match your current local file renaming)
+        'backend.rl_components.rl_agent': mock_agent_mod,
+        'backend.rl_components.rl_environment': mock_env_mod,
     }
     
     with patch.dict(sys.modules, mock_mods):
-        # Yielding the classes so tests can assert against their constructors if needed
         yield mock_agent_cls, mock_env_cls
 
 
@@ -93,7 +97,6 @@ def test_solve_fast_fails_on_empty_board():
 # --- BEHAVIOR TESTS ---
 
 def test_solve_success_complete_solution(patch_rl_classes, mock_board, mock_env, mock_agent):
-    # Simulate an episode taking a few steps
     mock_env.step.side_effect = [
         ({"grid": [1]}, 0.0, False, False, {}),
         ({"grid": [2]}, 0.0, False, False, {}),
@@ -103,7 +106,7 @@ def test_solve_success_complete_solution(patch_rl_classes, mock_board, mock_env,
     solver = RLSolver("backend/agent.zip")
     result = solver.solve(mock_board)
 
-    # Architectural Rule: Strictly asserting against protected attributes
+    # Asserts against protected fields
     assert result._status == SolverStatus.SOLVED
     assert result._metrics._steps == 3
     assert result._path is not None
@@ -123,40 +126,33 @@ def test_load_agent_caching_avoids_reloading_weights(patch_rl_classes, mock_boar
     type(second_mock_env.game).isFinished = property(lambda self: True)
     type(second_mock_env.game.getState).getPath = property(lambda self: [])
     
-    # RLEnvironment(...) will now return our second_mock_env
     mock_env_cls.return_value = second_mock_env
 
     solver.solve(mock_board)
     
-    # Important validation: RLAgent was NOT loaded from disk a second time
-    assert mock_agent_cls.call_count == 1 
+    assert mock_agent_cls.call_count == 1  # Verify no secondary disk load occurred
     assert mock_agent._env == second_mock_env
     mock_agent._model.set_env.assert_called_with(second_mock_env)
 
 
-# Helper class to simulate PyTorch tensors for the parametrize test cleanly
 class MockTensor:
     def item(self):
         return 3
 
 @pytest.mark.parametrize("action_tuple,expected_action_int", [
-    ((MockTensor(), None), 3),  # PyTorch 0D tensor + states
-    ((5, None), 5),             # Pure Python int + states
-    (([4], None), 4),           # List/1D array + states
+    ((MockTensor(), None), 3),  
+    ((5, None), 5),             
+    (([4], None), 4),           
 ])
 def test_run_episode_unboxes_tuple_actions_correctly(
     patch_rl_classes, mock_board, mock_env, mock_agent, action_tuple, expected_action_int
 ):
-    """
-    Ensures that the SB3 predict() tuple (action, states) is correctly split,
-    and the action array/tensor is successfully flattened to a Python integer.
-    """
     mock_agent.predict.return_value = action_tuple
 
     solver = RLSolver("backend/agent.zip")
     solver.solve(mock_board)
 
-    # Asserts Gym step() safely received a clean Python int
+    # Asserts Gym step() safely received a clean unboxed Python int
     mock_env.step.assert_called_with(expected_action_int)
 
 
