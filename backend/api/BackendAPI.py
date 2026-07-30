@@ -18,6 +18,7 @@ from backend.api.dtos.SolverResponse import SolverResponse
 from backend.api.dtos.ValidationResult import ValidationResult
 from backend.api.solver_dtos.SolverMetrics import SolverMetrics
 from backend.api.solver_dtos.SolverStatus import SolverStatus
+from backend.api.solver_result_adapter import to_solver_response
 from backend.api.version import API_VERSION
 
 
@@ -39,7 +40,7 @@ class SolverResultProtocol(Protocol):
 
 
 class SolverControllerProtocol(Protocol):
-    def solve(self, board: Board) -> SolverResultProtocol: ...
+    def solve(self, board: Board) -> SolverResponse: ...
 
 
 class ArchitectureProviderProtocol(Protocol):
@@ -125,22 +126,7 @@ class BackendAPI:
         """
         board = self._build_and_validate(request)
         result = self._solver_controller.solve(board)
-
-        solved = result.status == SolverStatus.SOLVED
-        path = (
-            [(p.getX, p.getY) for p in result.path.getPositions]
-            if (solved and result.path is not None)
-            else None
-        )
-
-        return SolverResponse(
-            status=result.status,
-            success=solved,
-            solutionPath=path,
-            solverUsed=result.solver_used,
-            message=result.message,
-            metrics=result.metrics,
-        )
+        return to_solver_response(result)
 
     def importPuzzle(self, request: PuzzleRequest) -> ValidationResult:
         """POST /api/import — 'validate before loading' (§2.3). Returns 200 ValidationResult
