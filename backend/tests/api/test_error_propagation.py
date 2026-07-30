@@ -356,12 +356,20 @@ def test_error_responses_are_json(client):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def test_solver_returning_none_becomes_500_not_a_crash(make_api, solver_controller):
-    """A collaborator violating its own contract must still produce a structured error."""
+def test_solver_returning_none_degrades_to_failed_200(make_api, solver_controller):
+    """A solver returning ``None`` violates its contract, but the adapter must degrade to a
+    FAILED 200 rather than 500 — a non-result is a solver outcome, and the frontend's
+    status switch handles FAILED. The adapter never lets a malformed result crash the
+    request."""
     solver_controller.solve.return_value = None
     _, client = make_api()
 
-    assert client.post("/api/solve", json=VALID_BODY).status_code == 500
+    response = client.post("/api/solve", json=VALID_BODY)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "FAILED"
+    assert body["success"] is False
+    assert body["solutionPath"] is None
 
 
 def test_validator_returning_wrong_type_becomes_500(make_api, input_validator):
@@ -371,20 +379,24 @@ def test_validator_returning_wrong_type_becomes_500(make_api, input_validator):
     assert client.post("/api/solve", json=VALID_BODY).status_code == 500
 
 
-def test_metrics_violating_constraints_become_500(make_api, solver_controller):
-    """``SolverMetrics`` enforces ``attempts >= 1``. A solver emitting 0 breaks the
-    response contract and must surface as an internal error, not a malformed 200."""
-    bad_metrics = MagicMock()
-    bad_metrics.runtime_ms = -5
-    bad_metrics.steps = -1
-    bad_metrics.attempts = 0
+def test_metrics_violating_constraints_are_clamped_not_500(make_api, solver_controller):
+    """The API DTO enforces ``runtimeMs/steps >= 0`` and ``attempts >= 1``. Rather than
+    let a solver emitting out-of-range metrics 500 the whole request, the adapter clamps
+    to the nearest valid value and returns a well-formed 200. A metrics glitch must not
+    sink an otherwise-good solve."""
+    from .conftest import _InternalMetrics
 
-    solver_controller.solve.return_value = make_solver_result(
-        path=make_path([(0, 0)]), metrics=bad_metrics
-    )
+    bad_metrics = _InternalMetrics(runtime_ms=-5, steps=-1, attempts=0)
+
+    result = make_solver_result(path=make_path([(0, 0)]))
+    result._metrics = bad_metrics  # inject out-of-range metrics onto the internal result
+    solver_controller.solve.return_value = result
     _, client = make_api()
 
-    assert client.post("/api/solve", json=VALID_BODY).status_code == 500
+    response = client.post("/api/solve", json=VALID_BODY)
+    assert response.status_code == 200
+    metrics = response.json()["metrics"]
+    assert metrics == {"runtimeMs": 0, "steps": 0, "attempts": 1}
 
 
 def test_very_large_payload_is_handled_structurally(client, input_validator):
@@ -418,25 +430,6 @@ def test_empty_waypoints_list_passes_shape_and_is_rejected_semantically(
 # ──────────────────────────────────────────────────────────────────────────────
 # Known-defect regression guards
 # ──────────────────────────────────────────────────────────────────────────────
-
-
-def test_solution_path_property_is_still_misspelled():
-    """``SolutionPath`` exposes ``getPostions`` (sic), and ``BackendAPI.solvePuzzle``
-    reads that exact name. ``SolutionValidator`` meanwhile calls ``getPositions`` and
-    fails at runtime.
-
-    This test documents the defect and will fail the moment the property is renamed —
-    at which point ``BackendAPI.solvePuzzle`` must be updated in the same commit.
-    Delete this test as part of that fix.
-    """
-    from backend.solution_path import SolutionPath
-
-    path = SolutionPath()
-    assert hasattr(path, "getPostions"), "spelling fixed — update BackendAPI.solvePuzzle"
-    assert not hasattr(path, "getPositions"), (
-        "getPositions now exists — reconcile BackendAPI.solvePuzzle and delete this guard"
-    )
-
 
 def test_solver_status_non_results_are_never_http_errors(client, solver_controller):
     """Belt-and-braces on the single most misunderstood rule in the contract (§5.5.5):

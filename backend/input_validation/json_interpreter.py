@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List, Tuple, Union
 
+from backend.api.dtos.PuzzleRequest import PuzzleRequest
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic import Position
 
@@ -45,14 +46,14 @@ class JsonInterpreter:
 
     # ── API-facing entry point ──────────────────────────────────────────────
 
-    def buildBoard(self, source: Any) -> Board:
+    def buildBoard(self, request: PuzzleRequest) -> Board:
         """Build a populated ``Board`` from a ``PuzzleRequest`` DTO or a raw JSON source.
 
         For a DTO, trusts the DTO's structural guarantees and constructs the board
         directly. For a raw JSON source, runs :meth:`verifySyntax` first and raises
         ``ValueError`` if it fails.
         """
-        board_size, waypoints, walls = self._extract(source)
+        board_size, waypoints, walls = self._extract(request)
 
         board = Board(board_size)
         for order, (x, y) in enumerate(waypoints):

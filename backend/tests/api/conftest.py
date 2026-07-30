@@ -64,6 +64,65 @@ def make_metrics(runtime_ms: int = 142, steps: int = 36, attempts: int = 1) -> S
     return SolverMetrics(runtimeMs=runtime_ms, steps=steps, attempts=attempts)
 
 
+class _InternalResult:
+    """Shaped exactly like the internal solver output the adapter consumes in production:
+    ``getStatus`` / ``getPath`` / ``getMessage`` / ``getMetrics`` / ``getSolverUsed``
+    properties, backed by an internal ``SolverStatus`` and ``SolverMetrics``.
+
+    Using a real object rather than a ``MagicMock`` matters here — a bare mock auto-creates
+    every getter as a truthy sub-mock, which would defeat the adapter's ``getattr(..., None)``
+    fallbacks and hide real bugs. This class exercises the genuine adapter path.
+    """
+
+    def __init__(self, status, path, message, solver_used, metrics):
+        self._status = status
+        self._path = path
+        self._message = message
+        self._solver_used = solver_used
+        self._metrics = metrics
+
+    @property
+    def getStatus(self):
+        return self._status
+
+    @property
+    def getPath(self):
+        return self._path
+
+    @property
+    def getMessage(self) -> str:
+        return self._message
+
+    @property
+    def getSolverUsed(self) -> str | None:
+        return self._solver_used
+
+    @property
+    def getMetrics(self):
+        return self._metrics
+
+
+class _InternalMetrics:
+    """Mirrors the internal ``SolverMetrics`` getter shape (``getRuntimeMs`` etc.)."""
+
+    def __init__(self, runtime_ms: int, steps: int, attempts: int):
+        self._runtime_ms = runtime_ms
+        self._steps = steps
+        self._attempts = attempts
+
+    @property
+    def getRuntimeMs(self) -> int:
+        return self._runtime_ms
+
+    @property
+    def getSteps(self) -> int:
+        return self._steps
+
+    @property
+    def getAttempts(self) -> int:
+        return self._attempts
+
+
 def make_solver_result(
     *,
     status: SolverStatus = SolverStatus.SOLVED,
@@ -71,21 +130,25 @@ def make_solver_result(
     solver_used: str | None = "RL",
     message: str = "Solved by RL agent.",
     metrics: SolverMetrics | None = None,
-) -> MagicMock:
-    """A stand-in satisfying ``SolverResultProtocol``.
+):
+    """Build an internal-shaped solve result for the adapter under test.
 
-    The real internal ``SolverResult`` exposes ``getStatus`` / ``getPath`` properties and
-    carries no ``status`` attribute at all, so it does *not* satisfy the protocol the API
-    reads. That adapter gap is tracked separately; the API layer is tested against the
-    protocol it declares.
+    ``status`` is given as the API ``SolverStatus`` for test readability and mapped onto an
+    equal-valued internal status object, so callers keep writing ``SolverStatus.TIMEOUT``
+    while the adapter still sees the internal getter shape it will meet in production.
     """
-    result = MagicMock()
-    result.status = status
-    result.path = path
-    result.solver_used = solver_used
-    result.message = message
-    result.metrics = metrics if metrics is not None else make_metrics()
-    return result
+    from backend.solving_process.solver_status import SolverStatus as InternalStatus
+
+    internal_status = InternalStatus(status.value)
+
+    if metrics is not None:
+        internal_metrics = _InternalMetrics(
+            metrics.runtime_ms, metrics.steps, metrics.attempts
+        )
+    else:
+        internal_metrics = _InternalMetrics(142, 36, 1)
+
+    return _InternalResult(internal_status, path, message, solver_used, internal_metrics)
 
 
 def make_validation_result(

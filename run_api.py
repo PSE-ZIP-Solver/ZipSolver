@@ -1,44 +1,26 @@
 """Local dev bootstrapper.
 
-JsonInterpreter / InputValidator / SolverController are still MagicMock stand-ins until
-the concrete classes land. ArchitectureProvider is the real implementation — it has no
-dependency on the solver pipeline, so it can be wired for real today.
+All four collaborators are now REAL — the response the frontend receives reflects the
+actual board the user drew, run through the actual algorithmic solver.
 
 Run from the repo root (not from backend/):
     uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8090
-"""
 
-from unittest.mock import MagicMock
+Frontend picks this up automatically via the Vite proxy in ``frontend/vite.config.ts``
+(all ``/api/*`` calls forwarded to 127.0.0.1:8090). No env vars needed.
+"""
 
 from backend.api.BackendAPI import BackendAPI
 from backend.api.architecture_provider.ArchitectureProvider import ArchitectureProvider
-from backend.api.dtos.ValidationResult import ValidationResult
-from backend.api.solver_dtos.SolverMetrics import SolverMetrics
-from backend.api.solver_dtos.SolverStatus import SolverStatus
-from backend.puzzle_logic import Board, Position
-from backend.solution_path import SolutionPath
+from backend.input_validation import InputValidator, JsonInterpreter
+from backend.solving_process.solver_controller import SolverController
 
-interp = MagicMock()
-interp.buildBoard.return_value = Board(6)
-
-val = MagicMock()
-val.validate.return_value = ValidationResult(valid=True, message="ok", errors=[])
-
-sp = SolutionPath()
-for x, y in [(0, 0), (0, 1), (0, 2)]:
-    sp.add(Position(x, y))
-
-res = MagicMock()
-res.status = SolverStatus.SOLVED
-res.path = sp
-res.solver_used = "RL"
-res.message = "ok"
-res.metrics = SolverMetrics(runtimeMs=142, steps=36, attempts=1)
-
-ctrl = MagicMock()
-ctrl.solve.return_value = res
-
-# Real provider — no solver/RL dependency, so no stub needed.
+# Real collaborators. No mocks. The solver internally selects between the RL and the
+# algorithmic solver; today only the algorithmic path is wired (the RL model is not yet
+# packaged), which is fine — every board still gets a real answer.
+interp = JsonInterpreter()
+val = InputValidator()
+ctrl = SolverController()
 arch = ArchitectureProvider()
 
 app = BackendAPI(
@@ -46,5 +28,6 @@ app = BackendAPI(
     val,
     ctrl,
     arch,
-    model_loaded_provider=lambda: False,  # no artifact wired yet
+    # No RL model loaded yet; health reports the state honestly rather than lying.
+    model_loaded_provider=lambda: False,
 ).app
