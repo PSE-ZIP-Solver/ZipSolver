@@ -56,7 +56,7 @@ class JsonInterpreter:
         board_size, waypoints, walls = self._extract(request)
 
         board = Board(board_size)
-        for order, (x, y) in enumerate(waypoints):
+        for order, (x, y) in enumerate(waypoints, start=1):
             board.addWaypoint(Position(x, y), order)
         for (ax, ay), (bx, by) in walls:
             board.addWall(Position(ax, ay), Position(bx, by))
