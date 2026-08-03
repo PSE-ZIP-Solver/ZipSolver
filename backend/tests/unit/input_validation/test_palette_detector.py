@@ -2,8 +2,6 @@ import sys
 import pytest
 from unittest.mock import MagicMock, patch
 
-# Import the class under test.
-# Lazy-imports inside PaletteDetector prevent ModuleNotFoundError during test collection.
 from backend.input_validation.screenshot.palette_detector import PaletteDetector
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
