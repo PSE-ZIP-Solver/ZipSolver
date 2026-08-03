@@ -1,3 +1,4 @@
+import pickle
 import random
 from pathlib import Path
 
@@ -60,6 +61,9 @@ class AgentTrainer:
         loadExistingModel: bool = True,
         resetModel: bool = False,
         randomizeBoardComplexity: bool = True,
+        useSavedTrainingBoards: bool = False,
+        loadReplayBuffer: bool = True,
+        trainingBoardsPath: str = "offline_training/training_boards/training-boards.pkl",
     ):
         """
         Creates a trainer configured with training and evaluation board sets.
@@ -80,23 +84,52 @@ class AgentTrainer:
             randomizeBoardComplexity: If True, randomly selects waypoint and wall
                 counts between zero and the configured values. If False, uses the
                 configured values as exact counts.
+            useSavedTrainingBoards: If True, loads the previously saved training boards.
+            loadReplayBuffer: If True, loads the previously saved replay buffer.
+            trainingBoardsPath: Path used for saving/loading the training board pool.
         """
         self.modelPath = modelPath
         self._totalTimesteps = timestepsPerBoard
         self.loadExistingModel = loadExistingModel
         self.resetModel = resetModel
         self.randomizeBoardComplexity = randomizeBoardComplexity
-        self.trainingBoards = (
-            trainingBoards
-            if trainingBoards is not None
-            else self._generate_random_boards(
+        self.loadReplayBuffer = loadReplayBuffer
+        self.trainingBoardsPath = Path(trainingBoardsPath)
+
+        if trainingBoards is not None:
+            self.trainingBoards = trainingBoards
+        elif useSavedTrainingBoards:
+            self.trainingBoards = self._load_training_boards()
+            missingBoards = nrTrainingBoards - len(self.trainingBoards)
+
+            if missingBoards < 0:
+                raise ValueError(
+                    f"Saved pool contains {len(self.trainingBoards)} boards, but "
+                    f"nrTrainingBoards is only {nrTrainingBoards}."
+                )
+
+            if missingBoards > 0:
+                self.trainingBoards.extend(
+                    self._generate_random_boards(
+                        boardSize,
+                        nrOfWaypoints,
+                        nrOfWalls,
+                        missingBoards,
+                        self.randomizeBoardComplexity,
+                    )
+                )
+                self._save_training_boards()
+                print(f"Added {missingBoards} new training boards.")
+        else:
+            self.trainingBoards = self._generate_random_boards(
                 boardSize,
                 nrOfWaypoints,
                 nrOfWalls,
                 nrTrainingBoards,
                 self.randomizeBoardComplexity,
             )
-        )
+            self._save_training_boards()
+
         self.evaluationBoards = (
             evaluationBoards
             if evaluationBoards is not None
@@ -108,6 +141,29 @@ class AgentTrainer:
                 self.randomizeBoardComplexity,
             )
         )
+
+    def _save_training_boards(self):
+        """Save the generated training board pool for later training runs."""
+        self.trainingBoardsPath.parent.mkdir(parents=True, exist_ok=True)
+        with self.trainingBoardsPath.open("wb") as file:
+            pickle.dump(self.trainingBoards, file)
+        print(f"Saved training boards to {self.trainingBoardsPath}")
+
+    def _load_training_boards(self) -> list[Board]:
+        """Load the training board pool created during an earlier run."""
+        if not self.trainingBoardsPath.exists():
+            raise FileNotFoundError(
+                f"Training board file not found: {self.trainingBoardsPath}"
+            )
+
+        with self.trainingBoardsPath.open("rb") as file:
+            boards = pickle.load(file)
+
+        if not isinstance(boards, list) or not boards:
+            raise ValueError("The saved training board file is empty or invalid.")
+
+        print(f"Loaded training boards from {self.trainingBoardsPath}")
+        return boards
 
     def _generate_random_boards(
         self,
@@ -143,15 +199,35 @@ class AgentTrainer:
 
         return boards
 
+    @staticmethod
+    def _get_sb3_model(agent: RLAgent):
+        """Return the Stable-Baselines model stored inside RLAgent."""
+        model = getattr(agent, "_model", None)
+        if model is None:
+            raise AttributeError(
+                "RLAgent must store its Stable-Baselines model in self._model."
+            )
+        return model
+
+    @staticmethod
+    def _replay_buffer_path(modelPath: str) -> Path:
+        """Create a replay-buffer path next to the corresponding model file."""
+        modelFile = Path(modelPath)
+        return modelFile.with_name(f"{modelFile.stem}_replay_buffer.pkl")
+
     def train(self) -> RLAgent:
         """Train one RLAgent across randomly sampled training boards."""
         if not self.trainingBoards:
             raise ValueError("Cannot train without at least one training board.")
 
         modelFile = Path(self.modelPath)
-        if self.resetModel and modelFile.exists():
-            print(f"Resetting model: deleting {self.modelPath}")
-            modelFile.unlink()
+        replayBufferFile = self._replay_buffer_path(self.modelPath)
+
+        if self.resetModel:
+            for file in (modelFile, replayBufferFile):
+                if file.exists():
+                    print(f"Resetting training data: deleting {file}")
+                    file.unlink()
 
         trainEnv = Monitor(BoardSamplingEnv(self.trainingBoards))
         if self.loadExistingModel and modelFile.exists():
@@ -162,10 +238,18 @@ class AgentTrainer:
                 tensorboard_log="./logs/zip_dqn/6x6/",
             )
 
+            if self.loadReplayBuffer and replayBufferFile.exists():
+                self._get_sb3_model(agent).load_replay_buffer(replayBufferFile)
+                print(f"Loaded replay buffer from {replayBufferFile}")
+            elif self.loadReplayBuffer:
+                print(f"No replay buffer found at {replayBufferFile}")
+            else:
+                print("Starting with an empty replay buffer.")
+
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.6,
-                final_eps=0.1,
+                initial_eps=0.5,
+                final_eps=0.05,
                 fraction=0.8,
             )
         else:
@@ -182,7 +266,7 @@ class AgentTrainer:
                 train_freq=(1, "step"),          # Update neural network (training) after every completed episode.
                 gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
                 target_update_interval=500,      # Copy the learned network weights to the target network every 500 steps.
-                gamma=0.95,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
+                gamma=0.98,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
                 max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
                 seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
                 tensorboard_log="./logs/zip_dqn/6x6/",
@@ -349,20 +433,31 @@ class AgentTrainer:
         print("Success rate:", result.getSuccessRate)
 
     def save(self, agent: RLAgent, modelPath: str | None = None):
-        """Save the trained agent to the provided model path."""
+        """Save the trained agent and its replay buffer."""
         path = modelPath if modelPath else self.modelPath
         if not path:
             raise ValueError("A valid model path is required.")
+
+        modelFile = Path(path)
+        modelFile.parent.mkdir(parents=True, exist_ok=True)
         agent.save(path)
+
+        replayBufferFile = self._replay_buffer_path(path)
+        self._get_sb3_model(agent).save_replay_buffer(replayBufferFile)
+        print(f"Saved replay buffer to {replayBufferFile}")
 
 
 if __name__ == "__main__":
-    RANDOMIZE_BOARD_COMPLEXITY = True
-    NR_OF_WALLS = 30
-    NR_OF_WAYPOINTS = 36
+    RANDOMIZE_BOARD_COMPLEXITY = False
+    NR_OF_WALLS = 25
+    NR_OF_WAYPOINTS = 25
+
+    USE_SAVED_TRAINING_BOARDS = True
+    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/6x6-training-pool.pkl"
 
     TRAIN_MODEL = True
-    PRINT_TRAINING_BOARDS = True 
+    PRINT_TRAINING_BOARDS = True
     SHOW_FIRST_TRAINING_RUN = True
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
@@ -375,17 +470,20 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/trained-model.zip",
 
         # number of training boards in the training pool
-        nrTrainingBoards=5,
+        nrTrainingBoards=20,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=1000,
+        nrEvaluationBoards=100,
 
         # Total time steps
-        timestepsPerBoard=300_000,
+        timestepsPerBoard=600_000,
 
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
+        useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
+        loadReplayBuffer=LOAD_REPLAY_BUFFER,
+        trainingBoardsPath=TRAINING_BOARDS_PATH,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
