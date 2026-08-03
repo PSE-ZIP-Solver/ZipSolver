@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic import Position
-from backend.json_interpreter import JsonInterpreter
+from backend.input_validation.json_interpreter import JsonInterpreter
 
 @pytest.fixture
 def valid_json_data():
