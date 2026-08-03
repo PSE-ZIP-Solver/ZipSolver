@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 # Import the class under test. Since ImageLoader lazy-imports its dependencies, 
 # this top-level import will NOT crash in a CI/CD environment missing cv2/numpy.
-from image_loader import ImageLoader
+from backend.input_validation.screenshot.image_loader import ImageLoader
 
 
 @pytest.fixture(autouse=True)
