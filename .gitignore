@@ -7,4 +7,6 @@
 uv.lock
 __pycache__/
 *.pyc
+
 *_replay_buffer.pkl
+logs/
