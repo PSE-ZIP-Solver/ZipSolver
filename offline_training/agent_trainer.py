@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 
 import gymnasium as gym
+from pygments.lexers.csound import newline
 from stable_baselines3.common.monitor import Monitor
 
 from backend.puzzle_logic import Board
@@ -117,7 +118,7 @@ class AgentTrainer:
         """Generate random boards with random numbers of waypoints and walls."""
         boards: list[Board] = []
 
-        for _ in range(numberBoards):
+        for i in range(numberBoards):
             intermediateWaypoints = random.randint(0, maxIntermediateWaypoints)
             walls = random.randint(0, maxWalls)
 
@@ -128,7 +129,6 @@ class AgentTrainer:
                 1,
             )[0]
 
-            boards.append(board)
 
         return boards
 
@@ -151,9 +151,9 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.6,
-                final_eps=0.05,
-                fraction=0.8,
+                initial_eps=0.8,
+                final_eps=0.1,
+                fraction=0.85,
             )
         else:
             print("Creating new agent")
@@ -374,20 +374,20 @@ if __name__ == "__main__":
         nrTrainingBoards=4000,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=5000,
+        nrEvaluationBoards=50,
 
         # Only relevant for training.
         timestepsPerBoard=6_000_000,
 
-        loadExistingModel=False,
-        resetModel=True,
+        loadExistingModel=True,
+        resetModel=False,
     )
 
     # ==========================
     # Option 1: Only evaluate saved model
-    # ==========================
+     #==========================
     #result = trainer.evaluate_saved_model(showExamples=True)
-
+    #
     #print("\nEvaluation result:")
     #print("Solved:", result.getSolveCount)
     #print("Total Boards:", result.getTotalBoards)
@@ -397,7 +397,7 @@ if __name__ == "__main__":
     # ==========================
     # Option 2: Continue training
     # Uncomment this block if you want to train again.
-    # ==========================
+    ## ==========================
     trainedAgent = trainer.train()
     trainer.save(trainedAgent)
 
