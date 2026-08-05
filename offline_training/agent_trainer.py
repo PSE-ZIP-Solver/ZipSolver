@@ -160,7 +160,7 @@ class AgentTrainer:
             agent = RLAgent(
                 trainEnv,
                 learning_rate=1e-4,
-                exploration_initial_eps=0.6,
+                exploration_initial_eps=1,
                 exploration_final_eps=0.10,
                 exploration_fraction=0.9,
                 learning_starts=3_000,
@@ -368,10 +368,10 @@ if __name__ == "__main__":
         boardSize=6,
         nrOfWalls=20,
         nrOfWaypoints=16,
-        modelPath="6x6Number1",
+        modelPath="NewTryModel",
 
         # Only relevant if you uncomment training again.
-        nrTrainingBoards=3000,
+        nrTrainingBoards=4000,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=5000,
@@ -379,8 +379,8 @@ if __name__ == "__main__":
         # Only relevant for training.
         timestepsPerBoard=6_000_000,
 
-        loadExistingModel=True,
-        resetModel=False,
+        loadExistingModel=False,
+        resetModel=True,
     )
 
     # ==========================
