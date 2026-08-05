@@ -128,6 +128,7 @@ class AgentTrainer:
                 walls,
                 1,
             )[0]
+            boards.append(board)
 
 
         return boards
