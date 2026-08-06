@@ -11,4 +11,6 @@ __pycache__/
 *_replay_buffer.pkl
 logs/
 
+# server stuff:
 .venv/
+*.egg-info/
