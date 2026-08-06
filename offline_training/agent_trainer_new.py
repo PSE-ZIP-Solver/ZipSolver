@@ -514,9 +514,9 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 10
+    MIN_NR_OF_WALLS = 5
     NR_OF_WALLS = 25
-    MIN_NR_OF_WAYPOINTS = 10
+    MIN_NR_OF_WAYPOINTS = 5
     NR_OF_WAYPOINTS = 25
 
     USE_SAVED_TRAINING_BOARDS = False
@@ -542,13 +542,13 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=1000,
+        nrTrainingBoards=1500,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=100, 
 
         # Total time steps
-        timestepsPerBoard=1_500_000,
+        timestepsPerBoard=2_000_000,
 
         loadExistingModel=True,
         resetModel=False,
