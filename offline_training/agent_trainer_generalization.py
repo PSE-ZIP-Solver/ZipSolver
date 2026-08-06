@@ -61,9 +61,13 @@ class AgentTrainer:
         loadExistingModel: bool = True,
         resetModel: bool = False,
         randomizeBoardComplexity: bool = True,
+        minNrOfWalls: int = 0,
+        minNrOfWaypoints: int = 0,
         useSavedTrainingBoards: bool = False,
         loadReplayBuffer: bool = True,
         trainingBoardsPath: str = "offline_training/training_boards/training-boards.pkl",
+        useSavedEvaluationBoards: bool = False,
+        evaluationBoardsPath: str = "offline_training/evaluation_boards/evaluation-boards.pkl",
     ):
         """
         Creates a trainer configured with training and evaluation board sets.
@@ -82,19 +86,36 @@ class AgentTrainer:
             loadExistingModel: If True, loads modelPath if it exists.
             resetModel: If True, deletes modelPath before training and starts fresh.
             randomizeBoardComplexity: If True, randomly selects waypoint and wall
-                counts between zero and the configured values. If False, uses the
-                configured values as exact counts.
+                counts between the configured minimum and maximum values. If False,
+                uses the configured maximum values as exact counts.
+            minNrOfWalls: Minimum number of walls for randomized board generation.
+            minNrOfWaypoints: Minimum number of intermediate waypoints for randomized
+                board generation.
             useSavedTrainingBoards: If True, loads the previously saved training boards.
             loadReplayBuffer: If True, loads the previously saved replay buffer.
             trainingBoardsPath: Path used for saving/loading the training board pool.
+            useSavedEvaluationBoards: If True, reuses a fixed saved evaluation set.
+                If the file does not exist yet, it is generated and saved automatically.
+            evaluationBoardsPath: Path used for saving/loading the evaluation board set.
         """
         self.modelPath = modelPath
         self._totalTimesteps = timestepsPerBoard
         self.loadExistingModel = loadExistingModel
         self.resetModel = resetModel
         self.randomizeBoardComplexity = randomizeBoardComplexity
+        self.minNrOfWalls = minNrOfWalls
+        self.minNrOfWaypoints = minNrOfWaypoints
         self.loadReplayBuffer = loadReplayBuffer
         self.trainingBoardsPath = Path(trainingBoardsPath)
+        self.evaluationBoardsPath = Path(evaluationBoardsPath)
+
+        if not 0 <= self.minNrOfWalls <= nrOfWalls:
+            raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
+
+        if not 0 <= self.minNrOfWaypoints <= nrOfWaypoints:
+            raise ValueError(
+                "minNrOfWaypoints must be between 0 and nrOfWaypoints."
+            )
 
         if trainingBoards is not None:
             self.trainingBoards = trainingBoards
@@ -112,7 +133,9 @@ class AgentTrainer:
                 self.trainingBoards.extend(
                     self._generate_random_boards(
                         boardSize,
+                        self.minNrOfWaypoints,
                         nrOfWaypoints,
+                        self.minNrOfWalls,
                         nrOfWalls,
                         missingBoards,
                         self.randomizeBoardComplexity,
@@ -123,24 +146,34 @@ class AgentTrainer:
         else:
             self.trainingBoards = self._generate_random_boards(
                 boardSize,
+                self.minNrOfWaypoints,
                 nrOfWaypoints,
+                self.minNrOfWalls,
                 nrOfWalls,
                 nrTrainingBoards,
                 self.randomizeBoardComplexity,
             )
             self._save_training_boards()
 
-        self.evaluationBoards = (
-            evaluationBoards
-            if evaluationBoards is not None
-            else self._generate_random_boards(
+        if evaluationBoards is not None:
+            self.evaluationBoards = evaluationBoards
+        elif useSavedEvaluationBoards and self.evaluationBoardsPath.exists():
+            self.evaluationBoards = self._load_evaluation_boards(
+                nrEvaluationBoards
+            )
+        else:
+            self.evaluationBoards = self._generate_random_boards(
                 boardSize,
+                self.minNrOfWaypoints,
                 nrOfWaypoints,
+                self.minNrOfWalls,
                 nrOfWalls,
                 nrEvaluationBoards,
                 self.randomizeBoardComplexity,
             )
-        )
+
+            if useSavedEvaluationBoards:
+                self._save_evaluation_boards()
 
     def _save_training_boards(self):
         """Save the generated training board pool for later training runs."""
@@ -165,10 +198,39 @@ class AgentTrainer:
         print(f"Loaded training boards from {self.trainingBoardsPath}")
         return boards
 
+    def _save_evaluation_boards(self):
+        """Save one fixed evaluation board set for comparable future runs."""
+        self.evaluationBoardsPath.parent.mkdir(parents=True, exist_ok=True)
+        with self.evaluationBoardsPath.open("wb") as file:
+            pickle.dump(self.evaluationBoards, file)
+        print(f"Saved evaluation boards to {self.evaluationBoardsPath}")
+
+    def _load_evaluation_boards(
+        self,
+        expectedNumberBoards: int,
+    ) -> list[Board]:
+        """Load the fixed evaluation board set created during an earlier run."""
+        with self.evaluationBoardsPath.open("rb") as file:
+            boards = pickle.load(file)
+
+        if not isinstance(boards, list) or not boards:
+            raise ValueError("The saved evaluation board file is empty or invalid.")
+
+        if len(boards) != expectedNumberBoards:
+            raise ValueError(
+                f"Saved evaluation set contains {len(boards)} boards, but "
+                f"nrEvaluationBoards is {expectedNumberBoards}."
+            )
+
+        print(f"Loaded evaluation boards from {self.evaluationBoardsPath}")
+        return boards
+
     def _generate_random_boards(
         self,
         boardSize: int,
+        minIntermediateWaypoints: int,
         maxIntermediateWaypoints: int,
+        minWalls: int,
         maxWalls: int,
         numberBoards: int,
         randomizeBoardComplexity: bool,
@@ -178,12 +240,15 @@ class AgentTrainer:
 
         for _ in range(numberBoards):
             nrOfWaypoints = (
-                random.randint(0, maxIntermediateWaypoints)
+                random.randint(
+                    minIntermediateWaypoints,
+                    maxIntermediateWaypoints,
+                )
                 if randomizeBoardComplexity
                 else maxIntermediateWaypoints
             )
             nrOfWalls = (
-                random.randint(0, maxWalls)
+                random.randint(minWalls, maxWalls)
                 if randomizeBoardComplexity
                 else maxWalls
             )
@@ -248,7 +313,7 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.3,
+                initial_eps=0.5,
                 final_eps=0.05,
                 fraction=0.8,
             )
@@ -449,34 +514,41 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
+    MIN_NR_OF_WALLS = 10
     NR_OF_WALLS = 25
+    MIN_NR_OF_WAYPOINTS = 10
     NR_OF_WAYPOINTS = 25
 
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/6x6-training-pool.pkl"
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-1000boards.pkl")
+
+    USE_SAVED_EVALUATION_BOARDS = True
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-100boards.pkl"
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
-    SHOW_FIRST_TRAINING_RUN = True
+    SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
-    SHOW_EVALUATION_EXAMPLES = False
+    SHOW_EVALUATION_EXAMPLES = True
 
     trainer = AgentTrainer(
         boardSize=6,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
         modelPath="offline_training/trained_models/trained-model.zip",
+        minNrOfWalls=MIN_NR_OF_WALLS,
+        minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=500,
+        nrTrainingBoards=1000,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=100, 
 
         # Total time steps
-        timestepsPerBoard=1_000_000,
+        timestepsPerBoard=1_500_000,
 
         loadExistingModel=True,
         resetModel=False,
@@ -484,6 +556,8 @@ if __name__ == "__main__":
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
         trainingBoardsPath=TRAINING_BOARDS_PATH,
+        useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
+        evaluationBoardsPath=EVALUATION_BOARDS_PATH,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
