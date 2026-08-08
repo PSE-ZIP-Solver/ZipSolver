@@ -1,56 +1,71 @@
-from typing import Any, Dict, Union
-from image_loader import ImageLoader
-from palette_detector import PaletteDetector
-from grid_localizer import GridLocalizer
-from waypoint_detector import WaypointDetector, WaypointDetectionError
-from wall_detector import WallDetector
+import json
+from typing import Any, Dict
+
+from backend.input_validation.screenshot.image_loader import ImageLoader
+from backend.input_validation.screenshot.palette_detector import PaletteDetector
+from backend.input_validation.screenshot.grid_localizer import GridLocalizer
+from backend.input_validation.screenshot.waypoint_detector import (
+    WaypointDetector,
+    WaypointDetectionError,
+)
+from backend.input_validation.screenshot.wall_detector import WallDetector
+
+__all__ = ["ScreenshotExtractor", "WaypointDetectionError"]
+
 
 class ScreenshotExtractor:
     """
     Main orchestration class for the screenshot extraction pipeline.
-    Executes the detectors in sequence and outputs a schema-compliant dictionary.
+    Executes the detectors in sequence and outputs a schema-compliant result.
     """
-    
+
     def __init__(self):
-        # Strict encapsulation with protected attributes
+        # Strict encapsulation with protected attributes. Instantiated once; the heavy
+        # libraries each component needs are imported lazily inside their methods, so
+        # constructing the extractor stays cheap and import-safe.
         self._image_loader = ImageLoader()
         self._palette_detector = PaletteDetector()
         self._grid_localizer = GridLocalizer()
         self._waypoint_detector = WaypointDetector()
         self._wall_detector = WallDetector()
 
+    # ── Public API ───────────────────────────────────────────────────────────
+
     def extract_to_dict(self, image_bytes: bytes) -> Dict[str, Any]:
         """
-        Coordinates the extraction of board data and returns a Dictionary
-        compliant with the "5.4.1 Board Configuration Schema".
-        
-        INTEGRATION NOTE:
-        This output is explicitly designed to be passed directly into the pre-existing 
-        interpreter function: `JsonInterpreter.buildBoard(file: Union[str, dict, Any])`.
-        Returning a dictionary bypasses unnecessary JSON string serialization/deserialization.
-        
-        HOW IT WORKS:
-        1. Fast-Fails immediately if `image_bytes` is None or empty.
-        2. Calls `_image_loader.load_and_preprocess()`.
-        3. Passes image to `_palette_detector` to determine Light/Dark mode.
-        4. Passes image to `_grid_localizer` to get boardSize and cell_bounds.
-        5. Passes data to `_waypoint_detector` to get ordered waypoints list.
-           - Allows WaypointDetectionError to bubble up if OCR fails or sequence is missing.
-        6. Passes data to `_wall_detector` to get list of wall dicts.
-        7. Constructs and returns a Python dictionary exactly matching the JSON schema.
-        
-        Args:
-            image_bytes (bytes): The raw file bytes from the HTTP request.
-            
-        Returns:
-            Dict[str, Any]: Dictionary containing 'boardSize', 'waypoints', and 'walls', 
-                            ready for JsonInterpreter.buildBoard().
+        Runs the pipeline and returns a dict matching the Board Configuration Schema.
+
+        Designed to feed straight into ``JsonInterpreter.buildBoard(...)``; returning a
+        dict avoids a redundant serialize/deserialize round-trip at the integration point.
+
+        Sequence: image load -> theme -> grid -> waypoints -> walls. Any exception raised
+        by a sub-component (ValueError, WaypointDetectionError) bubbles up unchanged and
+        halts the remaining stages.
         """
-        # MACRO: FAST_FAIL_IF_BYTES_NONE_OR_EMPTY
-        # MACRO: EXECUTE_IMAGE_LOADER
-        # MACRO: EXECUTE_PALETTE_DETECTOR
-        # MACRO: EXECUTE_GRID_LOCALIZER
-        # MACRO: EXECUTE_WAYPOINT_DETECTOR_AND_ALLOW_EXCEPTIONS_TO_BUBBLE
-        # MACRO: EXECUTE_WALL_DETECTOR
-        # MACRO: CONSTRUCT_AND_RETURN_SCHEMA_DICT_FOR_JSON_INTERPRETER
-        raise NotImplementedError
+        # FAST_FAIL_IF_BYTES_NONE_OR_EMPTY — before any component runs.
+        if image_bytes is None or len(image_bytes) == 0:
+            raise ValueError("Image bytes cannot be None or empty.")
+
+        image = self._image_loader.load_and_preprocess(image_bytes)
+        theme = self._palette_detector.detect_theme(image)
+        board_size, cell_bounds = self._grid_localizer.localize_grid(image)
+
+        # Waypoint errors (gap/duplicate/unreadable) are allowed to bubble; the wall stage
+        # below must not run on a board we could not read waypoints from.
+        waypoints = self._waypoint_detector.detect_waypoints(image, cell_bounds, theme)
+        walls = self._wall_detector.detect_walls(image, cell_bounds, theme)
+
+        return {
+            "boardSize": int(board_size),
+            "waypoints": waypoints,
+            "walls": walls,
+        }
+
+    def extract_to_json(self, image_bytes: bytes) -> str:
+        """Same pipeline as :meth:`extract_to_dict`, returned as a JSON string.
+
+        Provided for callers that want the serialized schema directly (e.g. an HTTP layer
+        that forwards the raw JSON). Internally delegates so the two entry points can never
+        diverge.
+        """
+        return json.dumps(self.extract_to_dict(image_bytes))

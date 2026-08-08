@@ -2,7 +2,7 @@ import sys
 import pytest
 from unittest.mock import MagicMock, patch
 
-from backend.input_validation.screenshot.gird_localizer import GridLocalizer
+from backend.input_validation.screenshot.grid_localizer import GridLocalizer
 
 
 @pytest.fixture(autouse=True)
