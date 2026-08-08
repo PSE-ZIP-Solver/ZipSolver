@@ -1,7 +1,7 @@
 class EnvironmentConfig:
     """Environment configuration for the Zip RL environment."""
 
-    def __init__(self, size: int = 6):
+    def __init__(self, size: int = 8):
         self.size = size
         
         # The start cell is already visited after reset, so only size^2 - 1 moves are needed.

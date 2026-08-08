@@ -323,18 +323,18 @@ class AgentTrainer:
                 trainEnv,
                 learning_rate=1e-4,              # Controls how strongly the network weights are changed during each gradient/network update.
                 exploration_initial_eps=1.0,     # Initial probability of choosing a random action.
-                exploration_final_eps=0.10,      # Final minimum probability of choosing a random action.
+                exploration_final_eps=0.15,      # Final minimum probability of choosing a random action.
                 exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
-                learning_starts=500,             # Number of steps before the model starts learning.
-                buffer_size=50_000,              # Maximum number of transitions stored in the replay buffer.
-                batch_size=64,                   # Number of samples used for one training update.
+                learning_starts=2000,             # Number of steps before the model starts learning.
+                buffer_size=300_000,              # Maximum number of transitions stored in the replay buffer.
+                batch_size=128,                   # Number of samples used for one training update.
                 train_freq=(1, "step"),          # Update neural network (training) after every completed episode.
                 gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
-                target_update_interval=500,      # Copy the learned network weights to the target network every 500 steps.
-                gamma=0.98,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
+                target_update_interval=1000,      # Copy the learned network weights to the target network every 500 steps.
+                gamma=0.99,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
                 max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
                 seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
-                tensorboard_log="./logs/zip_dqn/6x6/",
+                tensorboard_log="./logs/zip_dqn/8x8/",
             )
 
         totalTimesteps = (
@@ -514,44 +514,44 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 5
+    MIN_NR_OF_WALLS = 24
     NR_OF_WALLS = 25
-    MIN_NR_OF_WAYPOINTS = 5
+    MIN_NR_OF_WAYPOINTS = 24
     NR_OF_WAYPOINTS = 25
 
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-1000boards.pkl")
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/01-8x8.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = True
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-100boards.pkl"
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/01-8x8.pkl"
 
     TRAIN_MODEL = True
-    PRINT_TRAINING_BOARDS = False
+    PRINT_TRAINING_BOARDS = True
     SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
 
     trainer = AgentTrainer(
-        boardSize=6,
+        boardSize=8,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/trained-model.zip",
+        modelPath="offline_training/trained_models/01-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=1500,
+        nrTrainingBoards=1,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=100, 
 
         # Total time steps
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard=900_000,
 
-        loadExistingModel=True,
-        resetModel=False,
+        loadExistingModel=False,
+        resetModel=True,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
