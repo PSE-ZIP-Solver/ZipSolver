@@ -515,16 +515,16 @@ class AgentTrainer:
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
     MIN_NR_OF_WALLS = 5
-    NR_OF_WALLS = 25
+    NR_OF_WALLS = 20
     MIN_NR_OF_WAYPOINTS = 5
-    NR_OF_WAYPOINTS = 25
+    NR_OF_WAYPOINTS = 20
 
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-1000boards.pkl")
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-2000boards-5to20.pkl")
 
-    USE_SAVED_EVALUATION_BOARDS = True
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-100boards.pkl"
+    USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-5to20-1000boards.pkl"
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
@@ -542,13 +542,13 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=1500,
+        nrTrainingBoards=2000,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=100, 
+        nrEvaluationBoards=1000, 
 
         # Total time steps
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard= 2_000_000,
 
         loadExistingModel=True,
         resetModel=False,
