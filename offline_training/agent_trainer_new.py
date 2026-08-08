@@ -523,7 +523,7 @@ if __name__ == "__main__":
     LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
     TRAINING_BOARDS_PATH = ("offline_training/training_boards/01-8x8.pkl")
 
-    USE_SAVED_EVALUATION_BOARDS = True
+    USE_SAVED_EVALUATION_BOARDS = False
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/01-8x8.pkl"
 
     TRAIN_MODEL = True
