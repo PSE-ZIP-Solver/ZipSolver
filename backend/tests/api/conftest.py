@@ -47,6 +47,13 @@ REFERENCE_BOARD: dict[str, Any] = {
 }
 
 
+#: A minimal multipart file payload for POST /api/import. The bytes are never decoded —
+#: the ScreenshotExtractor is mocked in every API test — so any non-empty content works.
+#: Import tests drive behaviour through ``screenshot_extractor.extract_to_dict``, not the
+#: image itself.
+IMAGE_UPLOAD: dict[str, Any] = {"file": ("board.png", b"fake-png-bytes", "image/png")}
+
+
 def make_path(coords: Iterable[tuple[int, int]]) -> SolutionPath:
     """Build a real ``SolutionPath`` from (x, y) pairs.
 
@@ -127,6 +134,24 @@ def solver_controller() -> MagicMock:
 
 
 @pytest.fixture
+def screenshot_extractor() -> MagicMock:
+    """ScreenshotExtractor stub — returns a valid 6x6 board dict by default.
+
+    The default output is a clean, semantically-valid board so the happy-path import test
+    needs no extra arrangement. Individual tests override ``extract_to_dict`` to simulate
+    extraction failures (ValueError / WaypointDetectionError) or a board that fails the
+    downstream semantic check.
+    """
+    stub = MagicMock()
+    stub.extract_to_dict.return_value = {
+        "boardSize": 6,
+        "waypoints": [[0, 0], [5, 0]],
+        "walls": [{"neighborA": [0, 0], "neighborB": [1, 0]}],
+    }
+    return stub
+
+
+@pytest.fixture
 def architecture_provider() -> MagicMock:
     """ArchitectureProvider stub — returns a real ArchitectureInfo built by the
     production provider, so the response shape under test is the genuine one."""
@@ -145,7 +170,7 @@ def architecture_provider() -> MagicMock:
 
 
 @pytest.fixture
-def make_api(interpreter, input_validator, solver_controller, architecture_provider):
+def make_api(interpreter, input_validator, solver_controller, architecture_provider, screenshot_extractor):
     """Factory building a ``BackendAPI`` with any subset of collaborators overridden.
 
     Usage::
@@ -169,6 +194,7 @@ def make_api(interpreter, input_validator, solver_controller, architecture_provi
             "input_validator": input_validator,
             "solver_controller": solver_controller,
             "architecture_provider": architecture_provider,
+            "screenshot_extractor": screenshot_extractor,
         }
         model_loaded_provider = overrides.pop("model_loaded_provider", None)
         allowed_origins = overrides.pop("allowed_origins", None)
@@ -179,6 +205,7 @@ def make_api(interpreter, input_validator, solver_controller, architecture_provi
             collaborators["input_validator"],
             collaborators["solver_controller"],
             collaborators["architecture_provider"],
+            collaborators["screenshot_extractor"],
             allowed_origins=allowed_origins,
             model_loaded_provider=model_loaded_provider,
         )

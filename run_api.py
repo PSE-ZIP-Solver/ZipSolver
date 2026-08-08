@@ -1,50 +1,35 @@
 """Local dev bootstrapper.
 
-JsonInterpreter / InputValidator / SolverController are still MagicMock stand-ins until
-the concrete classes land. ArchitectureProvider is the real implementation — it has no
-dependency on the solver pipeline, so it can be wired for real today.
+Wires the real interpreter, validator, solver controller, architecture provider, and
+screenshot extractor — no mocks. The frontend reaches this via the Vite proxy in
+frontend/vite.config.ts (all /api/* forwarded to 127.0.0.1:8090).
 
 Run from the repo root (not from backend/):
     uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8090
 """
 
-from unittest.mock import MagicMock
-
 from backend.api.BackendAPI import BackendAPI
 from backend.api.architecture_provider.ArchitectureProvider import ArchitectureProvider
-from backend.api.dtos.ValidationResult import ValidationResult
-from backend.api.solver_dtos.SolverMetrics import SolverMetrics
-from backend.api.solver_dtos.SolverStatus import SolverStatus
-from backend.puzzle_logic import Board, Position
-from backend.solution_path import SolutionPath
+from backend.input_validation.input_validator import InputValidator
+from backend.input_validation.json_interpreter import JsonInterpreter
+from backend.input_validation.screenshot import ScreenshotExtractor
+from backend.solving_process.solver_controller import SolverController
 
-interp = MagicMock()
-interp.buildBoard.return_value = Board(6)
-
-val = MagicMock()
-val.validate.return_value = ValidationResult(valid=True, message="ok", errors=[])
-
-sp = SolutionPath()
-for x, y in [(0, 0), (0, 1), (0, 2)]:
-    sp.add(Position(x, y))
-
-res = MagicMock()
-res.status = SolverStatus.SOLVED
-res.path = sp
-res.solver_used = "RL"
-res.message = "ok"
-res.metrics = SolverMetrics(runtimeMs=142, steps=36, attempts=1)
-
-ctrl = MagicMock()
-ctrl.solve.return_value = res
-
-# Real provider — no solver/RL dependency, so no stub needed.
-arch = ArchitectureProvider()
+# Real collaborators. buildBoard does structural parsing; InputValidator enforces the
+# semantic rules and returns structured 422 codes; SolverController runs the RL-then-
+# algorithmic strategy; ScreenshotExtractor turns an uploaded image into a board dict.
+interpreter = JsonInterpreter()
+validator = InputValidator()
+controller = SolverController()
+architecture = ArchitectureProvider()
+extractor = ScreenshotExtractor()
 
 app = BackendAPI(
-    interp,
-    val,
-    ctrl,
-    arch,
-    model_loaded_provider=lambda: False,  # no artifact wired yet
+    interpreter,
+    validator,
+    controller,
+    architecture,
+    extractor,
+    # No RL model artifact wired yet; report honestly rather than guessing True.
+    model_loaded_provider=lambda: False,
 ).app

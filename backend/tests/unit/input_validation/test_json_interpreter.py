@@ -213,20 +213,38 @@ def test_verifySyntax_catches_load_exception(interpreter):
     with patch.object(JsonInterpreter, '_load', side_effect=FileNotFoundError):
         assert call(interpreter.verifySyntax, "dummy_file.json") is False
 
-@pytest.mark.parametrize("missing_key", ["boardSize", "waypoints", "walls", "solutionPath"])
+@pytest.mark.parametrize("missing_key", ["boardSize", "waypoints", "walls"])
 def test_verifySyntax_missing_required_keys(interpreter, valid_json_data, missing_key):
+    """boardSize/waypoints/walls are required. solutionPath is optional (the API and the
+    screenshot extractor never send it, and the reference board ships it populated), so it
+    is not in this list."""
     del valid_json_data[missing_key]
     assert call(interpreter.verifySyntax, valid_json_data) is False
 
+
+def test_verifySyntax_solution_path_is_optional(interpreter, valid_json_data):
+    """A payload with no solutionPath key is valid — it is not part of the board contract."""
+    valid_json_data.pop("solutionPath", None)
+    assert call(interpreter.verifySyntax, valid_json_data) is True
+
 @pytest.mark.parametrize("solution_path", [
-    [[0, 0]],       # Not empty
     "empty",        # Wrong type (string)
     None,           # Wrong type (None)
     {},             # Wrong type (dict)
 ])
 def test_verifySyntax_invalid_solution_path(interpreter, valid_json_data, solution_path):
+    """When solutionPath is present it must be a list. Its contents are not constrained
+    here — path correctness is SolutionValidator's job, not the interpreter's — so a
+    populated list is accepted (see next test)."""
     valid_json_data["solutionPath"] = solution_path
     assert call(interpreter.verifySyntax, valid_json_data) is False
+
+
+def test_verifySyntax_populated_solution_path_is_accepted(interpreter, valid_json_data):
+    """The reference board_configuration.json carries a full solutionPath; it must import
+    cleanly rather than being rejected for being non-empty."""
+    valid_json_data["solutionPath"] = [[0, 0], [0, 1], [0, 2]]
+    assert call(interpreter.verifySyntax, valid_json_data) is True
 
 def test_verifySyntax_cascading_failures(interpreter, valid_json_data):
     # Corrupting nested data properties to ensure verify delegates to sub-validators
@@ -245,39 +263,42 @@ def test_verifySyntax_non_dict_data(interpreter):
 # Tests for buildBoard
 # ===================================================================
 def test_buildBoard_valid(interpreter, valid_json_data):
-    # Patch validation to isolate Board construction logic
-    with patch.object(JsonInterpreter, 'verifySyntax', return_value=True):
-        with patch.object(JsonInterpreter, '_load', return_value=valid_json_data):
-            board = call(interpreter.buildBoard, valid_json_data)
-            
-            assert isinstance(board, Board)
-            assert board.getSize == 6
-            
-            # Verify waypoints were added correctly and enumerate() index is respected
-            waypoints = board.getWaypoints
-            assert len(waypoints) == 3
-            assert waypoints[0].getPosition == Position(0, 0)
-            assert waypoints[0].getOrder == 0
-            assert waypoints[2].getPosition == Position(4, 4)
-            assert waypoints[2].getOrder == 2
-            
-            # Verify walls were added correctly
-            walls = board.getWalls
-            assert len(walls) == 1
-            assert board.hasWallBetween(Position(0, 0), Position(1, 0)) is True
+    """buildBoard does structural parsing only and builds the Board directly — it no
+    longer delegates to verifySyntax (semantics are InputValidator's job). Waypoint order
+    is 1-based, matching PuzzleRules.getWaypointByOrder(1) and GameState."""
+    with patch.object(JsonInterpreter, '_load', return_value=valid_json_data):
+        board = call(interpreter.buildBoard, valid_json_data)
+
+        assert isinstance(board, Board)
+        assert board.getSize == 6
+
+        # Waypoints added in order, numbered from 1.
+        waypoints = board.getWaypoints
+        assert len(waypoints) == 3
+        assert waypoints[0].getPosition == Position(0, 0)
+        assert waypoints[0].getOrder == 1
+        assert waypoints[2].getPosition == Position(4, 4)
+        assert waypoints[2].getOrder == 3
+
+        # Verify walls were added correctly
+        walls = board.getWalls
+        assert len(walls) == 1
+        assert board.hasWallBetween(Position(0, 0), Position(1, 0)) is True
 
 def test_buildBoard_zero_walls(interpreter, valid_json_data):
     valid_json_data["walls"] = []
-    with patch.object(JsonInterpreter, 'verifySyntax', return_value=True):
-        with patch.object(JsonInterpreter, '_load', return_value=valid_json_data):
-            board = call(interpreter.buildBoard, valid_json_data)
-            assert len(board.getWalls) == 0
+    with patch.object(JsonInterpreter, '_load', return_value=valid_json_data):
+        board = call(interpreter.buildBoard, valid_json_data)
+        assert len(board.getWalls) == 0
 
-def test_buildBoard_invalid_raises(interpreter, valid_json_data):
-    # Simulation: Validation failure should explicitly raise ValueError
-    with patch.object(JsonInterpreter, 'verifySyntax', return_value=False):
-        with pytest.raises(ValueError, match="Invalid puzzle JSON: failed syntax/constraint checks."):
-            call(interpreter.buildBoard, valid_json_data)
+def test_buildBoard_structurally_invalid_raises(interpreter):
+    """buildBoard raises ValueError only when the payload is too malformed to build a
+    Board at all (missing a required key, non-integer coordinates). Semantically-invalid
+    but structurally-sound boards build successfully and are judged by InputValidator —
+    that is what lets the API return a structured 422 rather than a blanket 400."""
+    with patch.object(JsonInterpreter, '_load', return_value={"boardSize": 6, "waypoints": [[0]]}):
+        with pytest.raises(ValueError):
+            call(interpreter.buildBoard, {"boardSize": 6, "waypoints": [[0]]})
 
 def test_buildBoard_integration(interpreter, valid_json_data, tmp_path):
     """

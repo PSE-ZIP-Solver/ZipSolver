@@ -16,6 +16,7 @@ from backend.api.solver_dtos.SolverStatus import SolverStatus
 from backend.api.version import API_VERSION
 
 from backend.tests.api.conftest import (
+    IMAGE_UPLOAD,
     REFERENCE_BOARD,
     VALID_BODY,
     make_path,
@@ -205,28 +206,34 @@ def test_solve_accepts_every_supported_board_size(client, board_size):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def test_import_returns_200_validation_result(client):
-    response = client.post("/api/import", json=VALID_BODY)
+def test_import_returns_200_with_extracted_board(client):
+    """A screenshot that extracts to a valid board returns 200 with the board and
+    ``valid: True``. The board is echoed back in ``PuzzleRequest`` shape so the frontend
+    can load it straight into the editor."""
+    response = client.post("/api/import", files=IMAGE_UPLOAD)
     assert response.status_code == 200
-    assert response.json() == {
-        "valid": True,
-        "message": "Board configuration is valid.",
-        "errors": [],
+    body = response.json()
+    assert body["valid"] is True
+    assert body["message"] == "Board configuration is valid."
+    assert body["errors"] == []
+    assert body["warnings"] == []
+    assert body["board"] == {
+        "boardSize": 6,
+        "waypoints": [[0, 0], [5, 0]],
+        "walls": [{"neighborA": [0, 0], "neighborB": [1, 0]}],
     }
 
 
-def test_import_accepts_reference_board_configuration(client):
-    """The canonical ``board_configuration.json`` (§5.4.2) carries a ``solutionPath`` key
-    that ``PuzzleRequest`` does not declare. Pydantic ignores unknown fields, so the
-    reference file must import cleanly — a real user workflow."""
-    response = client.post("/api/import", json=REFERENCE_BOARD)
-    assert response.status_code == 200
-    assert response.json()["valid"] is True
+def test_import_feeds_uploaded_bytes_to_the_extractor(client, screenshot_extractor):
+    """The raw uploaded bytes must reach ScreenshotExtractor unmodified — the endpoint is
+    a pass-through to the extraction pipeline, not a re-encoder."""
+    client.post("/api/import", files=IMAGE_UPLOAD)
+    screenshot_extractor.extract_to_dict.assert_called_once_with(b"fake-png-bytes")
 
 
 def test_import_never_invokes_the_solver(client, solver_controller):
-    """Import is validate-only (§2.3). The solver pipeline must stay untouched."""
-    client.post("/api/import", json=VALID_BODY)
+    """Import extracts and validates only (§2.3). The solver pipeline must stay untouched."""
+    client.post("/api/import", files=IMAGE_UPLOAD)
     solver_controller.solve.assert_not_called()
 
 
@@ -234,7 +241,7 @@ def test_import_propagates_validator_message(client, input_validator):
     input_validator.validate.return_value = make_validation_result(
         message="Board configuration accepted."
     )
-    assert client.post("/api/import", json=VALID_BODY).json()["message"] == (
+    assert client.post("/api/import", files=IMAGE_UPLOAD).json()["message"] == (
         "Board configuration accepted."
     )
 
