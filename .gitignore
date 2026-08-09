@@ -16,3 +16,4 @@ __pycache__/
 *.egg-info/
 logs/*.out
 logs/*.err
+trainmi6x6.sh
