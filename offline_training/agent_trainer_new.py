@@ -587,3 +587,4 @@ if __name__ == "__main__":
             evaluationResult,
         )
         print(torch.cuda.is_available())
+
