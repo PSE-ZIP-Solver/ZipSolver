@@ -64,7 +64,7 @@ class RLAgent:
                 env=self._env,
                 policy_kwargs=self.policy_kwargs,
                 verbose=1,
-                device="auto",
+                device="cuda",
                 **dqn_kwargs,
             )
 
@@ -120,7 +120,7 @@ class RLAgent:
             path,
             env=self._env,
             custom_objects=custom_objects,
-            device="auto",
+            device="cuda",
             **dqn_kwargs,
         )
 
