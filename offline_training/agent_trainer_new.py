@@ -315,8 +315,8 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.5,
-                final_eps=0.05,
+                initial_eps=0.85,
+                final_eps=0.1,
                 fraction=0.8,
             )
         else:
@@ -521,15 +521,15 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 24
     NR_OF_WAYPOINTS = 25
 
-    USE_SAVED_TRAINING_BOARDS = False
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
+    USE_SAVED_TRAINING_BOARDS = True
+    LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
     TRAINING_BOARDS_PATH = ("offline_training/training_boards/01-8x8.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = False
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/01-8x8.pkl"
 
     TRAIN_MODEL = True
-    PRINT_TRAINING_BOARDS = True
+    PRINT_TRAINING_BOARDS = False
     SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
@@ -539,12 +539,12 @@ if __name__ == "__main__":
         boardSize=8,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/01-8x8.zip",
+        modelPath="offline_training/trained_models/02-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=1,
+        nrTrainingBoards=3,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=100,
@@ -552,8 +552,8 @@ if __name__ == "__main__":
         # Total time steps
         timestepsPerBoard=900_000,
 
-        loadExistingModel=False,
-        resetModel=True,
+        loadExistingModel=True,
+        resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
