@@ -302,7 +302,7 @@ class AgentTrainer:
             agent = RLAgent(
                 trainEnv,
                 model_path=self.modelPath,
-                tensorboard_log="./logs/zip_dqn/6x6/",
+                tensorboard_log="./logs/zip_dqn/8x8/",
             )
 
             if self.loadReplayBuffer and replayBufferFile.exists():
@@ -315,17 +315,18 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.85,
+                initial_eps=0.7,
                 final_eps=0.1,
                 fraction=0.8,
             )
+            agent.tensorboard_log = "./logs/zip_dqn/8x8/"
         else:
             print("Creating new agent")
             agent = RLAgent(
                 trainEnv,
                 learning_rate=1e-4,              # Controls how strongly the network weights are changed during each gradient/network update.
-                exploration_initial_eps=1.0,     # Initial probability of choosing a random action.
-                exploration_final_eps=0.15,      # Final minimum probability of choosing a random action.
+                exploration_initial_eps=0.7,     # Initial probability of choosing a random action.
+                exploration_final_eps=0.1,      # Final minimum probability of choosing a random action.
                 exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
                 learning_starts=2000,             # Number of steps before the model starts learning.
                 buffer_size=300_000,              # Maximum number of transitions stored in the replay buffer.
@@ -516,17 +517,17 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 24
-    NR_OF_WALLS = 25
-    MIN_NR_OF_WAYPOINTS = 24
-    NR_OF_WAYPOINTS = 25
+    MIN_NR_OF_WALLS = 44
+    NR_OF_WALLS = 45
+    MIN_NR_OF_WAYPOINTS = 44
+    NR_OF_WAYPOINTS = 45
 
     USE_SAVED_TRAINING_BOARDS = True
     LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/01-8x8.pkl")
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/03-8x8.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = False
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/01-8x8.pkl"
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/03-8x8.pkl"
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
@@ -539,18 +540,18 @@ if __name__ == "__main__":
         boardSize=8,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/02-8x8.zip",
+        modelPath="offline_training/trained_models/03-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=3,
+        nrTrainingBoards=8,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=100,
 
         # Total time steps
-        timestepsPerBoard=900_000,
+        timestepsPerBoard=1_200_000,
 
         loadExistingModel=True,
         resetModel=False,
