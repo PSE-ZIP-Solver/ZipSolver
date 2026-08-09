@@ -1,6 +1,7 @@
 import pickle
 import random
 from pathlib import Path
+import torch
 
 import gymnasium as gym
 from stable_baselines3.common.monitor import Monitor
@@ -239,6 +240,7 @@ class AgentTrainer:
         boards: list[Board] = []
 
         for _ in range(numberBoards):
+            print(f"Generating board {len(boards) + 1}/{numberBoards}...")
             nrOfWaypoints = (
                 random.randint(
                     minIntermediateWaypoints,
@@ -584,3 +586,4 @@ if __name__ == "__main__":
             "Evaluation result on unseen evaluation boards",
             evaluationResult,
         )
+        print(torch.cuda.is_available())
