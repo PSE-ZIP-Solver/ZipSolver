@@ -9,7 +9,7 @@ __pycache__/
 *.pyc
 
 *_replay_buffer.pkl
-logs/
+#logs/
 
 # server stuff:
 .venv/
