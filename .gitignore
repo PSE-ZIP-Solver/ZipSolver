@@ -14,3 +14,5 @@ __pycache__/
 # server stuff:
 .venv/
 *.egg-info/
+logs/*.out
+logs/*.err
