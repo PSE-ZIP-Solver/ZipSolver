@@ -545,10 +545,10 @@ if __name__ == "__main__":
         nrTrainingBoards=1,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=100, 
+        nrEvaluationBoards=1,
 
         # Total time steps
-        timestepsPerBoard=900_000,
+        timestepsPerBoard=1,
 
         loadExistingModel=False,
         resetModel=True,
