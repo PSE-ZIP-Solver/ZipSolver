@@ -159,7 +159,10 @@ class TestWallDetector:
         # Assert OpenCV used standard binary thresholding for Light mode (dark walls)
         # We assume the implementation uses cv2.THRESH_BINARY_INV for dark walls on light bg, 
         # or cv2.THRESH_BINARY. We just assert that it was called.
-        mock_cv2.threshold.assert_called()
+        # The detector no longer uses cv2.threshold: Otsu split every blank boundary into
+        # two classes and reported all edges as walls. It now compares the boundary against
+        # the adjacent cell interiors, so cvtColor (not threshold) is the call that matters.
+        mock_cv2.cvtColor.assert_called()
         
         # Reset mocks
         mock_cv2.threshold.reset_mock()
@@ -169,4 +172,7 @@ class TestWallDetector:
         
         # Assert thresholding was called again, and it should hypothetically use a different flag
         # (Though we can't assert the exact flag without knowing implementation, we verify it routes).
-        mock_cv2.threshold.assert_called()
+        # The detector no longer uses cv2.threshold: Otsu split every blank boundary into
+        # two classes and reported all edges as walls. It now compares the boundary against
+        # the adjacent cell interiors, so cvtColor (not threshold) is the call that matters.
+        mock_cv2.cvtColor.assert_called()

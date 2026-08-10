@@ -8,22 +8,24 @@ export interface ExampleBoard {
 
 
 export const Examples: ExampleBoard[] = [
-    {
-        id: "maze-6x6-1",
-        name: "Tillmann's Glory",
-        config: {
-            boardSize: 6,
-            waypoints: [[1, 1], [1, 4], [4, 4], [4, 1]],
-            walls: [
-                { neighborA: [2, 4], neighborB: [3, 4] },
-                { neighborA: [2, 1], neighborB: [3, 1] },
-                { neighborA: [2, 3], neighborB: [2, 4] },
-                { neighborA: [3, 1], neighborB: [3, 2] },
-                { neighborA: [1, 2], neighborB: [1, 3] },
-                { neighborA: [4, 2], neighborB: [4, 3] }
-            ]
-        }
-    },
+   {
+    id: "board-8x8-1",
+    name: "Imported Board",
+    config: {
+        boardSize: 8,
+        waypoints: [
+            [3, 2],
+            [1, 3],
+            [3, 4],
+            [5, 4],
+            [1, 5],
+            [4, 6],
+            [6, 6],
+            [3, 7]
+        ],
+        walls: []
+    }
+},
     {
         id: "maze-6x6-2",
         name: "Tillmann's Torment",
