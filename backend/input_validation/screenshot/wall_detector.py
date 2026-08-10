@@ -7,7 +7,11 @@ if TYPE_CHECKING:
     import numpy as np
 
 # Fraction of the boundary that must read as "heavy" ink for a wall to be present.
-WALL_FILL_RATIO = 0.35
+WALL_FILL_RATIO = 0.15
+
+# How far a boundary pixel must differ from the adjacent cell interior to count as wall
+# ink. Measured: a wall bar differs by ~150 levels, an ordinary grid line by only ~40.
+WALL_CONTRAST_DELTA = 80
 
 
 class WallDetector:
@@ -72,27 +76,51 @@ class WallDetector:
         heavy ink — distinguishing a thick wall from a thin ordinary grid line.
         """
         import cv2
+        import numpy as np
 
         roi = self._extract_boundary_roi(image_data, bbox_a, bbox_b)
         if roi is None or getattr(roi, "size", 0) == 0:
             return False
 
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        # THRESHOLD_THICKNESS_BY_THEME — walls are dark on a light board and light on a
-        # dark board; invert accordingly so wall ink is always the non-zero pixels.
-        thresh_type = cv2.THRESH_BINARY_INV if theme.isLight else cv2.THRESH_BINARY
-        _, binary = cv2.threshold(gray, 0, 255, thresh_type + cv2.THRESH_OTSU)
 
-        filled = cv2.countNonZero(binary)
-        total = binary.shape[0] * binary.shape[1] if hasattr(binary, "shape") else 0
-        # Guarded so mocked cv2 return values (non-numeric) in unit tests cannot raise on
-        # the arithmetic; a real run always has numeric filled/total here.
+        # Compare the boundary against the two cells it separates rather than against an
+        # absolute level or an Otsu split. Otsu always divides a blank sliver into two
+        # classes, so every edge looked like a wall; an absolute cut instead depends on
+        # theme detection being right, and a misdetected theme inverts the test. The local
+        # contrast test is immune to both: a wall bar differs strongly from the cell
+        # interior (measured ~150 levels) while the ordinary grid line differs by only ~40.
         try:
+            ref = self._cell_reference_level(image_data, bbox_a, bbox_b)
+            if ref is None:
+                return False
+            ink = (int(ref) - gray.astype(np.int16)) > WALL_CONTRAST_DELTA
+            filled = int(np.count_nonzero(ink))
+            total = int(gray.shape[0] * gray.shape[1])
             if not total:
                 return False
             return (filled / total) >= WALL_FILL_RATIO
-        except TypeError:
+        except (TypeError, AttributeError, ValueError):
+            # Mocked cv2/numpy in unit tests can return non-numeric values.
             return False
+
+    def _cell_reference_level(self, image_data, bbox_a, bbox_b):
+        """Median gray of the two cells' interiors — the 'no wall here' baseline."""
+        import cv2
+        import numpy as np
+
+        samples = []
+        for (px, py, w, h) in (bbox_a, bbox_b):
+            # Inner core only, so the cell border and any waypoint disc are excluded.
+            y0, y1 = int(py + h * 0.3), int(py + h * 0.7)
+            x0, x1 = int(px + w * 0.3), int(px + w * 0.7)
+            patch = image_data[max(0, y0):y1, max(0, x0):x1]
+            if patch is None or getattr(patch, "size", 0) == 0:
+                continue
+            samples.append(float(np.median(cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY))))
+        if not samples:
+            return None
+        return float(np.median(samples))
 
     def _extract_boundary_roi(
         self,
@@ -110,14 +138,14 @@ class WallDetector:
 
         if bx > ax:  # B is to the right of A -> vertical shared border at x = ax + aw
             border_x = ax + aw
-            half = max(1, aw // 8)
+            half = max(1, aw // 16)
             x0 = max(border_x - half, 0)
             x1 = border_x + half
             return image_data[ay:ay + ah, x0:x1]
 
         # B is below A -> horizontal shared border at y = ay + ah
         border_y = ay + ah
-        half = max(1, ah // 8)
+        half = max(1, ah // 16)
         y0 = max(border_y - half, 0)
         y1 = border_y + half
         return image_data[y0:y1, ax:ax + aw]

@@ -81,19 +81,20 @@ class TestGridLocalizer:
         complete grid (the numeric refinement itself is covered by the corpus validation)."""
         with patch.object(GridLocalizer, "_detect_circles",
                           return_value=[(155.0, 155.0, 30.0)]), \
+             patch.object(GridLocalizer, "_disc_spacing_pitch", return_value=None), \
              patch.object(GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)):
             n, cell_bounds = self.localizer.localize_grid(self.valid_image_mock, board_size=6)
         assert n == 6
         assert len(cell_bounds) == 36
 
     def test_known_size_full_board_uses_disc_pitch(self):
-        """When no panel is found (board fills the crop) but there are >=4 discs, pitch is
-        the median nearest-neighbour disc gap and the origin comes from the disc extent."""
+        """With no panel but several discs, the pitch comes from the disc spacing and the
+        origin falls back to the disc extent. Still yields a complete n x n grid."""
         discs = [(100.0, 100.0, 30.0), (200.0, 100.0, 30.0),
                  (100.0, 200.0, 30.0), (200.0, 200.0, 30.0)]
         with patch.object(GridLocalizer, "_detect_circles", return_value=discs), \
              patch.object(GridLocalizer, "_panel_bounds", return_value=None), \
-             patch.object(GridLocalizer, "_nearest_neighbour_pitch", return_value=100.0):
+             patch.object(GridLocalizer, "_disc_spacing_pitch", return_value=100.0):
             n, cell_bounds = self.localizer.localize_grid(self.valid_image_mock, board_size=6)
         assert n == 6
         assert len(cell_bounds) == 36

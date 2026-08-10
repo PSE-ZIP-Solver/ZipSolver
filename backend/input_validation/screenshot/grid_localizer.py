@@ -96,18 +96,30 @@ class GridLocalizer:
         # can be over-sized by surrounding chrome. When enough discs are present, use their
         # spacing; otherwise fall back to the panel, then to disc radius.
         board_circles = [c for c in circles if c[2] < 40]  # drop oversized UI blobs
-        disc_pitch = self._disc_spacing_pitch(board_circles) if len(board_circles) >= 6 else None
+        approx = None
+        if panel is not None:
+            approx = (panel[2] + panel[3]) / 2.0 / n
+        disc_pitch = (
+            self._disc_spacing_pitch(board_circles, approx)
+            if len(board_circles) >= 2
+            else None
+        )
 
         if disc_pitch is not None:
             pitch = disc_pitch
-            # Origin from the discs themselves: the smallest disc coordinate is a cell
-            # centre, so the board origin is that minus half a pitch, snapped so all discs
-            # land on integer cells. Using the panel centre here is unreliable because the
-            # panel can be mis-sized; the discs are the ground truth for cell positions.
-            min_cx = min(c[0] for c in board_circles)
-            min_cy = min(c[1] for c in board_circles)
-            origin_x = min_cx - pitch / 2.0
-            origin_y = min_cy - pitch / 2.0
+            # Anchor the grid on the panel centre using the disc-derived pitch. Deriving the
+            # origin from the smallest disc coordinate is wrong whenever the top-left-most
+            # waypoint is not in row/column 0 — it shifts the whole grid by a cell. The
+            # panel centre is a stable anchor; the residual refinement below then snaps the
+            # grid so disc centres land exactly on cell centres.
+            if panel is not None:
+                centre_x = panel[0] + panel[2] / 2.0
+                centre_y = panel[1] + panel[3] / 2.0
+                origin_x = centre_x - n * pitch / 2.0
+                origin_y = centre_y - n * pitch / 2.0
+            else:
+                origin_x = min(c[0] for c in board_circles) - pitch / 2.0
+                origin_y = min(c[1] for c in board_circles) - pitch / 2.0
         elif panel is not None:
             px, py, pw, ph = panel
             centre_x = px + pw / 2.0
@@ -145,6 +157,34 @@ class GridLocalizer:
             ry = (cys - origin_y) / pitch - 0.5
             origin_x += float(np.median(rx - np.round(rx))) * pitch
             origin_y += float(np.median(ry - np.round(ry))) * pitch
+
+            # The residual step only aligns to cell centres (mod pitch); it cannot fix an
+            # anchor that is a whole cell out. Slide the grid by whole pitches until every
+            # disc falls inside [0, n) — the discs are all on the board by construction, so
+            # any disc mapping outside means the origin is off by that many cells.
+            # Guarded: unit tests mock numpy, where these comparisons yield non-numeric
+            # values; the alignment itself is covered by the real-screenshot corpus.
+            try:
+                for _ in range(3):
+                    cols = np.round((cxs - origin_x) / pitch - 0.5)
+                    rows = np.round((cys - origin_y) / pitch - 0.5)
+                    shifted = False
+                    if float(cols.min()) < 0:
+                        origin_x -= pitch * (0 - float(cols.min()))
+                        shifted = True
+                    elif float(cols.max()) > n - 1:
+                        origin_x += pitch * (float(cols.max()) - (n - 1))
+                        shifted = True
+                    if float(rows.min()) < 0:
+                        origin_y -= pitch * (0 - float(rows.min()))
+                        shifted = True
+                    elif float(rows.max()) > n - 1:
+                        origin_y += pitch * (float(rows.max()) - (n - 1))
+                        shifted = True
+                    if not shifted:
+                        break
+            except (TypeError, ValueError):
+                pass
 
         # Record the reliable disc -> cell mapping from GLOBAL circle detection, using the
         # final origin/pitch. The per-cell re-detection in the waypoint detector misses
@@ -212,13 +252,14 @@ class GridLocalizer:
                 best = (ww * hh, x, y, ww, hh)
         return best[1:] if best else None
 
-    def _disc_spacing_pitch(self, circles):
+    def _disc_spacing_pitch(self, circles, approx_pitch=None):
         """Pitch from the spacing of distinct disc columns and rows.
 
-        Discs sit at cell centres, so clustering their x (and y) coordinates into columns
-        (rows) and taking the smallest consistent gap yields the cell pitch directly. This
-        is robust even when discs are one, two, or more cells apart, because the *smallest*
-        gap between distinct columns is one pitch. Returns None if it can't be determined.
+        Discs sit at cell centres, so the gap between distinct disc columns (rows) is an
+        integer multiple of the cell pitch. On sparse boards the smallest observed gap can
+        be 2, 3 or more cells, so each measured gap is divided by the nearest integer
+        multiple of ``approx_pitch`` (the panel estimate) to recover the true single-cell
+        pitch. Returns None if it can't be determined.
         """
         import numpy as np
 
@@ -240,6 +281,13 @@ class GridLocalizer:
             gaps = gaps[gaps > tol]
             if len(gaps) == 0:
                 return None
+            if approx_pitch:
+                # Each gap spans an integer number of cells; normalise it back to one cell.
+                unit = []
+                for g in gaps:
+                    k = max(1, int(round(g / approx_pitch)))
+                    unit.append(g / k)
+                return float(np.median(unit))
             base = float(np.min(gaps))
             near = gaps[gaps < base * 1.5]
             return float(np.mean(near)) if len(near) else base
