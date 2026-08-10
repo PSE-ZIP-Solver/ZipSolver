@@ -13,7 +13,7 @@ from backend.solution_path import SolutionPath
 from backend.api.dtos.ArchitectureInfo import ArchitectureInfo
 from backend.api.dtos.ErrorResponse import ErrorCode, ErrorResponse
 from backend.api.dtos.HealthStatus import HealthStatus
-from backend.api.dtos.ImportResult import ImportResult
+from backend.api.dtos.ImportResult import ImportResult, ImportWarning
 from backend.api.dtos.PuzzleRequest import PuzzleRequest
 from backend.api.dtos.SolverResponse import SolverResponse
 from backend.api.solver_result_adapter import to_solver_response
@@ -220,6 +220,12 @@ class BackendAPI:
                 ) from exc
             raise
 
+        # Pull best-effort warnings the extractor attached (e.g. low-confidence waypoint
+        # numbering) out of the dict before it feeds the interpreter / PuzzleRequest, which
+        # only expect board fields.
+        raw_warnings = board_dict.pop("_warnings", []) or []
+        import_warnings = [ImportWarning(code="WAYPOINT_ORDER_UNCERTAIN",message=str(w)) for w in raw_warnings]
+
         # Reuse the solve-path front half: dict -> Board -> semantic validation.
         # buildBoard accepts a dict, so the extractor output feeds it directly.
         board = self._interpreter.buildBoard(board_dict)
@@ -231,7 +237,7 @@ class BackendAPI:
             valid=result.valid,
             message=result.message,
             errors=result.errors,
-            warnings=[],
+            warnings=import_warnings,
         )
 
     def healthCheck(self) -> HealthStatus:

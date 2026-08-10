@@ -150,9 +150,9 @@ class TestImageLoader:
         # Assert thumbnail was called to scale down the image safely while maintaining aspect ratio
         mock_transposed_image.thumbnail.assert_called_once()
         
-        # Assuming max cap is 1024x1024
+        # Assuming max cap is 2048x2048
         args, kwargs = mock_transposed_image.thumbnail.call_args
-        assert args[0][0] <= 1024 and args[0][1] <= 1024
+        assert args[0][0] <= 2048 and args[0][1] <= 2048
         
         # Assert Resampling filter was used (PIL.Image.Resampling.LANCZOS)
         assert "resample" in kwargs

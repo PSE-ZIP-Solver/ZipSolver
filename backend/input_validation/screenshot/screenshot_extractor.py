@@ -59,22 +59,27 @@ class ScreenshotExtractor:
         theme = self._palette_detector.detect_theme(image)
         detected_size, cell_bounds = self._grid_localizer.localize_grid(image, board_size)
 
-        # Waypoint errors (gap/duplicate/unreadable) are allowed to bubble; the wall stage
-        # below must not run on a board we could not read waypoints from.
+        # Waypoint detection is best-effort: positions are reliable, numbers may not be.
+        # It records any low-confidence reads on the detector; collect them to surface as
+        # import warnings rather than failing.
         waypoints = self._waypoint_detector.detect_waypoints(image, cell_bounds, theme)
+        warnings = list(getattr(self._waypoint_detector, "last_warnings", []) or [])
         walls = self._wall_detector.detect_walls(image, cell_bounds, theme)
 
         return {
             "boardSize": int(detected_size),
             "waypoints": waypoints,
             "walls": walls,
+            "_warnings": warnings,
         }
 
     def extract_to_json(self, image_bytes: bytes) -> str:
         """Same pipeline as :meth:`extract_to_dict`, returned as a JSON string.
 
         Provided for callers that want the serialized schema directly (e.g. an HTTP layer
-        that forwards the raw JSON). Internally delegates so the two entry points can never
-        diverge.
+        that forwards the raw JSON). The internal ``_warnings`` key (best-effort metadata,
+        not part of the board schema) is stripped so the JSON matches the board contract.
         """
-        return json.dumps(self.extract_to_dict(image_bytes))
+        data = dict(self.extract_to_dict(image_bytes))
+        data.pop("_warnings", None)
+        return json.dumps(data)

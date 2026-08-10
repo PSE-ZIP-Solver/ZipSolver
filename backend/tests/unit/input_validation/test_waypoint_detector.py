@@ -140,11 +140,9 @@ class TestWaypointDetector:
     # --- EXCEPTION BUBBLING TESTS ---
 
     @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_missing_sequence_gap_raises_exception(self, mock_read, mock_heavy_dependencies):
-        """
-        Exception Bubbling: If OCR reads [1, 3] but misses 2, 
-        it MUST explicitly raise WaypointDetectionError.
-        """
+    def test_missing_sequence_gap_warns_and_keeps_positions(self, mock_read, mock_heavy_dependencies):
+        """Best-effort: a gap in the read numbers ([1, 3]) no longer fails the import. All
+        detected positions are kept, ordered deterministically, and a warning is recorded."""
         def mock_ocr_logic(image, bbox, theme):
             if bbox == (0, 0, 50, 50): return 1
             if bbox == (50, 50, 50, 50): return 3
@@ -152,32 +150,31 @@ class TestWaypointDetector:
 
         mock_read.side_effect = mock_ocr_logic
 
-        with pytest.raises(WaypointDetectionError, match="(?i)missing.*sequence|gap"):
-            self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        # both detected markers survive as positions
+        assert len(result) == 2
+        assert self.detector.last_warnings  # a low-confidence warning was recorded
 
 
     @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_unreadable_ocr_marker_raises_exception(self, mock_read, mock_heavy_dependencies):
-        """
-        Exception Bubbling: If a marker is detected (e.g., Hough Circles finds it) 
-        but OCR reads '?' or nothing, it MUST explicitly raise WaypointDetectionError.
-        """
+    def test_unreadable_ocr_marker_warns_and_keeps_position(self, mock_read, mock_heavy_dependencies):
+        """Best-effort: a detected-but-unreadable marker ('?') keeps its position and records
+        a warning instead of raising — the user can fix the number in the editor."""
         def mock_ocr_logic(image, bbox, theme):
-            if bbox == (0, 0, 50, 50): return '?'  # Detected, but failed to interpret
+            if bbox == (0, 0, 50, 50): return '?'  # detected, unread
             return None
 
         mock_read.side_effect = mock_ocr_logic
 
-        with pytest.raises(WaypointDetectionError, match="(?i)unreadable|failed to read|invalid numeral"):
-            self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
+        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
+        assert len(result) == 1
+        assert self.detector.last_warnings
 
 
     @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_duplicate_waypoints_raises_exception(self, mock_read, mock_heavy_dependencies):
-        """
-        Exception Bubbling: If the ML incorrectly predicts the same number twice (e.g. [1, 1]),
-        it MUST explicitly raise WaypointDetectionError.
-        """
+    def test_duplicate_waypoints_warn_and_keep_positions(self, mock_read, mock_heavy_dependencies):
+        """Best-effort: a duplicate read ([1, 1]) no longer fails — both positions are kept
+        (deterministic order) and a warning is recorded."""
         def mock_ocr_logic(image, bbox, theme):
             if bbox == (0, 0, 50, 50): return 1
             if bbox == (50, 0, 50, 50): return 1
@@ -185,5 +182,6 @@ class TestWaypointDetector:
 
         mock_read.side_effect = mock_ocr_logic
 
-        with pytest.raises(WaypointDetectionError, match="(?i)duplicate"):
-            self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        assert len(result) == 2
+        assert self.detector.last_warnings

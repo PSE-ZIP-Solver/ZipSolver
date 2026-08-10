@@ -48,9 +48,15 @@ class AlgorithmicSolver(Solver):
             return h
         return 0
     
-    def _is_viable_state(self, visited_mask: int, board_size: int, total_cells: int, adj_list: Dict[Position, List[Position]]) -> bool:
+    def _is_viable_state(self, visited_mask: int, board_size: int, total_cells: int, adj_list: Dict[Position, List[Position]], head: Optional[Position] = None, final_wp_pos: Optional[Position] = None) -> bool:
         """
         Optimized Flood-Fill and Dead-End Detection using O(1) Adjacency Lookups.
+
+        Also applies a checkerboard-parity prune: on a bipartite grid every step flips
+        colour, so the remaining unvisited cells must split into the two colours in a way
+        the head can actually traverse to the final waypoint. When they can't, the branch is
+        dead no matter how the search continues — a very cheap, high-yield cut for open
+        boards where the flood-fill alone leaves too many live branches.
         """
         # [CRITICAL FIX]: Use native C-level bit_count() instead of bin().count()
         # Eliminates massive string-allocation garbage collection overhead in the A* loop.
@@ -58,6 +64,36 @@ class AlgorithmicSolver(Solver):
         
         if expected_unvisited == 0:
             return True
+
+        # PARITY PRUNE. The remaining unvisited cells (the head is already in visited_mask)
+        # must be traversable as one alternating-colour walk that starts adjacent to the
+        # head and ends on the final waypoint. On a checkerboard that fixes both the colour
+        # counts and the colour of the last cell; any mismatch means the branch is dead.
+        if head is not None and final_wp_pos is not None:
+            remaining_even = 0
+            remaining_odd = 0
+            for p in adj_list:
+                if (visited_mask & (1 << self._get_bit_index(p, board_size))) == 0:
+                    if (p.getX + p.getY) & 1:
+                        remaining_odd += 1
+                    else:
+                        remaining_even += 1
+            r_total = remaining_even + remaining_odd
+            if r_total > 0:
+                head_color = (head.getX + head.getY) & 1
+                first_color = 1 - head_color          # next step flips colour
+                need_first = (r_total + 1) // 2
+                need_other = r_total // 2
+                need_even = need_first if first_color == 0 else need_other
+                need_odd = need_first if first_color == 1 else need_other
+                last_color = (first_color + (r_total - 1)) & 1
+                final_color = (final_wp_pos.getX + final_wp_pos.getY) & 1
+                if (
+                    remaining_even != need_even
+                    or remaining_odd != need_odd
+                    or last_color != final_color
+                ):
+                    return False
 
         start_node = None
         dead_end_count = 0
@@ -127,6 +163,11 @@ class AlgorithmicSolver(Solver):
         # --- PRECOMPUTATION ---
         # Eliminate O(N) linear scans from the main search loop entirely
         waypoint_map = {wp.getPosition: wp for wp in waypoints}
+
+        # The path must END at the last waypoint, not merely pass through it — but only when
+        # there are at least two waypoints (a distinct start and end). With a single waypoint
+        # there is no end constraint: start there and cover the board, finishing anywhere.
+        final_wp_pos = waypoints[-1].getPosition if len(waypoints) >= 2 else None
         
         adj_list = {}
         for y in range(board_size):
@@ -143,20 +184,30 @@ class AlgorithmicSolver(Solver):
         pq: List[SearchNode] = []
         counter = 0
 
-        for start_pos in board.getAllPositions():
+        # SEED ONLY FROM WAYPOINT 1. The path must START at the first waypoint, so there is
+        # exactly one valid seed. Seeding from every cell (the old behaviour) let the search
+        # accept paths that begin on a non-waypoint cell and merely pass through waypoint 1
+        # mid-way — not a valid Zip solution. It also multiplied the frontier by the cell
+        # count, which is the main reason the search blew its time budget.
+        if waypoints:
+            seeds = [waypoints[0].getPosition]
+        else:
+            seeds = list(board.getAllPositions())
+
+        for start_pos in seeds:
             next_idx = 0
             wp = waypoint_map.get(start_pos)
-            
+
             if wp:
                 if len(waypoints) > 0 and wp.getOrder != waypoints[0].getOrder:
-                    continue 
+                    continue
                 next_idx = 1
-            
+
             visited_mask = (1 << self._get_bit_index(start_pos, board_size))
             h = self._heuristic(start_pos, waypoints, next_idx)
-            g = -1 
+            g = -1
             f = g + h
-            
+
             heapq.heappush(pq, SearchNode(f, g, counter, start_pos, visited_mask, next_idx, None))
             counter += 1
 
@@ -171,7 +222,13 @@ class AlgorithmicSolver(Solver):
             current_node = heapq.heappop(pq)
             
             if current_node.visited_mask == target_mask:
-                if current_node.next_idx == len(waypoints):
+                # Full coverage AND every waypoint visited in order AND the path terminates
+                # on the final waypoint. The last condition is essential: without it the
+                # search accepts paths that pass through the last waypoint mid-way and end
+                # elsewhere, which is not a valid Zip solution.
+                if current_node.next_idx == len(waypoints) and (
+                    final_wp_pos is None or current_node.pos == final_wp_pos
+                ):
                     return self._reconstruct_path(current_node), steps
 
             state_key = (current_node.pos, current_node.visited_mask, current_node.next_idx)
@@ -195,8 +252,12 @@ class AlgorithmicSolver(Solver):
                     n_idx += 1
                     
                 n_mask = current_node.visited_mask | (1 << n_idx_bit)
-                
-                if not self._is_viable_state(n_mask, board_size, total_cells, adj_list):
+
+                # After moving, n_pos is the new path head; parity pruning needs it and the
+                # final waypoint to check the remaining-cell colour balance.
+                if not self._is_viable_state(
+                    n_mask, board_size, total_cells, adj_list, n_pos, final_wp_pos
+                ):
                     continue
 
                 n_depth = -current_node.neg_depth + 1

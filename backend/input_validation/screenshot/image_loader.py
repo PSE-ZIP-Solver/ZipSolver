@@ -12,7 +12,7 @@ MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 # Longest edge fed downstream. A board only needs a few hundred pixels per cell to read
 # cleanly, so a 4K/5K monitor capture is scaled down first — smaller images make every
 # later CV stage faster without costing OCR accuracy at these grid sizes.
-MAX_DIMENSION = 1024
+MAX_DIMENSION = 2048
 
 
 class ImageLoader:
