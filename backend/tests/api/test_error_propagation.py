@@ -292,7 +292,7 @@ def test_collaborator_exception_becomes_500_envelope(make_api, request, collabor
         RuntimeError("db password is hunter2"),
         ValueError("/home/ammar/models/zip-dqn.zip not found"),
         KeyError("SECRET_TOKEN"),
-        AttributeError("'NoneType' object has no attribute 'getPostions'"),
+        AttributeError("'NoneType' object has no attribute 'getPositions'"),
         MemoryError(),
     ],
 )
@@ -304,7 +304,7 @@ def test_internal_exception_details_never_reach_the_client(make_api, solver_cont
 
     raw = client.post("/api/solve", json=VALID_BODY).text
     assert raw.count("Traceback") == 0
-    for leaked in ("hunter2", "/home/", "SECRET_TOKEN", "getPostions", "NoneType"):
+    for leaked in ("hunter2", "/home/", "SECRET_TOKEN", "getPositions", "NoneType"):
         assert leaked not in raw
 
 

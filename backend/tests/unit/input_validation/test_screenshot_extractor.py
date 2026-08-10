@@ -1,3 +1,10 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false
+#
+# Every collaborator in this module is a MagicMock installed by the autouse
+# `mock_subcomponents` fixture, so attribute assignments (return_value/side_effect) and
+# assertion helpers (assert_called_*) are valid at runtime. The static checker resolves the
+# collaborators to their real classes instead and flags those as MethodType errors; the
+# above pragma silences that whole class of false positive for this test file only.
 import json
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -41,6 +48,10 @@ class TestScreenshotExtractor:
         
         # We attach the protected mock instances to a parent mock manager.
         # This allows us to rigorously verify the EXACT execution sequence across different objects.
+        # The mock_subcomponents fixture patches every collaborator class, so at runtime
+        # these attributes are MagicMocks and attach_mock / return_value / assert_* are all
+        # valid. Pylance can't see through the fixture and infers the real bound-method
+        # types; see the file-level pyright pragma at the top for why those are suppressed.
         self.sequence_manager = MagicMock()
         self.sequence_manager.attach_mock(self.extractor._image_loader.load_and_preprocess, 'load_and_preprocess')
         self.sequence_manager.attach_mock(self.extractor._palette_detector.detect_theme, 'detect_theme')
@@ -98,7 +109,7 @@ class TestScreenshotExtractor:
         expected_calls = [
             call.load_and_preprocess(payload),
             call.detect_theme(fake_image),
-            call.localize_grid(fake_image),
+            call.localize_grid(fake_image, None),
             call.detect_waypoints(fake_image, fake_bounds, ThemeMode.LIGHT),
             call.detect_walls(fake_image, fake_bounds, ThemeMode.LIGHT)
         ]

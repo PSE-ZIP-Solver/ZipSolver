@@ -228,7 +228,7 @@ def test_import_feeds_uploaded_bytes_to_the_extractor(client, screenshot_extract
     """The raw uploaded bytes must reach ScreenshotExtractor unmodified — the endpoint is
     a pass-through to the extraction pipeline, not a re-encoder."""
     client.post("/api/import", files=IMAGE_UPLOAD)
-    screenshot_extractor.extract_to_dict.assert_called_once_with(b"fake-png-bytes")
+    screenshot_extractor.extract_to_dict.assert_called_once_with(b"fake-png-bytes", None)
 
 
 def test_import_never_invokes_the_solver(client, solver_controller):

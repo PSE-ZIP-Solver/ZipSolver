@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
+from backend.input_validation.screenshot.errors import UnreadableImageError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ class WallDetector:
             List[Dict[str, List[int]]]: JSON-compliant list of wall dictionaries.
         """
         if image_data is None or image_data.size == 0:
-            raise ValueError("Image data cannot be None or empty.")
+            raise UnreadableImageError("Image data cannot be None or empty.")
         if not cell_bounds:
             raise ValueError("Cell bounds dictionary cannot be empty or None.")
 

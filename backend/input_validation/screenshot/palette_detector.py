@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from backend.input_validation.screenshot.errors import UnreadableImageError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 if TYPE_CHECKING:
@@ -32,11 +33,11 @@ class PaletteDetector:
         """
         # Fast-fail before importing anything heavy.
         if image_data is None:
-            raise ValueError("Image data cannot be None.")
+            raise UnreadableImageError("Image data cannot be None.")
         if image_data.size == 0:
-            raise ValueError("Invalid image data (empty array).")
+            raise UnreadableImageError("Invalid image data (empty array).")
         if len(image_data.shape) < 2:
-            raise ValueError("Image data must be at least 2D.")
+            raise UnreadableImageError("Image data must be at least 2D.")
 
         # LAZY_IMPORT_CV2_AND_NUMPY
         import cv2

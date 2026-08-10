@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Callable, Protocol, overload, Literal
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,6 +16,7 @@ from backend.api.dtos.HealthStatus import HealthStatus
 from backend.api.dtos.ImportResult import ImportResult
 from backend.api.dtos.PuzzleRequest import PuzzleRequest
 from backend.api.dtos.SolverResponse import SolverResponse
+from backend.api.solver_result_adapter import to_solver_response
 from backend.api.dtos.ValidationResult import ValidationResult
 from backend.api.solver_dtos.SolverMetrics import SolverMetrics
 from backend.api.solver_dtos.SolverStatus import SolverStatus
@@ -24,7 +25,10 @@ from backend.api.version import API_VERSION
 
 # ── Collaborator contracts (structural — real classes satisfy these without importing) ──
 class JsonInterpreterProtocol(Protocol):
-    def buildBoard(self, request: PuzzleRequest) -> Board: ...
+    # buildBoard does structural parsing and accepts either a parsed dict (from the
+    # screenshot extractor / import path) or a PuzzleRequest-shaped object (from solve).
+    # Typed as object so both callers satisfy it; the concrete interpreter narrows inside.
+    def buildBoard(self, file: object) -> Board: ...
 
 
 class InputValidatorProtocol(Protocol):
@@ -40,7 +44,10 @@ class SolverResultProtocol(Protocol):
 
 
 class SolverControllerProtocol(Protocol):
-    def solve(self, board: Board) -> SolverResultProtocol: ...
+    # The real controller returns a SolverResponse with getter properties; the API
+    # normalises whatever it returns via solver_result_adapter.to_solver_response, so the
+    # return is typed loosely here (object) rather than pinned to one internal shape.
+    def solve(self, board: Board) -> object: ...
 
 
 class ArchitectureProviderProtocol(Protocol):
@@ -48,7 +55,7 @@ class ArchitectureProviderProtocol(Protocol):
 
 
 class ScreenshotExtractorProtocol(Protocol):
-    def extract_to_dict(self, image_bytes: bytes) -> dict: ...
+    def extract_to_dict(self, image_bytes: bytes, board_size: int | None = None) -> dict: ...
 
 
 # ── Domain exception → mapped to a 422 ErrorResponse by the handler below ──
@@ -148,23 +155,16 @@ class BackendAPI:
         board = self._build_and_validate(request)
         result = self._solver_controller.solve(board)
 
-        solved = result.status == SolverStatus.SOLVED
-        path = (
-            [(p.getX, p.getY) for p in result.path.getPositions]
-            if (solved and result.path is not None)
-            else None
-        )
+        # The controller returns a SolverResponse with getter properties; normalise it to
+        # the flat API DTO here. This isolates the API from the internal result shape and
+        # tolerates the controller's success-only reporting (see the adapter's docstring).
+        return to_solver_response(result)
 
-        return SolverResponse(
-            status=result.status,
-            success=solved,
-            solutionPath=path,
-            solverUsed=result.solver_used,
-            message=result.message,
-            metrics=result.metrics,
-        )
-
-    async def importPuzzle(self, file: UploadFile = File(...)) -> ImportResult:
+    async def importPuzzle(
+        self,
+        file: UploadFile = File(...),
+        board_size: int | None = Form(default=None),
+    ) -> ImportResult:
         """POST /api/import — extract a board from an uploaded screenshot (PNG/JPEG).
 
         Pipeline: image bytes -> ScreenshotExtractor -> JsonInterpreter -> InputValidator.
@@ -172,6 +172,11 @@ class BackendAPI:
         included even when semantic validation fails, so the frontend can show the user
         what was read and let them fix it rather than starting over. Extraction failures
         (unreadable image, inconsistent waypoints) surface as 4xx via the handler below.
+
+        ``board_size`` is the grid size the user already selected in the UI. Passing it
+        (as a multipart form field) lets the extractor skip fragile size-detection and use
+        the known value, which is far more reliable on real screenshots. It is optional so
+        older clients that omit it still work via image-only estimation.
         """
         if self._screenshot_extractor is None:
             raise ScreenshotImportError(
@@ -186,15 +191,29 @@ class BackendAPI:
         # and WaypointDetectionError (marker unreadable, sequence gap, duplicate). Map the
         # former to 400 (image could not be read) and the latter to 422 (a board was read
         # but its waypoints are inconsistent) so the frontend can respond differently.
+        # The extractor raises a typed ScreenshotError hierarchy; each subclass carries its
+        # own code and http_status (NO_BOARD_DETECTED / AMBIGUOUS_BOARD / INVALID_WAYPOINTS
+        # -> 422, unreadable image -> 400). Map them uniformly rather than sniffing message
+        # strings. Anything else is an unexpected fault and bubbles to the 500 handler.
         try:
-            board_dict = self._screenshot_extractor.extract_to_dict(image_bytes)
+            board_dict = self._screenshot_extractor.extract_to_dict(
+                image_bytes, board_size
+            )
         except ScreenshotImportError:
             raise
-        except Exception as exc:  # noqa: BLE001 - narrowed by class name / type below
-            if type(exc).__name__ == "WaypointDetectionError":
+        except Exception as exc:  # noqa: BLE001 - ScreenshotError carries code/status
+            code = getattr(exc, "code", None)
+            http_status = getattr(exc, "http_status", None)
+            if code is not None and http_status is not None:
+                try:
+                    mapped = ErrorCode(code)
+                except ValueError:
+                    mapped = ErrorCode.INTERNAL_ERROR
                 raise ScreenshotImportError(
-                    str(exc), http_status=422, code=ErrorCode.INVALID_WAYPOINTS
+                    str(exc), http_status=http_status, code=mapped
                 ) from exc
+            # A bare ValueError with no typed code is still a bad-image condition (the
+            # extractor could not make sense of the upload) -> 400, not a 500.
             if isinstance(exc, ValueError):
                 raise ScreenshotImportError(
                     str(exc), http_status=400, code=ErrorCode.MALFORMED_REQUEST
@@ -247,6 +266,8 @@ class BackendAPI:
         """Shared front half: JSON→Board→semantic check. Raises SemanticValidationError on
         failure. Returns the ValidationResult for /import, the Board for /solve.
         """
+        # buildBoard accepts a PuzzleRequest (its _load serialises Pydantic models) or a
+        # dict; the import path passes a dict, solve passes the request DTO.
         board = self._interpreter.buildBoard(request)
         result = self._input_validator.validate(board)
         if not result.valid:

@@ -1,5 +1,6 @@
 import json
-from typing import Any, Dict
+from backend.input_validation.screenshot.errors import UnreadableImageError
+from typing import Any, Dict, Optional
 
 from backend.input_validation.screenshot.image_loader import ImageLoader
 from backend.input_validation.screenshot.palette_detector import PaletteDetector
@@ -31,12 +32,20 @@ class ScreenshotExtractor:
 
     # ── Public API ───────────────────────────────────────────────────────────
 
-    def extract_to_dict(self, image_bytes: bytes) -> Dict[str, Any]:
+    def extract_to_dict(
+        self, image_bytes: bytes, board_size: "Optional[int]" = None
+    ) -> Dict[str, Any]:
         """
         Runs the pipeline and returns a dict matching the Board Configuration Schema.
 
         Designed to feed straight into ``JsonInterpreter.buildBoard(...)``; returning a
         dict avoids a redundant serialize/deserialize round-trip at the integration point.
+
+        Args:
+            image_bytes: the raw uploaded image.
+            board_size: the grid size the user already selected in the frontend (6/7/8).
+                When provided it is authoritative and removes the need to guess the size
+                from the image; when None the localizer falls back to edge estimation.
 
         Sequence: image load -> theme -> grid -> waypoints -> walls. Any exception raised
         by a sub-component (ValueError, WaypointDetectionError) bubbles up unchanged and
@@ -44,11 +53,11 @@ class ScreenshotExtractor:
         """
         # FAST_FAIL_IF_BYTES_NONE_OR_EMPTY — before any component runs.
         if image_bytes is None or len(image_bytes) == 0:
-            raise ValueError("Image bytes cannot be None or empty.")
+            raise UnreadableImageError("Image bytes cannot be None or empty.")
 
         image = self._image_loader.load_and_preprocess(image_bytes)
         theme = self._palette_detector.detect_theme(image)
-        board_size, cell_bounds = self._grid_localizer.localize_grid(image)
+        detected_size, cell_bounds = self._grid_localizer.localize_grid(image, board_size)
 
         # Waypoint errors (gap/duplicate/unreadable) are allowed to bubble; the wall stage
         # below must not run on a board we could not read waypoints from.
@@ -56,7 +65,7 @@ class ScreenshotExtractor:
         walls = self._wall_detector.detect_walls(image, cell_bounds, theme)
 
         return {
-            "boardSize": int(board_size),
+            "boardSize": int(detected_size),
             "waypoints": waypoints,
             "walls": walls,
         }

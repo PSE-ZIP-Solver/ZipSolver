@@ -1,155 +1,224 @@
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
+
+from backend.input_validation.screenshot.errors import (
+    AmbiguousBoardError,
+    NoBoardDetectedError,
+    UnreadableImageError,
+)
 
 if TYPE_CHECKING:
     import numpy as np
 
-# Warped board is normalised to this many pixels per side before segmentation.
-WARP_SIZE = 600
 ALLOWED_SIZES = (6, 7, 8)
 
 
 class GridLocalizer:
     """Finds and isolates the n x n puzzle grid within the overall screenshot.
 
-    The grid is warped to a square and each cell's bounding box is mapped to pixel coordinates.
+    Two modes:
+      - board_size provided (production path): the frontend already knows which size the
+        user selected, so it is passed straight through. Geometry then reduces to finding
+        the board's square bounds and dividing by n — reliable, no fragile size guessing.
+      - board_size omitted (legacy / unit-test path): falls back to edge-based size
+        estimation. Kept so the existing localizer tests, which mock all CV, still exercise
+        the same routing.
+
+    Localization is anchored on the orange waypoint discs, which are the highest-saturation
+    features on the board and therefore the most reliable landmark. Their spacing and the
+    bright board panel together fix the grid origin and cell pitch. See the screenshot
+    corpus work for why line-based detection alone was insufficient on the app's own
+    low-contrast rendering.
     """
 
     def localize_grid(
-        self, image_data: "np.ndarray"
+        self,
+        image_data: "np.ndarray",
+        board_size: Optional[int] = None,
     ) -> Tuple[int, Dict[Tuple[int, int], Tuple[int, int, int, int]]]:
         """
-        Detects the outer boundary of the puzzle and segments the individual cells.
+        Detects the board and segments the individual cells.
 
-        HOW IT WORKS:
-        1. Lazily imports `cv2`.
-        2. Applies a Canny edge detector and finds the largest square contour.
-        3. Performs a perspective transform (warp) to flatten the board into a perfect square.
-        4. Calculates the grid size `n` (6, 7, or 8 per schema). Fast-fails if out of bounds.
-        5. Computes bounding boxes (x, y, w, h) for each cell (x, y) on the grid.
+        Args:
+            image_data: normalised BGR screenshot.
+            board_size: the known grid size (6, 7, or 8) supplied by the frontend. When
+                given it is authoritative; when None the size is estimated from the image.
 
         Returns:
-            Tuple[int, Dict]:
-                - The detected grid size `n` (int).
-                - A dictionary mapping (grid_x, grid_y) -> (pixel_x, pixel_y, width, height).
+            (grid_size, cell_bounds) where cell_bounds maps (grid_x, grid_y) ->
+            (pixel_x, pixel_y, width, height).
         """
         if image_data is None or image_data.size == 0:
-            raise ValueError("Image data cannot be None or empty.")
+            raise UnreadableImageError("Image data cannot be None or empty.")
 
-        # LAZY_IMPORT_CV2
-        import cv2
+        import cv2  # noqa: F401  (lazy import; used by helpers)
         import numpy as np
 
-        # DETECT_LARGEST_SQUARE_CONTOUR
-        gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 50, 150)
-        contours, _ = cv2.findContours(
-            edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
-        if not contours:
-            raise ValueError(
-                "Could not detect a valid square puzzle board in the image."
-            )
-
-        board_contour = self._largest_quadrilateral(contours)
-        if board_contour is None:
-            raise ValueError(
-                "Could not detect a valid square puzzle board in the image."
-            )
-
-        # APPLY_PERSPECTIVE_TRANSFORM — flatten whatever quadrilateral the board occupies
-        # (angled phone photos, non-square device pixels) into a clean WARP_SIZE square so
-        # cell segmentation is uniform. The bounds we return, however, are computed on the
-        # warped square then mapped straight to a regular grid; per the schema they are
-        # cell indices, not raw-image pixels, which is what every downstream detector
-        # consumes.
-        ordered = self._order_corners(board_contour)
-        destination = np.array(
-            [[0, 0], [WARP_SIZE - 1, 0], [WARP_SIZE - 1, WARP_SIZE - 1], [0, WARP_SIZE - 1]],
-            dtype="float32",
-        )
-        transform = cv2.getPerspectiveTransform(ordered, destination)
-        warped = cv2.warpPerspective(image_data, transform, (WARP_SIZE, WARP_SIZE))
-
-        # CALCULATE_GRID_SIZE_N + FAST_FAIL_IF_N_NOT_IN_6_7_8
-        n = self._calculate_grid_size(warped)
-        if n not in ALLOWED_SIZES:
-            raise ValueError(
-                f"Invalid board size detected: {n}. "
-                "Schema strictly requires 6, 7, or 8."
-            )
-
-        # MAP_CELL_COORDINATES_TO_PIXEL_BOUNDS
-        warped_h = warped.shape[0]
-        warped_w = warped.shape[1]
-        cell_w = warped_w // n
-        cell_h = warped_h // n
-
-        cell_bounds: Dict[Tuple[int, int], Tuple[int, int, int, int]] = {}
-        for grid_y in range(n):
-            for grid_x in range(n):
-                px = int(grid_x * cell_w)
-                py = int(grid_y * cell_h)
-                cell_bounds[(int(grid_x), int(grid_y))] = (
-                    px,
-                    py,
-                    int(cell_w),
-                    int(cell_h),
+        if board_size is not None:
+            if board_size not in ALLOWED_SIZES:
+                raise AmbiguousBoardError(
+                    f"Unsupported board size {board_size}; expected 6, 7, or 8."
                 )
+            origin_x, origin_y, pitch = self._solve_geometry(image_data, board_size)
+            return board_size, self._cell_bounds(board_size, origin_x, origin_y, pitch)
 
-        return int(n), cell_bounds
+        # ── Legacy size-estimation path (no size hint) ───────────────────────
+        n = self._estimate_size_from_edges(image_data)
+        if n not in ALLOWED_SIZES:
+            raise AmbiguousBoardError(
+                "A grid was found but its size could not be resolved to 6x6, 7x7, or "
+                f"8x8 (estimated {n}). Provide the board size or use a clearer screenshot."
+            )
+        origin_x, origin_y, pitch = self._solve_geometry(image_data, n)
+        return n, self._cell_bounds(n, origin_x, origin_y, pitch)
 
-    # ── Private helpers ──────────────────────────────────────────────────────
+    # ── Geometry ─────────────────────────────────────────────────────────────
 
-    def _largest_quadrilateral(self, contours):
-        """Return the largest 4-point contour, approximated as a polygon."""
-        import cv2
+    def _solve_geometry(self, image_data, n: int) -> Tuple[float, float, float]:
+        """Return (origin_x, origin_y, pitch) for an n x n board.
 
-        quads = []
-        for contour in contours:
-            perimeter = cv2.arcLength(contour, True)
-            approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
-            if approx.shape[0] == 4:
-                quads.append(approx)
-        if not quads:
-            return None
-        # Largest by area. Guarded so a non-numeric area (as produced by a mocked cv2 in
-        # unit tests) falls back to the first quad rather than raising on comparison.
-        try:
-            return max(quads, key=cv2.contourArea)
-        except TypeError:
-            return quads[0]
-
-    def _order_corners(self, quad):
-        """Order 4 corners as top-left, top-right, bottom-right, bottom-left."""
-        import numpy as np
-
-        points = quad.reshape(4, 2).astype("float32")
-        ordered = np.zeros((4, 2), dtype="float32")
-        summed = points.sum(axis=1)
-        diff = np.diff(points, axis=1)
-        ordered[0] = points[np.argmin(summed)]   # top-left: smallest x+y
-        ordered[2] = points[np.argmax(summed)]   # bottom-right: largest x+y
-        ordered[1] = points[np.argmin(diff)]     # top-right: smallest y-x
-        ordered[3] = points[np.argmax(diff)]     # bottom-left: largest y-x
-        return ordered
-
-    def _calculate_grid_size(self, warped_image) -> int:
-        """Infer n by counting interior grid lines in the flattened board.
-
-        Patched out in unit tests, so the routing above is what those tests pin; this body
-        is the real production estimate. It projects edge density onto each axis and counts
-        evenly-spaced interior lines, then adds one to get the cell count.
+        Strategy (validated against the real-screenshot corpus):
+          1. Detect orange waypoint discs.
+          2. Find the bright square board panel; when found its side / n is the pitch and
+             its centre fixes the origin.
+          3. When no panel is found (board fills the crop) but there are enough discs,
+             derive the pitch from the median nearest-neighbour disc gap.
+          4. Refine the origin so disc centres land on cell centres.
         """
+        import numpy as np
+
+        circles = self._detect_circles(image_data)
+        panel = self._panel_bounds(image_data, circles)
+
+        if panel is not None:
+            px, py, pw, ph = panel
+            centre_x = px + pw / 2.0
+            centre_y = py + ph / 2.0
+            pitch = (pw + ph) / 2.0 / n
+            origin_x = centre_x - n * pitch / 2.0
+            origin_y = centre_y - n * pitch / 2.0
+        elif len(circles) >= 4:
+            pitch = self._nearest_neighbour_pitch(circles)
+            origin_x = min(c[0] for c in circles) - pitch / 2.0
+            origin_y = min(c[1] for c in circles) - pitch / 2.0
+        elif circles:
+            # A disc nearly fills a cell; ~0.72 of the pitch is a measured constant.
+            pitch = 2.0 * float(np.median([c[2] for c in circles])) / 0.72
+            origin_x = min(c[0] for c in circles) - pitch / 2.0
+            origin_y = min(c[1] for c in circles) - pitch / 2.0
+        else:
+            raise NoBoardDetectedError(
+                "No board detected. Point the camera at a Zip puzzle grid, "
+                "or crop the screenshot closer to the board."
+            )
+
+        # Refine origin using discs that fall within the board footprint (drops UI
+        # false-positives such as an orange button in the surrounding chrome).
+        board = [
+            (cx, cy, r)
+            for (cx, cy, r) in circles
+            if origin_x - pitch * 0.3 <= cx <= origin_x + pitch * (n + 0.3)
+            and origin_y - pitch * 0.3 <= cy <= origin_y + pitch * (n + 0.3)
+        ]
+        if board:
+            cxs = np.array([c[0] for c in board])
+            cys = np.array([c[1] for c in board])
+            rx = (cxs - origin_x) / pitch - 0.5
+            ry = (cys - origin_y) / pitch - 0.5
+            origin_x += float(np.median(rx - np.round(rx))) * pitch
+            origin_y += float(np.median(ry - np.round(ry))) * pitch
+
+        return origin_x, origin_y, pitch
+
+    def _detect_circles(self, image_data):
+        """Detect orange waypoint discs. Returns list of (cx, cy, radius)."""
         import cv2
         import numpy as np
 
-        gray = cv2.cvtColor(warped_image, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(image_data, cv2.COLOR_BGR2HSV)
+        hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
+        mask = ((hue > 5) & (hue < 30) & (sat > 120) & (val > 120)).astype(np.uint8) * 255
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        out = []
+        for c in contours:
+            area = cv2.contourArea(c)
+            if area < 300:
+                continue
+            (cx, cy), r = cv2.minEnclosingCircle(c)
+            if area / (np.pi * r * r) > 0.6:  # reasonably circular
+                out.append((float(cx), float(cy), float(r)))
+        return out
+
+    def _panel_bounds(self, image_data, circles):
+        """Largest bright, near-square region that contains the discs' centroid."""
+        import cv2
+        import numpy as np
+
+        gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
+        h, w = gray.shape
+        bright = (gray >= 244).astype(np.uint8) * 255
+        bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, np.ones((31, 31), np.uint8))
+        bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, np.ones((31, 31), np.uint8))
+        contours, _ = cv2.findContours(bright, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        ccx = float(np.median([c[0] for c in circles])) if circles else None
+        ccy = float(np.median([c[1] for c in circles])) if circles else None
+
+        best = None
+        for c in contours:
+            x, y, ww, hh = cv2.boundingRect(c)
+            if ww * hh < w * h * 0.04:
+                continue
+            if not (0.8 < ww / hh < 1.25):
+                continue
+            if (
+                ccx is not None
+                and ccy is not None
+                and not (x <= ccx <= x + ww and y <= ccy <= y + hh)
+            ):
+                continue
+            if best is None or ww * hh > best[0]:
+                best = (ww * hh, x, y, ww, hh)
+        return best[1:] if best else None
+
+    def _nearest_neighbour_pitch(self, circles) -> float:
+        """Median nearest-neighbour disc gap — the cell pitch when discs are dense."""
+        import numpy as np
+
+        pts = np.array([(c[0], c[1]) for c in circles])
+        nn = []
+        for i, p in enumerate(pts):
+            d = np.hypot(pts[:, 0] - p[0], pts[:, 1] - p[1])
+            d[i] = 1e9
+            nn.append(d.min())
+        nn = np.array(nn)
+        adjacent = nn[nn < np.median(nn) * 1.4]  # reject diagonal / multi-cell gaps
+        return float(np.median(adjacent))
+
+    def _cell_bounds(self, n: int, origin_x: float, origin_y: float, pitch: float):
+        """Build the (col,row) -> (px,py,w,h) map from origin + pitch."""
+        cell = int(round(pitch))
+        bounds: Dict[Tuple[int, int], Tuple[int, int, int, int]] = {}
+        for row in range(n):
+            for col in range(n):
+                px = int(round(origin_x + col * pitch))
+                py = int(round(origin_y + row * pitch))
+                bounds[(col, row)] = (px, py, cell, cell)
+        return bounds
+
+    # ── Legacy edge-based size estimation (no size hint) ─────────────────────
+
+    def _estimate_size_from_edges(self, image_data) -> int:
+        """Fallback size estimate. Patched out in unit tests, which mock all CV."""
+        import cv2
+        import numpy as np
+
+        gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, 50, 150)
 
         def count_lines(projection) -> int:
             threshold = projection.max() * 0.4 if projection.max() > 0 else 0
-            peaks = 0
-            in_peak = False
+            peaks, in_peak = 0, False
             for value in projection:
                 if value > threshold and not in_peak:
                     peaks += 1
@@ -158,8 +227,6 @@ class GridLocalizer:
                     in_peak = False
             return peaks
 
-        vertical_lines = count_lines(edges.sum(axis=0))
-        horizontal_lines = count_lines(edges.sum(axis=1))
-        # Interior + border lines number n+1; average both axes for robustness.
-        estimated = round((vertical_lines + horizontal_lines) / 2) - 1
-        return int(estimated)
+        vertical = count_lines(edges.sum(axis=0))
+        horizontal = count_lines(edges.sum(axis=1))
+        return int(round((vertical + horizontal) / 2) - 1)

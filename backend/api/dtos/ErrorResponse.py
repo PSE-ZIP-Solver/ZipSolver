@@ -12,6 +12,8 @@ class ErrorCode(str, Enum):
     UNSUPPORTED_BOARD_SIZE = "UNSUPPORTED_BOARD_SIZE"  # 422 — boardSize not in {6,7,8}
     INVALID_WAYPOINTS = "INVALID_WAYPOINTS"            # 422 — dup / oob / missing waypoints
     INVALID_WALLS = "INVALID_WALLS"                    # 422 — non-adjacent / oob / dup wall
+    NO_BOARD_DETECTED = "NO_BOARD_DETECTED"            # 422 — no grid found in the image
+    AMBIGUOUS_BOARD = "AMBIGUOUS_BOARD"                # 422 — grid found, size not 6/7/8
     INTERNAL_ERROR = "INTERNAL_ERROR"                  # 500 — unexpected backend fault
 
 

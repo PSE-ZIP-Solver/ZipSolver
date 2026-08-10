@@ -1,15 +1,24 @@
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
+from backend.input_validation.screenshot.errors import ScreenshotError
+from backend.input_validation.screenshot.errors import UnreadableImageError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 if TYPE_CHECKING:
     import numpy as np
 
 
-class WaypointDetectionError(Exception):
-    """Custom exception raised when waypoints cannot be fully or sequentially resolved."""
+class WaypointDetectionError(ScreenshotError):
+    """Raised when waypoints cannot be fully or sequentially resolved.
 
-    pass
+    A board was located and sized, but its numerals are inconsistent — an unreadable
+    marker, a gap in the sequence, or a duplicate. 422 with INVALID_WAYPOINTS, matching
+    the semantic-waypoint failures the validator raises, so the frontend handles both the
+    same way.
+    """
+
+    code = "INVALID_WAYPOINTS"
+    http_status = 422
 
 
 class WaypointDetector:
@@ -33,7 +42,7 @@ class WaypointDetector:
             WaypointDetectionError: If OCR fails on a marker or if a sequence number is missing.
         """
         if image_data is None or image_data.size == 0:
-            raise ValueError("Image data cannot be None or empty.")
+            raise UnreadableImageError("Image data cannot be None or empty.")
         if not cell_bounds:
             raise ValueError("Cell bounds dictionary cannot be empty or None.")
 

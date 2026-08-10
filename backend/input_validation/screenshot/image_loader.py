@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from backend.input_validation.screenshot.errors import UnreadableImageError
+
 if TYPE_CHECKING:
     import numpy as np
 
@@ -34,9 +36,9 @@ class ImageLoader:
         """
         # FAST_FAIL_IF_BYTES_INVALID — before importing anything heavy.
         if image_bytes is None or len(image_bytes) == 0:
-            raise ValueError("Image bytes cannot be None or empty.")
+            raise UnreadableImageError("Image bytes cannot be None or empty.")
         if len(image_bytes) > MAX_FILE_SIZE_BYTES:
-            raise ValueError("Image file size exceeds the maximum allowed.")
+            raise UnreadableImageError("Image file size exceeds the maximum allowed.")
 
         # LAZY_IMPORT_CV2_AND_PIL — kept inside the method so importing this module (e.g.
         # during test collection) never drags in cv2/PIL. See the "danger zone" rules.
@@ -64,10 +66,10 @@ class ImageLoader:
                 )
 
             rgb = transposed.convert("RGB")
-        except ValueError:
+        except UnreadableImageError:
             raise
         except Exception as exc:  # noqa: BLE001 - any decode failure maps to one message
-            raise ValueError("Failed to decode image data.") from exc
+            raise UnreadableImageError("Failed to decode image data.") from exc
 
         rgb_array = np.array(rgb)
         bgr = cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR)

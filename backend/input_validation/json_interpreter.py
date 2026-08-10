@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, cast
 
 
 from backend.puzzle_logic.board import Board
@@ -136,6 +136,11 @@ class JsonInterpreter:
         """Accepts a file path (str), an open file-like object, or a dict."""
         if isinstance(arg, dict):
             return arg
+        # Pydantic models (e.g. PuzzleRequest from the API layer): serialise by alias so the
+        # keys match the schema (boardSize/waypoints/walls). Checked before str/read since a
+        # model has neither.
+        if hasattr(arg, "model_dump"):
+            return cast(Any, arg).model_dump(by_alias=True)
         if isinstance(arg, str):
             with open(arg, "r", encoding="utf-8") as f:
                 return json.load(f)

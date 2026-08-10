@@ -333,12 +333,14 @@ class TestValidationErrorModel:
 
 
 class TestErrorResponse:
-    def test_defines_exactly_the_five_taxonomy_codes(self):
+    def test_defines_exactly_the_taxonomy_codes(self):
         assert {member.value for member in ErrorCode} == {
             "MALFORMED_REQUEST",
             "UNSUPPORTED_BOARD_SIZE",
             "INVALID_WAYPOINTS",
             "INVALID_WALLS",
+            "NO_BOARD_DETECTED",
+            "AMBIGUOUS_BOARD",
             "INTERNAL_ERROR",
         }
 
