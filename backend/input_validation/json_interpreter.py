@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, cast
 
 
 from backend.puzzle_logic.board import Board
@@ -51,7 +51,7 @@ class JsonInterpreter:
         if not isinstance(data, dict):
             return False
 
-        required_keys = {"boardSize", "waypoints", "walls", "solutionPath"}
+        required_keys = {"boardSize", "waypoints", "walls"}
         if not required_keys.issubset(data.keys()):
             return False
 
@@ -67,10 +67,11 @@ class JsonInterpreter:
         if not JsonInterpreter._validate_walls(walls, board_size):
             return False
 
-        solution_path = data["solutionPath"]
-        if not isinstance(solution_path, list):
-            return False
-        if len(solution_path) != 0:
+        # solutionPath is optional. The API's PuzzleRequest and the screenshot extractor
+        # never send it; the reference board_configuration.json ships it populated. When
+        # present it must be a list, but its contents are not constrained here (path
+        # correctness is SolutionValidator's job, not the interpreter's).
+        if "solutionPath" in data and not isinstance(data["solutionPath"], list):
             return False
 
         return True
@@ -78,23 +79,53 @@ class JsonInterpreter:
     @staticmethod
     def buildBoard(file: Union[str, dict, Any]) -> Board:
         """
-        Takes a json file (path, open file object, or already-parsed dict),
-        validates it, and returns a populated Board instance.
-        Raises ValueError if the json does not match the expected syntax.
-        """
-        if not JsonInterpreter.verifySyntax(file):
-            raise ValueError("Invalid puzzle JSON: failed syntax/constraint checks.")
+        Takes a json source (path, open file object, or already-parsed dict) and returns
+        a populated Board.
 
+        This performs STRUCTURAL parsing only — it checks that the payload has the right
+        keys and that coordinates are 2-integer pairs, enough to construct a Board without
+        crashing. It deliberately does NOT enforce semantic rules (board size in {6,7,8},
+        waypoint bounds/count/uniqueness, wall adjacency); those belong to InputValidator,
+        which the API runs immediately after this and which reports each failure as a
+        structured 422 rather than a blanket ValueError. Running the semantic checks here
+        too would collapse those into a 400 and lose the per-error detail.
+
+        Raises ValueError only when the payload is too malformed to build a Board at all.
+        """
         data = JsonInterpreter._load(file)
+
+        if not isinstance(data, dict):
+            raise ValueError("Puzzle JSON must be an object.")
+        for key in ("boardSize", "waypoints", "walls"):
+            if key not in data:
+                raise ValueError(f"Puzzle JSON is missing required key: {key!r}.")
+        if not isinstance(data["boardSize"], int) or isinstance(data["boardSize"], bool):
+            raise ValueError("boardSize must be an integer.")
+        if not isinstance(data["waypoints"], list) or not isinstance(data["walls"], list):
+            raise ValueError("waypoints and walls must be lists.")
+
+        def _point(value: Any) -> tuple[int, int]:
+            if (
+                not isinstance(value, (list, tuple))
+                or len(value) != 2
+                or not all(isinstance(c, int) and not isinstance(c, bool) for c in value)
+            ):
+                raise ValueError(f"Coordinate must be a [x, y] integer pair: {value!r}.")
+            return int(value[0]), int(value[1])
 
         board = Board(data["boardSize"])
 
-        for order, (x, y) in enumerate(data["waypoints"]):
+        # 1-based ordering: PuzzleRules._startsAtFirstWaypoint reads getWaypointByOrder(1)
+        # and GameState starts at order 2, so the first waypoint must be order 1, not 0.
+        for order, raw in enumerate(data["waypoints"], start=1):
+            x, y = _point(raw)
             board.addWaypoint(Position(x, y), order)
 
         for wall in data["walls"]:
-            ax, ay = wall["neighborA"]
-            bx, by = wall["neighborB"]
+            if not isinstance(wall, dict) or "neighborA" not in wall or "neighborB" not in wall:
+                raise ValueError("Each wall must have neighborA and neighborB.")
+            ax, ay = _point(wall["neighborA"])
+            bx, by = _point(wall["neighborB"])
             board.addWall(Position(ax, ay), Position(bx, by))
 
         return board
@@ -105,6 +136,11 @@ class JsonInterpreter:
         """Accepts a file path (str), an open file-like object, or a dict."""
         if isinstance(arg, dict):
             return arg
+        # Pydantic models (e.g. PuzzleRequest from the API layer): serialise by alias so the
+        # keys match the schema (boardSize/waypoints/walls). Checked before str/read since a
+        # model has neither.
+        if hasattr(arg, "model_dump"):
+            return cast(Any, arg).model_dump(by_alias=True)
         if isinstance(arg, str):
             with open(arg, "r", encoding="utf-8") as f:
                 return json.load(f)

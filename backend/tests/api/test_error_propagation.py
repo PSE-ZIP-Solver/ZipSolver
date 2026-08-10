@@ -23,10 +23,10 @@ import pytest
 from backend.api.dtos.ValidationResult import ValidationError
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 
-from backend.tests.api.conftest import VALID_BODY, make_path, make_solver_result, make_validation_result
+from backend.tests.api.conftest import IMAGE_UPLOAD, VALID_BODY, make_path, make_solver_result, make_validation_result
 
 ERROR_ENVELOPE_KEYS = {"status", "code", "message", "details", "timestamp"}
-ENDPOINTS = [("POST", "/api/solve"), ("POST", "/api/import")]
+ENDPOINTS = [("POST", "/api/solve")]
 
 
 def _invalid_result(code: str, field: str | None = None):
@@ -42,7 +42,7 @@ def _invalid_result(code: str, field: str | None = None):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("path", ["/api/solve", "/api/import"])
+@pytest.mark.parametrize("path", ["/api/solve"])
 @pytest.mark.parametrize(
     "payload",
     [
@@ -67,7 +67,8 @@ def test_malformed_bodies_return_400_not_422(client, path, payload):
     """FastAPI defaults Pydantic shape failures to 422; §5.5.5 requires 400. This is the
     single most load-bearing override in the API layer — 422 is reserved for *semantic*
     rejection, and conflating the two makes the frontend unable to distinguish a broken
-    file from a broken puzzle."""
+    file from a broken puzzle. /api/import no longer accepts JSON (it takes an image), so
+    this covers /api/solve only."""
     response = client.post(path, json=payload)
     assert response.status_code == 400
     assert response.json()["code"] == "MALFORMED_REQUEST"
@@ -101,14 +102,50 @@ def test_wrong_content_type_returns_400(client):
     assert response.status_code == 400
 
 
-def test_multipart_import_returns_400(client):
-    """Known frontend contract delta: ``apiCalls.importPuzzle`` posts
-    ``multipart/form-data`` while the backend expects a JSON ``PuzzleRequest``. Until
-    the two are reconciled the backend must reject cleanly with the documented envelope
-    rather than crashing. Pins current behaviour so the fix is a deliberate change."""
-    response = client.post("/api/import", files={"file": ("board.json", b"{}", "application/json")})
+def test_import_missing_file_returns_422(client):
+    """POST /api/import with no file part is a shape failure. FastAPI raises
+    RequestValidationError for the missing ``file`` field, which the taxonomy maps to a
+    clean 400 rather than a bare 422."""
+    response = client.post("/api/import")
     assert response.status_code == 400
     assert response.json()["code"] == "MALFORMED_REQUEST"
+
+
+def test_import_unreadable_image_returns_400(make_api, screenshot_extractor):
+    """When ScreenshotExtractor cannot decode the image (ValueError), the endpoint returns
+    400 — the upload itself was unusable, distinct from a board that read but is invalid."""
+    screenshot_extractor.extract_to_dict.side_effect = ValueError("Failed to decode image data.")
+    _, client = make_api()
+
+    response = client.post("/api/import", files=IMAGE_UPLOAD)
+    assert response.status_code == 400
+    assert response.json()["code"] == "MALFORMED_REQUEST"
+
+
+def test_import_inconsistent_waypoints_returns_422(make_api, screenshot_extractor):
+    """A board that reads but whose waypoints are inconsistent (a sequence gap, duplicate,
+    or unreadable marker) surfaces as 422 — the image was fine, the puzzle was not. The
+    extractor signals this with WaypointDetectionError, which the endpoint maps to 422."""
+    from backend.input_validation.screenshot.waypoint_detector import WaypointDetectionError
+
+    screenshot_extractor.extract_to_dict.side_effect = WaypointDetectionError(
+        "Missing waypoint in sequence (gap detected)."
+    )
+    _, client = make_api()
+
+    response = client.post("/api/import", files=IMAGE_UPLOAD)
+    assert response.status_code == 422
+    assert response.json()["code"] == "INVALID_WAYPOINTS"
+
+
+def test_import_without_extractor_returns_503(make_api):
+    """If no ScreenshotExtractor was injected, import is unconfigured, not broken — a 503
+    distinguishes 'this instance can't do screenshot import' from a 4xx client error."""
+    _, client = make_api(screenshot_extractor=None)
+
+    response = client.post("/api/import", files=IMAGE_UPLOAD)
+    assert response.status_code == 503
+    assert response.json()["code"] == "INTERNAL_ERROR"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -116,20 +153,40 @@ def test_multipart_import_returns_400(client):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("path", ["/api/solve", "/api/import"])
+@pytest.mark.parametrize("path", ["/api/solve"])
 @pytest.mark.parametrize(
     "code",
     ["UNSUPPORTED_BOARD_SIZE", "INVALID_WAYPOINTS", "INVALID_WALLS"],
 )
 def test_validator_error_code_propagates_to_the_envelope(make_api, input_validator, path, code):
     """§8.2.4: "correct propagation of validation errors from input validation to
-    API-level error responses"."""
+    API-level error responses". For /api/solve a semantic rejection is a 422 envelope."""
     input_validator.validate.return_value = _invalid_result(code)
     _, client = make_api()
 
     response = client.post(path, json=VALID_BODY)
     assert response.status_code == 422
     assert response.json()["code"] == code
+
+
+@pytest.mark.parametrize(
+    "code",
+    ["UNSUPPORTED_BOARD_SIZE", "INVALID_WAYPOINTS", "INVALID_WALLS"],
+)
+def test_import_validator_errors_surface_in_result_not_envelope(make_api, input_validator, code):
+    """Import differs from solve here: a board that extracts cleanly but fails semantic
+    validation returns 200 with ``valid: False`` and the errors inside the ImportResult —
+    not a 4xx envelope. The board still round-trips so the user can correct it in the
+    editor rather than losing the import entirely."""
+    input_validator.validate.return_value = _invalid_result(code)
+    _, client = make_api()
+
+    response = client.post("/api/import", files=IMAGE_UPLOAD)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["valid"] is False
+    assert body["board"] is not None
+    assert [e["errorCode"] for e in body["errors"]] == [code]
 
 
 def test_unrecognised_validator_code_falls_back_to_invalid_waypoints(make_api, input_validator):
@@ -235,7 +292,7 @@ def test_collaborator_exception_becomes_500_envelope(make_api, request, collabor
         RuntimeError("db password is hunter2"),
         ValueError("/home/ammar/models/zip-dqn.zip not found"),
         KeyError("SECRET_TOKEN"),
-        AttributeError("'NoneType' object has no attribute 'getPostions'"),
+        AttributeError("'NoneType' object has no attribute 'getPositions'"),
         MemoryError(),
     ],
 )
@@ -247,7 +304,7 @@ def test_internal_exception_details_never_reach_the_client(make_api, solver_cont
 
     raw = client.post("/api/solve", json=VALID_BODY).text
     assert raw.count("Traceback") == 0
-    for leaked in ("hunter2", "/home/", "SECRET_TOKEN", "getPostions", "NoneType"):
+    for leaked in ("hunter2", "/home/", "SECRET_TOKEN", "getPositions", "NoneType"):
         assert leaked not in raw
 
 
@@ -298,15 +355,19 @@ def test_service_recovers_after_an_internal_error(make_api, solver_controller):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _all_error_responses(client, make_api, input_validator, solver_controller):
+def _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
     """Yield one response per reachable error class."""
-    yield client.post("/api/solve", json={"boardSize": "six"})  # 400
-    yield client.post("/api/import", json={})  # 400
+    yield client.post("/api/solve", json={"boardSize": "six"})  # 400 (solve shape)
+    yield client.post("/api/import")  # 400 (import missing file part)
+
+    # Import: unreadable image -> 400 via the ScreenshotImportError envelope.
+    screenshot_extractor.extract_to_dict.side_effect = ValueError("bad image")
+    _, bad_image_client = make_api()
+    yield bad_image_client.post("/api/import", files=IMAGE_UPLOAD)  # 400
 
     input_validator.validate.return_value = _invalid_result("INVALID_WAYPOINTS")
     _, semantic_client = make_api()
-    yield semantic_client.post("/api/solve", json=VALID_BODY)  # 422
-    yield semantic_client.post("/api/import", json=VALID_BODY)  # 422
+    yield semantic_client.post("/api/solve", json=VALID_BODY)  # 422 (solve semantic)
 
     solver_controller.solve.side_effect = RuntimeError("boom")
     _, failing_client = make_api()
@@ -317,9 +378,9 @@ def _all_error_responses(client, make_api, input_validator, solver_controller):
 
 
 def test_every_error_uses_the_same_envelope(
-    client, make_api, input_validator, solver_controller
+    client, make_api, input_validator, solver_controller, screenshot_extractor
 ):
-    for response in _all_error_responses(client, make_api, input_validator, solver_controller):
+    for response in _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
         body = response.json()
         assert set(body) == ERROR_ENVELOPE_KEYS, response.status_code
         assert body["status"] == response.status_code
@@ -328,21 +389,21 @@ def test_every_error_uses_the_same_envelope(
 
 
 def test_every_error_carries_a_parseable_utc_timestamp(
-    client, make_api, input_validator, solver_controller
+    client, make_api, input_validator, solver_controller, screenshot_extractor
 ):
-    for response in _all_error_responses(client, make_api, input_validator, solver_controller):
+    for response in _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
         timestamp = response.json()["timestamp"]
         parsed = datetime.fromisoformat(timestamp)
         assert parsed.tzinfo is not None, f"{timestamp} is not timezone-aware"
 
 
 def test_every_error_code_is_in_the_documented_taxonomy(
-    client, make_api, input_validator, solver_controller
+    client, make_api, input_validator, solver_controller, screenshot_extractor
 ):
     from backend.api.dtos.ErrorResponse import ErrorCode
 
     taxonomy = {member.value for member in ErrorCode}
-    for response in _all_error_responses(client, make_api, input_validator, solver_controller):
+    for response in _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
         assert response.json()["code"] in taxonomy
 
 
@@ -418,24 +479,6 @@ def test_empty_waypoints_list_passes_shape_and_is_rejected_semantically(
 # ──────────────────────────────────────────────────────────────────────────────
 # Known-defect regression guards
 # ──────────────────────────────────────────────────────────────────────────────
-
-
-def test_solution_path_property_is_still_misspelled():
-    """``SolutionPath`` exposes ``getPostions`` (sic), and ``BackendAPI.solvePuzzle``
-    reads that exact name. ``SolutionValidator`` meanwhile calls ``getPositions`` and
-    fails at runtime.
-
-    This test documents the defect and will fail the moment the property is renamed —
-    at which point ``BackendAPI.solvePuzzle`` must be updated in the same commit.
-    Delete this test as part of that fix.
-    """
-    from backend.solution_path import SolutionPath
-
-    path = SolutionPath()
-    assert hasattr(path, "getPostions"), "spelling fixed — update BackendAPI.solvePuzzle"
-    assert not hasattr(path, "getPositions"), (
-        "getPositions now exists — reconcile BackendAPI.solvePuzzle and delete this guard"
-    )
 
 
 def test_solver_status_non_results_are_never_http_errors(client, solver_controller):

@@ -21,6 +21,7 @@ import pytest
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 
 from backend.tests.api.conftest import (
+    IMAGE_UPLOAD,
     VALID_BODY,
     make_path,
     make_solver_result,
@@ -47,11 +48,14 @@ def test_solve_invokes_collaborators_in_documented_order(make_api, call_recorder
     ]
 
 
-def test_import_stops_after_validation(make_api, call_recorder):
-    """Import shares the front half of the pipeline and must stop there (§2.3)."""
+def test_import_runs_extract_then_build_then_validate(make_api, call_recorder, screenshot_extractor):
+    """Import runs extraction, then the shared build+validate front half, and stops there —
+    it must never reach the solver. The recorder captures interpreter/validator ordering;
+    the extractor runs first, before either."""
     _, client = make_api()
-    client.post("/api/import", json=VALID_BODY)
+    client.post("/api/import", files=IMAGE_UPLOAD)
 
+    screenshot_extractor.extract_to_dict.assert_called_once()
     invoked = [name for name, _, _ in call_recorder.mock_calls]
     assert invoked == ["interpreter.buildBoard", "input_validator.validate"]
 
@@ -108,18 +112,23 @@ def test_malformed_body_never_reaches_any_collaborator(
     solver_controller.solve.assert_not_called()
 
 
-def test_malformed_import_body_never_reaches_any_collaborator(
-    client, interpreter, input_validator
+def test_missing_file_never_reaches_any_collaborator(
+    client, interpreter, input_validator, screenshot_extractor
 ):
-    assert client.post("/api/import", json={"nonsense": True}).status_code == 400
+    """A POST with no file part fails shape validation before any collaborator runs — not
+    the extractor, not the interpreter, not the validator."""
+    assert client.post("/api/import").status_code == 400
 
+    screenshot_extractor.extract_to_dict.assert_not_called()
     interpreter.buildBoard.assert_not_called()
     input_validator.validate.assert_not_called()
 
 
-def test_invalid_import_returns_422_and_does_not_load(make_api, input_validator):
-    """§7.1.1: a semantically invalid import returns 422 so the frontend keeps its
-    current state rather than loading a broken board."""
+def test_invalid_import_returns_200_with_errors_and_board(make_api, input_validator):
+    """§7.1.1 revised for screenshot import: a board that extracts but fails semantic
+    validation returns 200 with ``valid: False``, the errors, and the board itself — so
+    the frontend can show what was read and let the user fix it rather than silently
+    discarding the import. (Contrast /api/solve, where a semantic failure is a 422.)"""
     input_validator.validate.return_value = make_validation_result(
         valid=False,
         message="Wall between non-adjacent cells.",
@@ -127,9 +136,12 @@ def test_invalid_import_returns_422_and_does_not_load(make_api, input_validator)
     )
     _, client = make_api()
 
-    response = client.post("/api/import", json=VALID_BODY)
-    assert response.status_code == 422
-    assert response.json()["code"] == "INVALID_WALLS"
+    response = client.post("/api/import", files=IMAGE_UPLOAD)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["valid"] is False
+    assert body["board"] is not None
+    assert [e["errorCode"] for e in body["errors"]] == ["INVALID_WALLS"]
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -244,9 +256,9 @@ def test_requests_are_stateless(client, solver_controller):
 
 
 def test_solve_and_import_do_not_share_state(client, interpreter, input_validator):
-    """Both endpoints reuse ``_build_and_validate``; the shared helper must not carry
-    state between calls."""
-    client.post("/api/import", json=VALID_BODY)
+    """Both endpoints run interpreter.buildBoard + input_validator.validate; the shared
+    path must not carry state between calls."""
+    client.post("/api/import", files=IMAGE_UPLOAD)
     client.post("/api/solve", json=VALID_BODY)
 
     assert interpreter.buildBoard.call_count == 2
