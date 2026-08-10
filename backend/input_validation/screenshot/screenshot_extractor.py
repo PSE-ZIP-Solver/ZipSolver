@@ -59,10 +59,16 @@ class ScreenshotExtractor:
         theme = self._palette_detector.detect_theme(image)
         detected_size, cell_bounds = self._grid_localizer.localize_grid(image, board_size)
 
+        # Prefer the globally-detected disc positions the localizer already found (reliable
+        # even for discs straddling a cell boundary) over per-cell re-detection.
+        disc_cells = getattr(self._grid_localizer, "last_waypoint_cells", None)
+
         # Waypoint detection is best-effort: positions are reliable, numbers may not be.
         # It records any low-confidence reads on the detector; collect them to surface as
         # import warnings rather than failing.
-        waypoints = self._waypoint_detector.detect_waypoints(image, cell_bounds, theme)
+        waypoints = self._waypoint_detector.detect_waypoints(
+            image, cell_bounds, theme, disc_cells
+        )
         warnings = list(getattr(self._waypoint_detector, "last_warnings", []) or [])
         walls = self._wall_detector.detect_walls(image, cell_bounds, theme)
 

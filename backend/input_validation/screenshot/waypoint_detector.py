@@ -24,14 +24,30 @@ class WaypointDetectionError(ScreenshotError):
 class WaypointDetector:
     """Identifies and reads the numerals inside grid cells (Waypoints)."""
 
+    def _disc_bbox(self, center, fallback_bbox):
+        """Build a square bbox centred on a disc (cx, cy, r) for precise digit cropping.
+
+        Falls back to the cell bbox if the centre is missing. Using the disc's own centre
+        (rather than the cell box) keeps the numeral centred even when the disc straddles a
+        cell boundary — the exact case per-cell detection got wrong.
+        """
+        if center is None:
+            return fallback_bbox
+        cx, cy, r = center
+        side = int(round(r * 2.0))
+        x = int(round(cx - r))
+        y = int(round(cy - r))
+        return (x, y, side, side)
+
     def detect_waypoints(
         self,
         image_data: "np.ndarray",
         cell_bounds: Dict[Tuple[int, int], Tuple[int, int, int, int]],
         theme: ThemeMode,
+        disc_cells: "Optional[Dict[Tuple[int, int], Tuple[float, float, float]]]" = None,
     ) -> List[List[int]]:
         """
-        Scans all localized cells to detect markers and reads their sequential numbers.
+        Scans the localized cells to detect markers and reads their sequential numbers.
         Formats the return exactly to the JSON schema: ordered List[[x, y]].
 
         Best-effort contract: waypoint *positions* are detected reliably, but the printed
@@ -42,12 +58,15 @@ class WaypointDetector:
         to surface. This keeps a slightly-misread board usable (the user can fix the order
         in the editor) instead of failing the import outright.
 
+        ``disc_cells`` (optional): a {(col,row): (cx, cy, r)} map of discs the localizer
+        already found by GLOBAL circle detection. When present it is the authoritative set
+        of waypoint POSITIONS — it does not miss discs that straddle a cell boundary, which
+        per-cell re-detection does — and the digit reader crops precisely around each disc
+        centre. When absent, falls back to scanning every cell (the original contract the
+        unit tests patch).
+
         Returns:
             List[List[int]]: [x, y] coordinates in visit order (index 0 == waypoint 1).
-
-        Raises:
-            WaypointDetectionError: only for a marker that is detected but yields a value
-                that is neither a number nor cleanly absent — a genuinely corrupt read.
         """
         self.last_warnings: List[str] = []
 
@@ -56,13 +75,24 @@ class WaypointDetector:
         if not cell_bounds:
             raise ValueError("Cell bounds dictionary cannot be empty or None.")
 
-        # ITERATE_CELLS — read every cell; a cell with no marker returns None and is
-        # skipped. Collect (cell, numeral) where numeral may be None (marker present but
-        # unread) so we can decide confidence over the whole board, not cell-by-cell.
+        # ITERATE — prefer the localizer's globally-detected discs (reliable positions). If
+        # none were supplied, fall back to per-cell marker detection over every cell.
         marked_cells: List[Tuple[int, int]] = []          # every cell that HAS a marker
         numeral_to_cell: Dict[int, Tuple[int, int]] = {}  # confidently-read numerals
-        for (grid_x, grid_y), bbox in cell_bounds.items():
+
+        if disc_cells:
+            iterator = [
+                (cell, self._disc_bbox(center, cell_bounds.get(cell)))
+                for cell, center in disc_cells.items()
+            ]
+        else:
+            iterator = list(cell_bounds.items())
+
+        for (grid_x, grid_y), bbox in iterator:
             raw = self._detect_marker_and_read(image_data, bbox, theme)
+            if disc_cells is not None and raw is None:
+                # Position is trusted (came from global detection); only the number failed.
+                raw = "?"
             if raw is None:
                 continue
 

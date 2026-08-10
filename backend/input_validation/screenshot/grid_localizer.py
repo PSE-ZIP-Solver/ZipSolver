@@ -53,6 +53,8 @@ class GridLocalizer:
         import cv2  # noqa: F401  (lazy import; used by helpers)
         import numpy as np
 
+        self.last_waypoint_cells: Dict[Tuple[int, int], Tuple[float, float, float]] = {}
+
         if board_size is not None:
             if board_size not in ALLOWED_SIZES:
                 raise AmbiguousBoardError(
@@ -89,7 +91,24 @@ class GridLocalizer:
         circles = self._detect_circles(image_data)
         panel = self._panel_bounds(image_data, circles)
 
-        if panel is not None:
+        # Discs sit at cell centres, so the spacing between distinct disc columns/rows is a
+        # direct, reliable pitch measurement — more trustworthy than the panel bounds, which
+        # can be over-sized by surrounding chrome. When enough discs are present, use their
+        # spacing; otherwise fall back to the panel, then to disc radius.
+        board_circles = [c for c in circles if c[2] < 40]  # drop oversized UI blobs
+        disc_pitch = self._disc_spacing_pitch(board_circles) if len(board_circles) >= 6 else None
+
+        if disc_pitch is not None:
+            pitch = disc_pitch
+            # Origin from the discs themselves: the smallest disc coordinate is a cell
+            # centre, so the board origin is that minus half a pitch, snapped so all discs
+            # land on integer cells. Using the panel centre here is unreliable because the
+            # panel can be mis-sized; the discs are the ground truth for cell positions.
+            min_cx = min(c[0] for c in board_circles)
+            min_cy = min(c[1] for c in board_circles)
+            origin_x = min_cx - pitch / 2.0
+            origin_y = min_cy - pitch / 2.0
+        elif panel is not None:
             px, py, pw, ph = panel
             centre_x = px + pw / 2.0
             centre_y = py + ph / 2.0
@@ -126,6 +145,18 @@ class GridLocalizer:
             ry = (cys - origin_y) / pitch - 0.5
             origin_x += float(np.median(rx - np.round(rx))) * pitch
             origin_y += float(np.median(ry - np.round(ry))) * pitch
+
+        # Record the reliable disc -> cell mapping from GLOBAL circle detection, using the
+        # final origin/pitch. The per-cell re-detection in the waypoint detector misses
+        # discs that straddle cell boundaries; these globally-detected centres do not, so
+        # the extractor prefers them. Map each disc centre to its cell and keep the pixel
+        # centre so the digit reader can crop precisely around the disc.
+        self.last_waypoint_cells: Dict[Tuple[int, int], Tuple[float, float, float]] = {}
+        for (cx, cy, r) in board:
+            col = int(round((cx - origin_x) / pitch - 0.5))
+            row = int(round((cy - origin_y) / pitch - 0.5))
+            if 0 <= col < n and 0 <= row < n:
+                self.last_waypoint_cells[(col, row)] = (cx, cy, r)
 
         return origin_x, origin_y, pitch
 
@@ -180,6 +211,45 @@ class GridLocalizer:
             if best is None or ww * hh > best[0]:
                 best = (ww * hh, x, y, ww, hh)
         return best[1:] if best else None
+
+    def _disc_spacing_pitch(self, circles):
+        """Pitch from the spacing of distinct disc columns and rows.
+
+        Discs sit at cell centres, so clustering their x (and y) coordinates into columns
+        (rows) and taking the smallest consistent gap yields the cell pitch directly. This
+        is robust even when discs are one, two, or more cells apart, because the *smallest*
+        gap between distinct columns is one pitch. Returns None if it can't be determined.
+        """
+        import numpy as np
+
+        if len(circles) < 2:
+            return None
+
+        def base_gap(values):
+            vals = sorted(values)
+            tol = 15.0
+            clusters = [vals[0]]
+            for v in vals[1:]:
+                if v - clusters[-1] > tol:
+                    clusters.append(v)
+                else:
+                    clusters[-1] = (clusters[-1] + v) / 2.0
+            if len(clusters) < 2:
+                return None
+            gaps = np.diff(clusters)
+            gaps = gaps[gaps > tol]
+            if len(gaps) == 0:
+                return None
+            base = float(np.min(gaps))
+            near = gaps[gaps < base * 1.5]
+            return float(np.mean(near)) if len(near) else base
+
+        gx = base_gap([c[0] for c in circles])
+        gy = base_gap([c[1] for c in circles])
+        candidates = [g for g in (gx, gy) if g is not None]
+        if not candidates:
+            return None
+        return float(np.median(candidates))
 
     def _nearest_neighbour_pitch(self, circles) -> float:
         """Median nearest-neighbour disc gap — the cell pitch when discs are dense."""

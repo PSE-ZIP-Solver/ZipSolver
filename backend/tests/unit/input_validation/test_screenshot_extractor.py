@@ -94,6 +94,10 @@ class TestScreenshotExtractor:
         
         fake_bounds = {(0, 0): (0, 0, 50, 50)}
         self.extractor._grid_localizer.localize_grid.return_value = (6, fake_bounds)
+        # The extractor reads the localizer's disc-cell map and forwards it to the waypoint
+        # detector; set it explicitly so the call assertion is deterministic.
+        fake_disc_cells = {(0, 1): (25.0, 75.0, 20.0)}
+        self.extractor._grid_localizer.last_waypoint_cells = fake_disc_cells
         
         fake_waypoints = [[0, 1], [1, 2], [2, 2]]
         self.extractor._waypoint_detector.detect_waypoints.return_value = fake_waypoints
@@ -110,14 +114,14 @@ class TestScreenshotExtractor:
             call.load_and_preprocess(payload),
             call.detect_theme(fake_image),
             call.localize_grid(fake_image, None),
-            call.detect_waypoints(fake_image, fake_bounds, ThemeMode.LIGHT),
+            call.detect_waypoints(fake_image, fake_bounds, ThemeMode.LIGHT, fake_disc_cells),
             call.detect_walls(fake_image, fake_bounds, ThemeMode.LIGHT)
         ]
         assert self.sequence_manager.mock_calls == expected_calls
         
         # Redundant specific assertions based on the prompt's TDD requirements
         self.extractor._image_loader.load_and_preprocess.assert_called_once_with(payload)
-        self.extractor._waypoint_detector.detect_waypoints.assert_called_once_with(fake_image, fake_bounds, ThemeMode.LIGHT)
+        self.extractor._waypoint_detector.detect_waypoints.assert_called_once_with(fake_image, fake_bounds, ThemeMode.LIGHT, fake_disc_cells)
         
         # 4. Assert Output Strict Schema Integrity
         assert isinstance(result_json, str)
