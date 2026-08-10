@@ -23,8 +23,13 @@ interface GridProps {
 	board: BoardConfig;
 	solution: SolutionPath | null;
 	editMode: EditMode;
+	playerPath: Position[];
+	activePosition: Position | null;
+	hintPosition: Position | null;
+	isPlayMode: boolean;
 	onCellClick: (position: Position) => void;
 	onWallClick: (wall: Wall) => void;
+	pathShakeVersion?: number;
 }
 
 const MAX_GRID_PIXELS = 600;
@@ -53,15 +58,22 @@ export default function Grid({
 	board,
 	solution,
 	editMode,
+	playerPath,
+	activePosition,
+	hintPosition,
+	isPlayMode,
 	onCellClick,
-	onWallClick
+	onWallClick,
+	pathShakeVersion = 0
 }: GridProps) {
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	const playerPathCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
 	const [containerWidth, setContainerWidth] = useState(0);
 	const [hoveredCell, setHoveredCell] = useState<number | null>(null);
+	const [isPointerDown, setIsPointerDown] = useState(false);
 
 	useEffect(() => {
 		const element = containerRef.current;
@@ -102,6 +114,31 @@ export default function Grid({
 		return map;
 	}, [board.waypoints]);
 
+	const activeCellKey = activePosition ? `${activePosition[0]},${activePosition[1]}` : null;
+	const hintCellKey = hintPosition ? `${hintPosition[0]},${hintPosition[1]}` : null;
+	const startPosition = board.waypoints[0] ?? null;
+	const pathToRender = startPosition && playerPath.length > 0
+		? (playerPath[0] && playerPath[0][0] === startPosition[0] && playerPath[0][1] === startPosition[1]
+			? playerPath
+			: [startPosition, ...playerPath])
+		: playerPath;
+	const solutionPathToRender = useMemo(() => {
+		if (!solution || solution.length === 0) {
+			return [];
+		}
+
+		if (!startPosition) {
+			return solution;
+		}
+
+		const [firstPosition] = solution;
+		if (firstPosition && firstPosition[0] === startPosition[0] && firstPosition[1] === startPosition[1]) {
+			return solution;
+		}
+
+		return [startPosition, ...solution];
+	}, [solution, startPosition]);
+
 	const wallSet = useMemo(() => {
 		const set = new Set<string>();
 		board.walls.forEach((wall) => {
@@ -125,7 +162,7 @@ export default function Grid({
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, gridPixels, gridPixels);
 
-		if (!solution || solution.length < 2) {
+		if (!solution || solutionPathToRender.length < 2) {
 			return;
 		}
 
@@ -135,7 +172,7 @@ export default function Grid({
 
 		const draw = (now: number) => {
 			const animationProgress = Math.min(1, (now - startedAt) / duration);
-			const visibleSegments = animationProgress * (solution.length - 1);
+			const visibleSegments = animationProgress * (solutionPathToRender.length - 1);
 
 			ctx.clearRect(0, 0, gridPixels, gridPixels);
 
@@ -145,11 +182,11 @@ export default function Grid({
 			ctx.shadowColor = "rgba(249, 115, 22, 0.28)";
 			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
 
-			for (let i = 1; i < solution.length; i += 1) {
+			for (let i = 1; i < solutionPathToRender.length; i += 1) {
 				if (i > Math.ceil(visibleSegments)) break;
 
-				const previous = solution[i - 1];
-				const current = solution[i];
+				const previous = solutionPathToRender[i - 1];
+				const current = solutionPathToRender[i];
 				const segmentProgress = Math.max(
 					0,
 					Math.min(1, visibleSegments - (i - 1))
@@ -163,7 +200,7 @@ export default function Grid({
 				const currentX = prevX + (currX - prevX) * segmentProgress;
 				const currentY = prevY + (currY - prevY) * segmentProgress;
 
-				const tintProgress = i / solution.length;
+				const tintProgress = i / solutionPathToRender.length;
 				const hue = 48 - tintProgress * 36;
 				const lightness = 66 - tintProgress * 12;
 
@@ -182,7 +219,44 @@ export default function Grid({
 		raf = requestAnimationFrame(draw);
 
 		return () => cancelAnimationFrame(raf);
-	}, [cellSize, gridPixels, solution, stride]);
+	}, [cellSize, gridPixels, solutionPathToRender, stride]);
+
+	useEffect(() => {
+		const canvas = playerPathCanvasRef.current;
+		if (!canvas || !gridPixels) return;
+
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = Math.round(gridPixels * dpr);
+		canvas.height = Math.round(gridPixels * dpr);
+		canvas.style.width = `${gridPixels}px`;
+		canvas.style.height = `${gridPixels}px`;
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, gridPixels, gridPixels);
+
+		if (pathToRender.length < 2) return;
+
+		ctx.lineWidth = Math.max(2.5, cellSize * 0.18);
+		ctx.lineCap = "round";
+		ctx.lineJoin = "round";
+		ctx.strokeStyle = "rgba(234, 106, 26, 0.95)";
+		ctx.shadowColor = "rgba(234, 106, 26, 0.25)";
+		ctx.shadowBlur = Math.max(6, cellSize * 0.12);
+
+		ctx.beginPath();
+		pathToRender.forEach((position, index) => {
+			const x = position[1] * stride + cellSize / 2;
+			const y = position[0] * stride + cellSize / 2;
+			if (index === 0) {
+				ctx.moveTo(x, y);
+			} else {
+				ctx.lineTo(x, y);
+			}
+		});
+		ctx.stroke();
+	}, [cellSize, gridPixels, pathToRender, pathShakeVersion, stride]);
 
 	return (
 		<div
@@ -200,6 +274,16 @@ export default function Grid({
 					ref={canvasRef}
 					className="pointer-events-none absolute inset-0 z-20"
 				/>
+				<div
+					key={pathShakeVersion}
+					className="pointer-events-none absolute inset-0 z-20"
+					style={{ animation: pathShakeVersion > 0 ? "zip-path-shake 220ms ease-in-out" : undefined }}
+				>
+					<canvas
+						ref={playerPathCanvasRef}
+						className="absolute inset-0"
+					/>
+				</div>
 
 				<div
 					className="grid-lines absolute inset-0 z-10 grid"
@@ -213,20 +297,18 @@ export default function Grid({
 						const row = Math.floor(index / board.boardSize);
 						const col = index % board.boardSize;
 						const key = `${row},${col}`;
-						const waypointIndex = waypointIndexByCell.get(key);
-						const isWaypoint = waypointIndex !== undefined;
 						const isHovered = hoveredCell === index;
 
-						const rightWallExists =
-							col < board.boardSize - 1
-								? wallSet.has(getWallKey([row, col], [row, col + 1]))
-								: false;
-
-						const bottomWallExists =
-							row < board.boardSize - 1
-								? wallSet.has(getWallKey([row, col], [row + 1, col]))
-								: false;
-
+							const isActive = activeCellKey === key;
+							const isHint = hintCellKey === key;
+							const rightWallExists =
+								col < board.boardSize - 1
+									? wallSet.has(getWallKey([row, col], [row, col + 1]))
+									: false;
+							const bottomWallExists =
+								row < board.boardSize - 1
+									? wallSet.has(getWallKey([row, col], [row + 1, col]))
+									: false;
 						return (
 							<div
 								key={index}
@@ -237,30 +319,49 @@ export default function Grid({
 										? "cursor-default"
 										: "cursor-pointer"
 									,
-									editMode === "NUMBERS" && isHovered
+										(editMode === "NUMBERS" && isHovered)
 										? "grid-cell--hovered"
 										: ""
 								].join(" ")}
-								onMouseEnter={() => setHoveredCell(index)}
-								onMouseLeave={() => setHoveredCell(null)}
-								onClick={() => {
+								onMouseEnter={() => {
+									if (isPlayMode && isPointerDown) {
+										onCellClick([row, col]);
+										return;
+									}
+
+									if (editMode === "NUMBERS" && !isPlayMode) {
+										setHoveredCell(index);
+									}
+								}}
+								onMouseLeave={() => {
+									if (!isPlayMode) {
+										setHoveredCell(null);
+									}
+								}}
+								onPointerDown={() => {
+									if (isPlayMode) {
+										setIsPointerDown(true);
+										onCellClick([row, col]);
+										return;
+									}
+
 									if (editMode === "NUMBERS") {
 										onCellClick([row, col]);
 									}
 								}}
+								onPointerUp={() => {
+									setIsPointerDown(false);
+								}}
+								onPointerCancel={() => {
+									setIsPointerDown(false);
+								}}
 							>
-								{isWaypoint && (
-									<div
-										className="grid-waypoint flex items-center justify-center rounded-full text-white"
-										style={{
-											width: Math.round(cellSize * 0.58),
-											height: Math.round(cellSize * 0.58),
-											fontSize: Math.round(cellSize * 0.28),
-											animation: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
-										}}
-									>
-										{waypointIndex + 1}
-									</div>
+								{isActive && (
+									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_rgba(234,106,26,0.18)]" />
+								)}
+
+								{isHint && !isActive && (
+									<div className="absolute inset-0 rounded-xl border border-dashed border-primary/60 bg-primary/10" />
 								)}
 
 								{editMode === "WALLS" && col < board.boardSize - 1 && !rightWallExists && (
@@ -308,6 +409,41 @@ export default function Grid({
 										/>
 									</button>
 								)}
+							</div>
+						);
+					})}
+				</div>
+
+				<div className="pointer-events-none absolute inset-0 z-40">
+					{Array.from({ length: board.boardSize * board.boardSize }).map((_, index) => {
+						const row = Math.floor(index / board.boardSize);
+						const col = index % board.boardSize;
+						const key = `${row},${col}`;
+						const waypointIndex = waypointIndexByCell.get(key);
+						const isWaypoint = waypointIndex !== undefined;
+
+						if (!isWaypoint) {
+							return null;
+						}
+
+						const markerSize = Math.round(cellSize * 0.58);
+						const left = col * stride + (cellSize - markerSize) / 2;
+						const top = row * stride + (cellSize - markerSize) / 2;
+
+						return (
+							<div
+								key={key}
+								className="grid-waypoint absolute flex items-center justify-center rounded-full text-white"
+								style={{
+									width: markerSize,
+									height: markerSize,
+									fontSize: Math.round(cellSize * 0.28),
+									left,
+									top,
+									animation: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
+								}}
+							>
+								{waypointIndex + 1}
 							</div>
 						);
 					})}

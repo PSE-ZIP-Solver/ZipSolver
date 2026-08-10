@@ -9,7 +9,8 @@ import ExamplesSection from "./ExamplesSection";
 
 import {
     type EditMode,
-    type GridSize
+    type GridSize,
+    type ViewMode
 } from "../types/grid";
 
 import {
@@ -36,6 +37,22 @@ import {
     createShareUrl,
     loadBoardFromSearch,
 } from "../utils/boardShareService";
+
+import {
+    isValidGameMove,
+} from "../utils/gameMode";
+
+import {
+    appendVisitedCell,
+    createPlayModeState,
+    getActivePosition,
+    getExpectedNextWaypoint,
+    getHintPosition as getPlayHintPosition,
+    hasCompletedAllWaypoints,
+    isCellAlreadyVisited,
+    resetPlayModeState,
+    undoVisitedCell,
+} from "../utils/playMode";
 
 
 interface GridBuilderProps {
@@ -72,6 +89,9 @@ export default function GridBuilder({
     const [editMode, setEditMode] =
         useState<EditMode>("NUMBERS");
 
+    const [viewMode, setViewMode] =
+        useState<ViewMode>("BUILD");
+
 
     const [message, setMessage] =
         useState<AppMessage>({
@@ -89,6 +109,12 @@ export default function GridBuilder({
 
     const [isSolving, setIsSolving] =
         useState(false);
+
+    const [pathShakeVersion, setPathShakeVersion] =
+        useState(0);
+
+    const [playModeState, setPlayModeState] =
+        useState(createPlayModeState(board.waypoints[0] ?? null));
 
 
     const sharedBoardLoadedRef =
@@ -116,6 +142,7 @@ export default function GridBuilder({
 
         setSolution(null);
         setMetrics(null);
+        setPlayModeState(resetPlayModeState(sharedBoard.waypoints[0] ?? null));
 
 
         clearSharedBoardFromUrl();
@@ -146,6 +173,7 @@ export default function GridBuilder({
 
         setSolution(null);
         setMetrics(null);
+        setPlayModeState(resetPlayModeState());
 
         showMessage(
             "INFO",
@@ -157,6 +185,78 @@ export default function GridBuilder({
     function handleCellClick(
         position: Position
     ) {
+
+        if (viewMode === "PLAY") {
+            const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
+
+            if (!currentPosition) {
+                showMessage("WARNING", "Add at least one waypoint before playing");
+                return;
+            }
+
+            if (position[0] === currentPosition[0] && position[1] === currentPosition[1]) {
+                showMessage("INFO", "You are already on this cell");
+                return;
+            }
+
+            const previousPosition = playModeState.visitedCells.length > 1
+                ? playModeState.visitedCells[playModeState.visitedCells.length - 2]
+                : null;
+
+            if (previousPosition && position[0] === previousPosition[0] && position[1] === previousPosition[1]) {
+                setPlayModeState((previous) => undoVisitedCell(previous));
+                showMessage("INFO", "Undid the last move");
+                return;
+            }
+
+            const expectedWaypoint = getExpectedNextWaypoint(playModeState, board);
+            const targetIsWaypoint = board.waypoints.some((waypoint) => waypoint[0] === position[0] && waypoint[1] === position[1]);
+
+            if (targetIsWaypoint && expectedWaypoint) {
+                const isExpectedWaypoint = position[0] === expectedWaypoint[0] && position[1] === expectedWaypoint[1];
+
+                if (!isExpectedWaypoint) {
+                    showMessage("WARNING", "You must visit the waypoints in order");
+                    return;
+                }
+            }
+
+            if (!isValidGameMove(currentPosition, position, board)) {
+                showMessage("WARNING", "This move is not valid");
+                return;
+            }
+
+            if (isCellAlreadyVisited(playModeState, position)) {
+                setPathShakeVersion((previous) => previous + 1);
+                showMessage("WARNING", "This cell was already visited");
+                return;
+            }
+
+            const nextState = {
+                ...playModeState,
+                visitedCells: [...playModeState.visitedCells, position],
+            };
+
+            setPlayModeState((previous) => appendVisitedCell(previous, position));
+
+            if (hasCompletedAllWaypoints(nextState, board)) {
+                showMessage("SUCCESS", "Puzzle solved! You visited every cell and all waypoints in order.");
+                return;
+            }
+
+            const lastWaypoint = board.waypoints[board.waypoints.length - 1] ?? null;
+            const reachedLastWaypoint = lastWaypoint
+                ? position[0] === lastWaypoint[0] && position[1] === lastWaypoint[1]
+                : false;
+
+            if (reachedLastWaypoint) {
+                showMessage("INFO", "You reached the last waypoint, but you still need to visit every cell to solve the puzzle.");
+                return;
+            }
+
+            showMessage("INFO", `Moved to (${position[0] + 1}, ${position[1] + 1})`);
+            return;
+        }
 
         if (editMode !== "NUMBERS")
             return;
@@ -430,9 +530,9 @@ export default function GridBuilder({
             walls: []
         }));
 
-
         setSolution(null);
         setMetrics(null);
+        setPlayModeState(resetPlayModeState());
 
 
         showMessage(
@@ -497,6 +597,7 @@ export default function GridBuilder({
         setBoard(exampleBoard);
         setSolution(null);
         setMetrics(null);
+        setPlayModeState(resetPlayModeState(exampleBoard.waypoints[0] ?? null));
 
         showMessage(
             "SUCCESS",
@@ -504,6 +605,97 @@ export default function GridBuilder({
         );
     }
 
+
+    function handleHint() {
+        if (viewMode !== "PLAY") {
+            showMessage("WARNING", "Switch to Play mode first");
+            return;
+        }
+
+        const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
+        const suggestedPosition = getPlayHintPosition(solution, playModeState, board);
+
+        if (!currentPosition || !suggestedPosition) {
+            showMessage("WARNING", "Solve the puzzle to unlock hints");
+            return;
+        }
+
+        if (suggestedPosition[0] === currentPosition[0] && suggestedPosition[1] === currentPosition[1]) {
+            showMessage("INFO", "You are already on the suggested cell");
+            return;
+        }
+
+        if (!isValidGameMove(currentPosition, suggestedPosition, board)) {
+            showMessage("WARNING", "The hinted move is blocked by a wall");
+            return;
+        }
+
+        setPlayModeState((previous) => appendVisitedCell(previous, suggestedPosition));
+        showMessage("INFO", `Hint applied to (${suggestedPosition[0] + 1}, ${suggestedPosition[1] + 1})`);
+    }
+
+    function handleModeChange(mode: EditMode) {
+        setEditMode(mode);
+        setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
+    }
+
+    function handleViewModeChange(mode: ViewMode) {
+        setViewMode(mode);
+
+        if (mode === "PLAY") {
+            setPlayModeState(createPlayModeState(board.waypoints[0] ?? null));
+            showMessage("INFO", "Play mode started. Choose a neighboring cell to continue");
+            return;
+        }
+
+        setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
+    }
+
+    useEffect(() => {
+        if (viewMode !== "PLAY") {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
+
+            if (!currentPosition) {
+                return;
+            }
+
+            const directionMap: Record<string, Position> = {
+                ArrowUp: [-1, 0],
+                ArrowDown: [1, 0],
+                ArrowLeft: [0, -1],
+                ArrowRight: [0, 1],
+            };
+
+            const delta = directionMap[event.key];
+
+            if (!delta) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const nextPosition: Position = [currentPosition[0] + delta[0], currentPosition[1] + delta[1]];
+
+            if (
+                nextPosition[0] < 0 ||
+                nextPosition[0] >= board.boardSize ||
+                nextPosition[1] < 0 ||
+                nextPosition[1] >= board.boardSize
+            ) {
+                return;
+            }
+
+            handleCellClick(nextPosition);
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [board.boardSize, board.waypoints, playModeState, viewMode]);
 
     function showMessage(
         type: AppMessage["type"],
@@ -560,6 +752,11 @@ export default function GridBuilder({
                     board={board}
                     solution={solution}
                     editMode={editMode}
+                    playerPath={playModeState.visitedCells}
+                    activePosition={getActivePosition(playModeState, board.waypoints[0] ?? null)}
+                    hintPosition={getPlayHintPosition(solution, playModeState, board)}
+                    isPlayMode={viewMode === "PLAY"}
+                    pathShakeVersion={pathShakeVersion}
                     onCellClick={handleCellClick}
                     onWallClick={handleWallClick}
                 />
@@ -583,9 +780,15 @@ export default function GridBuilder({
                     <ControlPanel
                         boardSize={board.boardSize}
                         editMode={editMode}
+                        viewMode={viewMode}
                         isSolving={isSolving}
                         onGridSizeChange={handleGridSizeChange}
-                        onEditModeChange={setEditMode}
+                        onEditModeChange={handleModeChange}
+                        onHint={handleHint}
+                        onUndo={() => {
+                            setPlayModeState((previous) => undoVisitedCell(previous));
+                            showMessage("INFO", "Last move undone");
+                        }}
                     />
                 </div>
 
@@ -599,7 +802,9 @@ export default function GridBuilder({
                     <ActionPanel
                         canSolve={board.waypoints.length >= 2}
                         isSolving={isSolving}
+                        viewMode={viewMode}
                         onSolve={handleSolve}
+                        onViewModeChange={handleViewModeChange}
                         onReset={handleReset}
                         onShare={handleShare}
                     />
