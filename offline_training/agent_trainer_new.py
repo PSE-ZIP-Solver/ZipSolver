@@ -315,11 +315,12 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.5,
+                initial_eps=0.6,
                 final_eps=0.1,
                 fraction=0.8,
             )
             agent.tensorboard_log = "./logs/zip_dqn/8x8/"
+            agent.target_update_interval = 10000
         else:
             print("Creating new agent")
             agent = RLAgent(
@@ -517,17 +518,17 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 30
+    MIN_NR_OF_WALLS = 44
     NR_OF_WALLS = 45
-    MIN_NR_OF_WAYPOINTS = 30
+    MIN_NR_OF_WAYPOINTS = 44
     NR_OF_WAYPOINTS = 45
 
     USE_SAVED_TRAINING_BOARDS = True
     LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/08-8x8.pkl")
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/05-rerun.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = False
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/08-8x8.pkl"
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/05-rerun.pkl"
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = True
@@ -540,18 +541,18 @@ if __name__ == "__main__":
         boardSize=8,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/08-8x8.zip",
+        modelPath="offline_training/trained_models/05-rerun.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=100,
+        nrTrainingBoards=30,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=100,
 
         # Total time steps
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard=1_500_000,
 
         loadExistingModel=True,
         resetModel=False,
