@@ -313,7 +313,7 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.5,
+                initial_eps=0.2,
                 final_eps=0.05,
                 fraction=0.8,
             )
@@ -519,8 +519,8 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 0
     NR_OF_WAYPOINTS = 34
 
-    USE_SAVED_TRAINING_BOARDS = False
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
+    USE_SAVED_TRAINING_BOARDS = True
+    LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
     TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-4000boards-0to25walls-0to34wp.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
@@ -548,7 +548,7 @@ if __name__ == "__main__":
         nrEvaluationBoards=1000, 
 
         # Total time steps
-        timestepsPerBoard= 6_000_000,
+        timestepsPerBoard= 1_000_000,
 
         loadExistingModel=True,
         resetModel=False,
