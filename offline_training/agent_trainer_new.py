@@ -520,18 +520,18 @@ if __name__ == "__main__":
     NR_OF_WAYPOINTS = 34
 
     USE_SAVED_TRAINING_BOARDS = True
-    LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
+    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
     TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-4000boards-0to25walls-0to34wp.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-0to25walls-0to34wp-1000boards.pkl"
 
-    TRAIN_MODEL = True
+    TRAIN_MODEL = False
     PRINT_TRAINING_BOARDS = False
     SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
-    EVALUATE_EVALUATION_BOARDS = True
-    SHOW_EVALUATION_EXAMPLES = True
+    EVALUATE_EVALUATION_BOARDS = False
+    SHOW_EVALUATION_EXAMPLES = False
 
     trainer = AgentTrainer(
         boardSize=6,
