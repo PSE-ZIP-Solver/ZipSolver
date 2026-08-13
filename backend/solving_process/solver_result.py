@@ -28,5 +28,7 @@ class SolverResult:
         return self._metrics
 
     def hasSolution(self) -> bool:
-        """Returns whether the result contains a solution path."""
-        return self._path is not None
+        return (
+            self._status == SolverStatus.SOLVED
+            and self._path is not None
+        )

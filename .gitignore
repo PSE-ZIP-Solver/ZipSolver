@@ -7,4 +7,20 @@
 uv.lock
 __pycache__/
 *.pyc
-.pytest_cache/
+
+# RL training artifacts / old checkpoints
+offline_training/trained_models/6x6(all)/
+offline_training/trained_models/6x6(test)/
+offline_training/trained_models/trained-model.zip
+offline_training/trained_models/trained-model_replay_buffer.pkl
+
+# Training logs
+logs/
+
+
+# server stuff:
+.venv/
+*.egg-info/
+logs/*.out
+logs/*.err
+trainmi6x6.sh
