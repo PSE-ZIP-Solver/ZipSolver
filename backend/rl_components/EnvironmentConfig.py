@@ -11,5 +11,5 @@ class EnvironmentConfig:
         self.invalid_move_penalty = -10.0
         self.step_penalty = -0.01
         self.completion_reward = 200.0
-        self.next_waypoint_reward = 15.0
+        self.next_waypoint_reward = 25.0
         self.new_cell_reward = 2.0
