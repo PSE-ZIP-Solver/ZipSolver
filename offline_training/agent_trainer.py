@@ -313,7 +313,7 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.2,
+                initial_eps=0.4,
                 final_eps=0.05,
                 fraction=0.8,
             )
@@ -515,21 +515,21 @@ class AgentTrainer:
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
     MIN_NR_OF_WALLS = 0
-    NR_OF_WALLS = 25
+    NR_OF_WALLS = 5
     MIN_NR_OF_WAYPOINTS = 0
-    NR_OF_WAYPOINTS = 34
+    NR_OF_WAYPOINTS = 10
 
-    USE_SAVED_TRAINING_BOARDS = True
+    USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-4000boards-0to25walls-0to34wp.pkl")
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-sparse-2000boards-0to5walls-0to10wp.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-0to25walls-0to34wp-1000boards.pkl"
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-0to5walls-0to10wp-1000boards.pkl"
 
-    TRAIN_MODEL = False
+    TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
     SHOW_FIRST_TRAINING_RUN = False
-    EVALUATE_TRAINING_BOARDS = False
+    EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
 
@@ -537,18 +537,18 @@ if __name__ == "__main__":
         boardSize=6,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/6x6/6x6-agent.zip",
-        minNrOfWalls=MIN_NR_OF_WALLS,
+        modelPath="offline_training/trained_models/6x6/trained-model.zip",
+        minNrOfWalls=MIN_NR_OF_WALLS, 
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=4000,
+        nrTrainingBoards=2000,
 
         # Evaluation boards for testing the saved model.
         nrEvaluationBoards=1000, 
 
         # Total time steps
-        timestepsPerBoard= 1_000_000,
+        timestepsPerBoard= 2_000_000,
 
         loadExistingModel=True,
         resetModel=False,
