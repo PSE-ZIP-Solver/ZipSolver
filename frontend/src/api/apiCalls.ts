@@ -78,7 +78,7 @@ export async function solvePuzzle(
     );
 
 
-    const response: SolverResponse = await apiFetch(
+    const response = await apiFetch(
         "/api/solve",
         {
             method: "POST",
@@ -87,7 +87,7 @@ export async function solvePuzzle(
             },
             body: JSON.stringify(apiBoard),
         }
-    );
+    ) as SolverResponse;
 
 
     /*

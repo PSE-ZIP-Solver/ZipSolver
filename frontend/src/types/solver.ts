@@ -8,9 +8,9 @@ export type SolverStatus =
     | "TIMEOUT"
     | "FAILED";
 
-export type SolverType =
-    | "RL"
-    | "DFS";
+export type SolverUsedType =
+    | "RLSolver"
+    | "AlgorithmicSolver";
 
 export interface SolverMetrics {
     runtimeMs: number;
@@ -22,7 +22,7 @@ export interface SolverResponse {
     status: SolverStatus;
     success: boolean;
     solutionPath: SolutionPath | null;
-    solverUsed: SolverType;
+    solverUsed: SolverUsedType;
     message: string;
     metrics: SolverMetrics;
 }
