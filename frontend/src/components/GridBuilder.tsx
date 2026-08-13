@@ -28,6 +28,8 @@ import {
     type AppMessage,
 } from "../types/message";
 
+import { dialogMessages } from "../data/dialogMessages";
+
 import {
     solvePuzzle,
 } from "../api/apiCalls";
@@ -100,7 +102,7 @@ export default function GridBuilder({
             type: "INFO",
 
             message:
-                "Welcome to ZipSolver! Start placing waypoints and walls.",
+                dialogMessages.welcome,
 
             timestamp:
                 new Date()
@@ -174,11 +176,6 @@ export default function GridBuilder({
         setSolution(null);
         setMetrics(null);
         setPlayModeState(resetPlayModeState());
-
-        showMessage(
-            "INFO",
-            `Grid size changed to ${size}`
-        );
     }
 
 
@@ -190,12 +187,12 @@ export default function GridBuilder({
             const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
 
             if (!currentPosition) {
-                showMessage("WARNING", "Add at least one waypoint before playing");
+                showMessage("WARNING", dialogMessages.play.addWaypointFirst);
                 return;
             }
 
             if (position[0] === currentPosition[0] && position[1] === currentPosition[1]) {
-                showMessage("INFO", "You are already on this cell");
+                showMessage("INFO", dialogMessages.play.alreadyOnCell);
                 return;
             }
 
@@ -205,7 +202,7 @@ export default function GridBuilder({
 
             if (previousPosition && position[0] === previousPosition[0] && position[1] === previousPosition[1]) {
                 setPlayModeState((previous) => undoVisitedCell(previous));
-                showMessage("INFO", "Undid the last move");
+                showMessage("INFO", dialogMessages.play.lastMoveUndone);
                 return;
             }
 
@@ -216,19 +213,19 @@ export default function GridBuilder({
                 const isExpectedWaypoint = position[0] === expectedWaypoint[0] && position[1] === expectedWaypoint[1];
 
                 if (!isExpectedWaypoint) {
-                    showMessage("WARNING", "You must visit the waypoints in order");
+                    showMessage("WARNING", dialogMessages.play.waypointOrder);
                     return;
                 }
             }
 
             if (!isValidGameMove(currentPosition, position, board)) {
-                showMessage("WARNING", "This move is not valid");
+                showMessage("WARNING", dialogMessages.play.invalidMove);
                 return;
             }
 
             if (isCellAlreadyVisited(playModeState, position)) {
                 setPathShakeVersion((previous) => previous + 1);
-                showMessage("WARNING", "This cell was already visited");
+                showMessage("WARNING", dialogMessages.play.alreadyVisited);
                 return;
             }
 
@@ -240,7 +237,7 @@ export default function GridBuilder({
             setPlayModeState((previous) => appendVisitedCell(previous, position));
 
             if (hasCompletedAllWaypoints(nextState, board)) {
-                showMessage("SUCCESS", "Puzzle solved! You visited every cell and all waypoints in order.");
+                showMessage("SUCCESS", dialogMessages.play.solved);
                 return;
             }
 
@@ -250,11 +247,11 @@ export default function GridBuilder({
                 : false;
 
             if (reachedLastWaypoint) {
-                showMessage("INFO", "You reached the last waypoint, but you still need to visit every cell to solve the puzzle.");
+                showMessage("INFO", dialogMessages.play.lastWaypointOnly);
                 return;
             }
 
-            showMessage("INFO", `Moved to (${position[0] + 1}, ${position[1] + 1})`);
+            showMessage("INFO", dialogMessages.play.movedTo(position));
             return;
         }
 
@@ -391,7 +388,7 @@ export default function GridBuilder({
 
             showMessage(
                 "WARNING",
-                "Add at least two waypoints first"
+                dialogMessages.solve.addWaypointsFirst
             );
 
             return;
@@ -412,28 +409,24 @@ export default function GridBuilder({
 
                 setSolution(response.solutionPath);
 
+                showMessage(
+                    response.solverUsed === "RLSolver" ? "SUCCESS" : "WARNING",
+                    response.message
+                );
 
-                if (response.solverUsed === "RL") {
 
-                    showMessage(
-                        "SUCCESS",
-                        "Puzzle solved successfully using RL solver"
-                    );
+                return;
+            }
 
-                }
 
-                else if (response.solverUsed === "DFS") {
+            if (response.success) {
 
-                    showMessage(
-                        "WARNING",
-                        [
-                            "Puzzle solved using DFS fallback",
-                            response.message
-                        ].join("\n")
-                    );
+                setSolution(null);
 
-                }
-
+                showMessage(
+                    "ERROR",
+                    response.message
+                );
 
                 return;
             }
@@ -447,11 +440,8 @@ export default function GridBuilder({
                 case "UNSOLVABLE":
 
                     showMessage(
-                        "ERROR",
-                        [
-                            "Puzzle is not solvable",
-                            response.message
-                        ].join("\n")
+                        "WARNING",
+                        response.message
                     );
 
                     break;
@@ -461,10 +451,7 @@ export default function GridBuilder({
 
                     showMessage(
                         "ERROR",
-                        [
-                            "Solver timed out",
-                            response.message
-                        ].join("\n")
+                        response.message
                     );
 
                     break;
@@ -474,10 +461,7 @@ export default function GridBuilder({
 
                     showMessage(
                         "ERROR",
-                        [
-                            "Solver failed",
-                            response.message
-                        ].join("\n")
+                        response.message
                     );
 
                     break;
@@ -487,7 +471,7 @@ export default function GridBuilder({
 
                     showMessage(
                         "ERROR",
-                        response.message || "Unknown solver error"
+                        response.message
                     );
 
                     break;
@@ -507,7 +491,7 @@ export default function GridBuilder({
 
             showMessage(
                 "ERROR",
-                "Solver request failed"
+                dialogMessages.solve.requestFailed
             );
 
         }
@@ -537,7 +521,7 @@ export default function GridBuilder({
 
         showMessage(
             "INFO",
-            "Puzzle reset"
+            dialogMessages.reset
         );
 
     }
@@ -552,7 +536,7 @@ export default function GridBuilder({
 
             showMessage(
                 "WARNING",
-                "Nothing to share"
+                dialogMessages.share.nothingToShare
             );
 
             return;
@@ -568,7 +552,7 @@ export default function GridBuilder({
 
             showMessage(
                 "SUCCESS",
-                "Share link copied to clipboard"
+                dialogMessages.share.copied
             );
 
         }
@@ -584,7 +568,7 @@ export default function GridBuilder({
 
             showMessage(
                 "WARNING",
-                "Clipboard access denied. Share link opened manually."
+                dialogMessages.share.clipboardDenied
             );
 
         }
@@ -600,15 +584,15 @@ export default function GridBuilder({
         setPlayModeState(resetPlayModeState(exampleBoard.waypoints[0] ?? null));
 
         showMessage(
-            "SUCCESS",
-            `Loaded example: ${name}`
+            "INFO",
+            dialogMessages.examples.loaded(name)
         );
     }
 
 
     function handleHint() {
         if (viewMode !== "PLAY") {
-            showMessage("WARNING", "Switch to Play mode first");
+            showMessage("WARNING", dialogMessages.play.switchToPlayFirst);
             return;
         }
 
@@ -616,22 +600,22 @@ export default function GridBuilder({
         const suggestedPosition = getPlayHintPosition(solution, playModeState, board);
 
         if (!currentPosition || !suggestedPosition) {
-            showMessage("WARNING", "Solve the puzzle to unlock hints");
+            showMessage("WARNING", dialogMessages.play.hintLocked);
             return;
         }
 
         if (suggestedPosition[0] === currentPosition[0] && suggestedPosition[1] === currentPosition[1]) {
-            showMessage("INFO", "You are already on the suggested cell");
+            showMessage("INFO", dialogMessages.play.hintAlreadyHere);
             return;
         }
 
         if (!isValidGameMove(currentPosition, suggestedPosition, board)) {
-            showMessage("WARNING", "The hinted move is blocked by a wall");
+            showMessage("WARNING", dialogMessages.play.hintBlocked);
             return;
         }
 
         setPlayModeState((previous) => appendVisitedCell(previous, suggestedPosition));
-        showMessage("INFO", `Hint applied to (${suggestedPosition[0] + 1}, ${suggestedPosition[1] + 1})`);
+        showMessage("INFO", dialogMessages.play.hintApplied(suggestedPosition));
     }
 
     function handleModeChange(mode: EditMode) {
@@ -644,11 +628,12 @@ export default function GridBuilder({
 
         if (mode === "PLAY") {
             setPlayModeState(createPlayModeState(board.waypoints[0] ?? null));
-            showMessage("INFO", "Play mode started. Choose a neighboring cell to continue");
+            showMessage("INFO", dialogMessages.mode.playEnabled);
             return;
         }
 
         setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
+        showMessage("INFO", dialogMessages.mode.buildEnabled);
     }
 
     useEffect(() => {
