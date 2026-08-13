@@ -529,15 +529,15 @@ if __name__ == "__main__":
     TRAIN_MODEL = False
     PRINT_TRAINING_BOARDS = False
     SHOW_FIRST_TRAINING_RUN = False
-    EVALUATE_TRAINING_BOARDS = True
-    EVALUATE_EVALUATION_BOARDS = False
-    SHOW_EVALUATION_EXAMPLES = False
+    EVALUATE_TRAINING_BOARDS = False
+    EVALUATE_EVALUATION_BOARDS = True
+    SHOW_EVALUATION_EXAMPLES = True
 
     trainer = AgentTrainer(
         boardSize=6,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/trained-model.zip",
+        modelPath="offline_training/trained_models/6x6/6x6-agent.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
