@@ -537,7 +537,7 @@ if __name__ == "__main__":
         boardSize=6,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/6x6/trained-model.zip",
+        modelPath="offline_training/trained_models/trained-model.zip",
         minNrOfWalls=MIN_NR_OF_WALLS, 
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
