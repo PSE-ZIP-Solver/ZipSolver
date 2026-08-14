@@ -8,8 +8,8 @@ class EnvironmentConfig:
         self.max_steps = self.size ** 2 - 1
 
         # Rewards / penalties
-        self.invalid_move_penalty = -10.0
-        self.step_penalty = -0.01
-        self.completion_reward = 200.0
-        self.next_waypoint_reward = 25.0
-        self.new_cell_reward = 2.0
+        self.invalid_move_penalty = -5.0
+        self.step_penalty = -0.02
+        self.completion_reward = 300.0
+        self.next_waypoint_reward = 4.0
+        self.new_cell_reward = 1.0
