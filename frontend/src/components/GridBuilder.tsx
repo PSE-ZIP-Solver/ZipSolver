@@ -242,6 +242,12 @@ export default function GridBuilder() {
                 return;
             }
 
+            if (!isValidGameMove(currentPosition, position, board)) {
+                setPathShakeVersion((previous) => previous + 1);
+                showMessage("WARNING", dialogMessages.play.invalidMove);
+                return;
+            }
+
             const expectedWaypoint = getExpectedNextWaypoint(playModeState, board);
             const targetIsWaypoint = board.waypoints.some((waypoint) => waypoint[0] === position[0] && waypoint[1] === position[1]);
 
@@ -249,14 +255,10 @@ export default function GridBuilder() {
                 const isExpectedWaypoint = position[0] === expectedWaypoint[0] && position[1] === expectedWaypoint[1];
 
                 if (!isExpectedWaypoint) {
+                    setPathShakeVersion((previous) => previous + 1);
                     showMessage("WARNING", dialogMessages.play.waypointOrder);
                     return;
                 }
-            }
-
-            if (!isValidGameMove(currentPosition, position, board)) {
-                showMessage("WARNING", dialogMessages.play.invalidMove);
-                return;
             }
 
             if (isCellAlreadyVisited(playModeState, position)) {
