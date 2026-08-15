@@ -12,7 +12,7 @@ Run from the repo root (not from backend/):
 from backend.api.BackendAPI import BackendAPI
 from backend.api.architecture_provider.ArchitectureProvider import (
     ArchitectureProvider,
-    available_model_sizes,
+    rl_inference_ready,
 )
 from backend.input_validation.input_validator import InputValidator
 from backend.input_validation.json_interpreter import JsonInterpreter
@@ -35,6 +35,8 @@ app = BackendAPI(
     architecture,
     extractor,
     # Same source of truth the architecture inventory uses, so /api/health and
-    # /api/architecture can never disagree about whether a model artifact is present.
-    model_loaded_provider=lambda: bool(available_model_sizes()),
+    # /api/architecture can never disagree. Reports readiness, not mere file presence:
+    # a trained artifact with no importable RL runtime cannot serve a request, and
+    # health must not claim otherwise.
+    model_loaded_provider=rl_inference_ready,
 ).app

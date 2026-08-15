@@ -39,4 +39,32 @@ export const dialogMessages = {
     examples: {
         loaded: (name: string) => `Loaded example: ${name}`,
     },
+
+    /*
+     * Screenshot import. Extraction is probabilistic, so the copy distinguishes three
+     * outcomes the user must respond to differently: a clean read, a read that needs
+     * checking, and a read that produced an unusable board.
+     */
+    import: {
+        started: "Reading your screenshot...",
+
+        succeeded: (waypointCount: number, wallCount: number) =>
+            `Imported ${waypointCount} waypoints and ${wallCount} walls from your screenshot`,
+
+        succeededWithWarnings: (warningCount: number) =>
+            `Board imported, but ${warningCount} ${warningCount === 1 ? "marker" : "markers"} `
+            + "could not be read confidently. Check the numbers before solving",
+
+        invalidBoard: (message: string) =>
+            `Imported board needs fixing: ${message}`,
+
+        noBoardDetected:
+            "No Zip board found in that image. Upload a screenshot showing the full grid",
+
+        failed: (message: string) => `Import failed: ${message}`,
+
+        sizeHint: (size: number) =>
+            `Reading the screenshot as a ${size}\u00d7${size} board. `
+            + "Change the grid size first if that is wrong",
+    },
 } as const;

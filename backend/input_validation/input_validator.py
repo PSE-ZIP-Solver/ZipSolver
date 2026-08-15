@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from backend.api.dtos.ValidationResult import ValidationError, ValidationResult
+from backend.input_validation.validation_dtos import ValidationError, ValidationResult
 from backend.puzzle_logic import Board
 
 _ALLOWED_BOARD_SIZES = (6, 7, 8)

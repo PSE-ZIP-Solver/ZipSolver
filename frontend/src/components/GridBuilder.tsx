@@ -31,8 +31,15 @@ import {
 import { dialogMessages } from "../data/dialogMessages";
 
 import {
+    importPuzzle,
     solvePuzzle,
 } from "../api/apiCalls";
+
+import { ApiError } from "../api/apiClient";
+
+import {
+    validateImageFile,
+} from "../utils/fileValidation";
 
 import {
     clearSharedBoardFromUrl,
@@ -110,6 +117,9 @@ export default function GridBuilder({
 
 
     const [isSolving, setIsSolving] =
+        useState(false);
+
+    const [isImporting, setIsImporting] =
         useState(false);
 
     const [pathShakeVersion, setPathShakeVersion] =
@@ -506,6 +516,154 @@ export default function GridBuilder({
 
 
 
+    /*
+     * ============================
+     * Screenshot import
+     * ============================
+     *
+     * The currently selected grid size is sent with the upload and is authoritative:
+     * estimating the size from pixels alone is unreliable on the app's low-contrast
+     * rendering, and the user has already told us the answer in the editor.
+     *
+     * Extraction is best-effort by design. A board that fails semantic validation is
+     * still loaded into the grid, because showing the user what was read and letting
+     * them correct two cells beats making them start over.
+     */
+    async function handleImportScreenshot(file: File) {
+
+        const fileCheck = validateImageFile(file);
+
+        if (!fileCheck.valid) {
+
+            showMessage(
+                "WARNING",
+                fileCheck.reason
+            );
+
+            return;
+        }
+
+
+        try {
+
+            setIsImporting(true);
+
+            showMessage(
+                "INFO",
+                dialogMessages.import.started
+            );
+
+
+            const result = await importPuzzle(
+                file,
+                board.boardSize
+            );
+
+
+            if (!result.board) {
+
+                showMessage(
+                    "ERROR",
+                    result.message ||
+                    dialogMessages.import.noBoardDetected
+                );
+
+                return;
+            }
+
+
+            const importedBoard = result.board;
+
+            setBoard(importedBoard);
+            setSolution(null);
+            setMetrics(null);
+            setViewMode("BUILD");
+            setPlayModeState(
+                resetPlayModeState(importedBoard.waypoints[0] ?? null)
+            );
+
+
+            /*
+             * Three outcomes, three different things the user should do next.
+             */
+            if (!result.valid) {
+
+                showMessage(
+                    "WARNING",
+                    dialogMessages.import.invalidBoard(
+                        result.errors[0]?.message ?? result.message
+                    )
+                );
+
+                return;
+            }
+
+
+            if (result.warnings.length > 0) {
+
+                showMessage(
+                    "WARNING",
+                    dialogMessages.import.succeededWithWarnings(
+                        result.warnings.length
+                    )
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "SUCCESS",
+                dialogMessages.import.succeeded(
+                    importedBoard.waypoints.length,
+                    importedBoard.walls.length
+                )
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+
+            /*
+             * The backend already explains the failure in its ErrorResponse; NO_BOARD_DETECTED
+             * gets bespoke copy because the remedy ("show the whole grid") is specific
+             * and worth spelling out.
+             */
+            if (error instanceof ApiError) {
+
+                showMessage(
+                    "ERROR",
+                    error.code === "NO_BOARD_DETECTED"
+                        ? dialogMessages.import.noBoardDetected
+                        : dialogMessages.import.failed(error.message)
+                );
+
+                return;
+            }
+
+
+            showMessage(
+                "ERROR",
+                dialogMessages.import.failed(
+                    "Unexpected error while reading the screenshot"
+                )
+            );
+
+        }
+
+        finally {
+
+            setIsImporting(false);
+
+        }
+
+    }
+
+
+
     function handleReset() {
 
         setBoard(previous => ({
@@ -787,11 +945,13 @@ export default function GridBuilder({
                     <ActionPanel
                         canSolve={board.waypoints.length >= 2}
                         isSolving={isSolving}
+                        isImporting={isImporting}
                         viewMode={viewMode}
                         onSolve={handleSolve}
                         onViewModeChange={handleViewModeChange}
                         onReset={handleReset}
                         onShare={handleShare}
+                        onImport={handleImportScreenshot}
                     />
                 </div>
 

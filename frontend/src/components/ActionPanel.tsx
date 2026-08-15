@@ -1,25 +1,58 @@
+import { useRef } from "react";
+
 import type { ViewMode } from "../types/grid";
+import { IMAGE_ACCEPT_ATTRIBUTE } from "../utils/fileValidation";
 
 interface ActionPanelProps {
   canSolve: boolean;
   isSolving: boolean;
+  isImporting: boolean;
   viewMode: ViewMode;
 
   onSolve: () => void;
   onViewModeChange: (mode: ViewMode) => void;
   onReset: () => void;
   onShare: () => void;
+  onImport: (file: File) => void;
 }
 
 export default function ActionPanel({
   canSolve,
   isSolving,
+  isImporting,
   viewMode,
   onSolve,
   onViewModeChange,
   onReset,
   onShare,
+  onImport,
 }: ActionPanelProps) {
+  /*
+   * The native file input cannot be styled to match the rest of the panel, so it is kept
+   * off-screen and driven by a real button. `sr-only` rather than `display: none` so the
+   * input stays reachable by assistive technology and keyboard users.
+   */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isBusy = isSolving || isImporting;
+
+  function handleFileSelected(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+
+    /*
+     * Reset the input value after every selection. Without it, picking the same file
+     * twice in a row fires no change event, so a user who fixes their screenshot and
+     * re-selects it silently gets nothing.
+     */
+    event.target.value = "";
+
+    if (file) {
+      onImport(file);
+    }
+  }
+
   return (
     <section
       className="panel-card rounded-2xl p-4"
@@ -57,6 +90,48 @@ export default function ActionPanel({
           {isSolving ? "Solving..." : "Solve"}
         </button>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={IMAGE_ACCEPT_ATTRIBUTE}
+          onChange={handleFileSelected}
+          className="sr-only"
+          aria-label="Import a puzzle screenshot"
+        />
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isBusy}
+          className="
+            flex
+            min-h-12
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            border
+            border-dashed
+            border-primary/40
+            bg-primary/5
+            px-4
+            py-3
+            text-sm
+            font-semibold
+            text-primary
+            transition-colors
+
+            hover:bg-primary/10
+            hover:border-primary/60
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        >
+          <ImportIcon />
+          {isImporting ? "Reading screenshot..." : "Import from screenshot"}
+        </button>
+
         <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
           {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
             const isActive = viewMode === mode;
@@ -82,7 +157,7 @@ export default function ActionPanel({
           <button
             type="button"
             onClick={onReset}
-            disabled={isSolving}
+            disabled={isBusy}
             className="
               flex
               w-full
@@ -113,7 +188,7 @@ export default function ActionPanel({
           <button
             type="button"
             onClick={onShare}
-            disabled={isSolving}
+            disabled={isBusy}
             className="
               flex
               w-full
@@ -144,6 +219,25 @@ export default function ActionPanel({
 
       </div>
     </section>
+  );
+}
+
+function ImportIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M21 15l-5-5L5 21" />
+    </svg>
   );
 }
 

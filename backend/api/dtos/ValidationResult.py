@@ -1,23 +1,12 @@
-from pydantic import BaseModel, ConfigDict, Field
+"""Re-export of the validation contract (§5.5.4).
 
+The models themselves live in ``backend.input_validation.validation_dtos`` — the component
+that produces them. Keeping this module as a thin re-export preserves every existing
+import path (``from backend.api.dtos.ValidationResult import ValidationResult``) and the
+generated OpenAPI schema, while the dependency now points API -> input_validation rather
+than the other way round.
+"""
 
-class ValidationError(BaseModel):
-    """One semantic problem found in a board configuration or solution path (§5.5.4)."""
+from backend.input_validation.validation_dtos import ValidationError, ValidationResult
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    error_code: str = Field(..., alias="errorCode")
-    affected_field: str | None = Field(default=None, alias="affectedField")
-    message: str
-
-
-class ValidationResult(BaseModel):
-    """Outcome of semantic validation. Returned by POST /api/import; also produced
-    internally by InputValidator (input) and SolutionValidator (final path) (§5.5.4).
-    """
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    valid: bool
-    message: str = ""
-    errors: list[ValidationError] = Field(default_factory=list)
+__all__ = ["ValidationError", "ValidationResult"]

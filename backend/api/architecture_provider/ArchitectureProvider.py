@@ -3,6 +3,7 @@ from __future__ import annotations
 import platform
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Callable
 
@@ -58,6 +59,33 @@ def available_model_sizes() -> list[int]:
         if folder.is_dir() and any(folder.glob("*.zip")):
             sizes.append(size)
     return sizes
+
+
+#: Modules the RL inference path imports. Absent any one of them, RLSolver cannot be
+#: constructed and SolverController permanently degrades to the algorithmic fallback.
+_RL_RUNTIME_MODULES = ("gymnasium", "stable_baselines3", "torch")
+
+
+def rl_runtime_available() -> bool:
+    """Whether the RL inference stack can actually be imported.
+
+    Uses ``find_spec`` rather than a real import: answering "could this run?" must not cost
+    the multi-second torch import, and must not have the side effect of loading it into a
+    process that may never need it.
+    """
+    return all(find_spec(name) is not None for name in _RL_RUNTIME_MODULES)
+
+
+def rl_inference_ready() -> bool:
+    """Whether a solve request could genuinely be served by the RL solver.
+
+    Both halves are load-bearing and were previously conflated: an artifact on disk is
+    useless without the runtime to execute it, and the runtime is useless with no weights
+    to load. ``GET /api/health`` reported ``modelLoaded: true`` on a deployment with no
+    gymnasium installed purely because a ``.zip`` existed — while the solver logged
+    "RL solver unavailable" and silently fell back on every request.
+    """
+    return bool(available_model_sizes()) and rl_runtime_available()
 
 
 def _pkg_version(dist_name: str) -> str:
@@ -119,8 +147,11 @@ class ArchitectureProvider:
         if self._model_status_provider is not None:
             return self._model_status_provider()
         # Report the sizes an artifact actually exists for rather than the aspirational
-        # {6, 7, 8}, and derive `loaded` from the same fact instead of hardcoding False.
-        available = available_model_sizes()
+        # {6, 7, 8}. `loaded` additionally requires the RL runtime to be importable, so it
+        # answers "can the RL solver serve a request?" rather than the weaker "does a file
+        # exist?" — and can never contradict GET /api/health, which uses the same helper.
         return ModelInfo(
-            name="zip-dqn", supportedBoardSizes=available, loaded=bool(available)
+            name="zip-dqn",
+            supportedBoardSizes=available_model_sizes(),
+            loaded=rl_inference_ready(),
         )
