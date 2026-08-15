@@ -287,8 +287,8 @@ export default function Grid({
 			ctx.lineWidth = Math.max(2, cellSize * 0.15);
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.shadowColor = hintGlow;
-			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
+			ctx.shadowColor = darkTheme ? hintGlow : "transparent";
+			ctx.shadowBlur = darkTheme ? Math.max(4, cellSize * 0.12) : 0;
 
 			for (let i = 1; i < hintPath.length; i += 1) {
 				if (i > Math.ceil(visibleSegments)) break;
@@ -308,14 +308,17 @@ export default function Grid({
 				const currentX = prevX + (currX - prevX) * segmentProgress;
 				const currentY = prevY + (currY - prevY) * segmentProgress;
 
-				const tintProgress = i / hintPath.length;
+				const linearProgress = i / hintPath.length;
+				const tintProgress = darkTheme
+					? linearProgress
+					: Math.pow(linearProgress, 0.72);
 				const hue = darkTheme
 					? 154 - tintProgress * 12
-					: 156 - tintProgress * 16;
-				const saturation = darkTheme ? 48 : 78;
+					: 151 - tintProgress * 4;
+				const saturation = darkTheme ? 48 : 56;
 				const lightness = darkTheme
 					? 56 - tintProgress * 8
-					: 58 - tintProgress * 8;
+					: 58 - tintProgress * 2.6;
 
 				ctx.beginPath();
 				ctx.moveTo(prevX, prevY);
