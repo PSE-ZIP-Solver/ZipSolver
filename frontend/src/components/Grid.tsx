@@ -30,6 +30,7 @@ interface GridProps {
 	hintPath: SolutionPath | null;
 	hintPathVersion?: number;
 	isPlayMode: boolean;
+	victoryVersion?: number;
 	onCellClick: (position: Position) => void;
 	onWallClick: (wall: Wall) => void;
 	pathShakeVersion?: number;
@@ -88,6 +89,7 @@ export default function Grid({
 	hintPath,
 	hintPathVersion = 0,
 	isPlayMode,
+	victoryVersion = 0,
 	onCellClick,
 	onWallClick,
 	pathShakeVersion = 0
@@ -101,6 +103,36 @@ export default function Grid({
 	const [containerWidth, setContainerWidth] = useState(0);
 	const [hoveredCell, setHoveredCell] = useState<number | null>(null);
 	const [isPointerDown, setIsPointerDown] = useState(false);
+	const [isVictoryAnimating, setIsVictoryAnimating] = useState(false);
+	const lastAnimatedVictoryVersionRef = useRef(victoryVersion);
+
+	useEffect(() => {
+		if (victoryVersion <= lastAnimatedVictoryVersionRef.current) {
+			return;
+		}
+
+		lastAnimatedVictoryVersionRef.current = victoryVersion;
+
+		if (!isPlayMode) {
+			return;
+		}
+
+		setIsVictoryAnimating(true);
+
+		const timeoutId = window.setTimeout(() => {
+			setIsVictoryAnimating(false);
+		}, 1600);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [isPlayMode, victoryVersion]);
+
+	useEffect(() => {
+		if (!isPlayMode) {
+			setIsVictoryAnimating(false);
+		}
+	}, [isPlayMode]);
 
 	useEffect(() => {
 		const element = containerRef.current;
@@ -412,6 +444,36 @@ export default function Grid({
 						className="absolute inset-0"
 					/>
 				</div>
+
+				{isVictoryAnimating && (
+					<div className="grid-victory-overlay absolute inset-0 z-60 pointer-events-none">
+						<div className="grid-victory-radiance" />
+						<div className="grid-victory-badge">
+							<span className="grid-victory-title">Congratulations!</span>
+						</div>
+						<div className="grid-victory-confetti-layer" aria-hidden="true">
+							{Array.from({ length: 16 }).map((_, index) => (
+								<span
+									key={`confetti-${index}`}
+									className="grid-victory-confetti"
+									style={{
+										left: `${6 + ((index * 13) % 88)}%`,
+										animationDelay: `${index * 45}ms`,
+										animationDuration: `${860 + (index % 4) * 140}ms`,
+										background: [
+											"#f5d66a",
+											"#f29b4b",
+											"#f06c55",
+											"#6cd5b8",
+											"#7cc8ff",
+											"#d4a4ff",
+										][index % 6],
+									}}
+								/>
+							))}
+						</div>
+					</div>
+				)}
 
 				<div
 					className="grid-lines absolute inset-0 z-10 grid"

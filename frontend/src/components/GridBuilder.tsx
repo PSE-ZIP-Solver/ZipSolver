@@ -139,6 +139,9 @@ export default function GridBuilder() {
     const [pathShakeVersion, setPathShakeVersion] =
         useState(0);
 
+    const [victoryAnimationVersion, setVictoryAnimationVersion] =
+        useState(0);
+
     const [playModeState, setPlayModeState] =
         useState(createPlayModeState(board.waypoints[0] ?? null));
 
@@ -290,6 +293,7 @@ export default function GridBuilder() {
             setPlayModeState((previous) => appendVisitedCell(previous, position));
 
             if (hasCompletedAllWaypoints(nextState, board)) {
+                setVictoryAnimationVersion((previous) => previous + 1);
                 showMessage("SUCCESS", dialogMessages.play.solved);
                 return;
             }
@@ -978,6 +982,7 @@ export default function GridBuilder() {
                     hintPathVersion={hintPathVersion}
                     isPlayMode={viewMode === "PLAY"}
                     pathShakeVersion={pathShakeVersion}
+                    victoryVersion={victoryAnimationVersion}
                     onCellClick={handleCellClick}
                     onWallClick={handleWallClick}
                 />

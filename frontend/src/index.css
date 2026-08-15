@@ -304,6 +304,71 @@ body {
   box-shadow: 0 0 14px var(--color-wall-shadow);
 }
 
+.grid-victory-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: zip-victory-overlay-fade 1600ms ease-out both;
+}
+
+.grid-victory-radiance {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(circle, color-mix(in oklab, var(--color-feedback-success-border) 72%, white 28%) 0%, transparent 62%),
+    radial-gradient(circle at 24% 24%, rgba(197, 255, 218, 0.25) 0%, transparent 52%),
+    radial-gradient(circle at 76% 24%, rgba(146, 238, 188, 0.24) 0%, transparent 52%),
+    radial-gradient(circle at 24% 76%, rgba(146, 238, 188, 0.22) 0%, transparent 52%),
+    radial-gradient(circle at 76% 76%, rgba(123, 214, 170, 0.2) 0%, transparent 52%);
+  filter: blur(1px);
+  opacity: 0;
+  animation: zip-victory-radiance-spin 1600ms ease-out both;
+}
+
+.grid-victory-badge {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 16px 24px;
+  border: 1px solid color-mix(in oklab, var(--color-feedback-success-border) 76%, white 24%);
+  border-radius: 16px;
+  background: color-mix(in oklab, var(--color-feedback-success-bg) 76%, transparent);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2);
+  animation: zip-victory-badge-pop 1300ms var(--motion-ease-ui) both;
+}
+
+.grid-victory-title {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-feedback-success-text) 74%, #ffffff 26%);
+}
+
+.grid-victory-confetti-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.grid-victory-confetti {
+  position: absolute;
+  top: -8%;
+  width: 7px;
+  height: 14px;
+  border-radius: 9999px;
+  opacity: 0;
+  box-shadow: 0 0 0 1px rgba(218, 255, 232, 0.2);
+  animation-name: zip-victory-confetti-burst;
+  animation-timing-function: cubic-bezier(0.2, 0.75, 0.34, 1);
+  animation-fill-mode: both;
+}
+
 .panel-card {
   background: var(--color-panel-bg);
   border: 1px solid var(--color-panel-border);
@@ -424,5 +489,67 @@ body {
       0 14px 28px var(--color-waypoint-shadow),
       0 0 0 8px rgba(255, 255, 255, 0.06),
       0 0 24px color-mix(in oklab, var(--color-waypoint-start) 72%, white 28%);
+  }
+}
+
+@keyframes zip-victory-overlay-fade {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes zip-victory-radiance-spin {
+  0% {
+    transform: scale(0.7) rotate(0deg);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.22) rotate(72deg);
+    opacity: 0;
+  }
+}
+
+@keyframes zip-victory-badge-pop {
+  0% {
+    transform: translateY(10px) scale(0.88);
+    opacity: 0;
+  }
+  22% {
+    transform: translateY(-3px) scale(1.04);
+    opacity: 1;
+  }
+  72% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-5px) scale(0.97);
+    opacity: 0;
+  }
+}
+
+@keyframes zip-victory-confetti-burst {
+  0% {
+    transform: translate(-50%, 0) rotate(0deg) scale(0.82);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 170px) rotate(290deg) scale(1.02);
+    opacity: 0;
   }
 }
