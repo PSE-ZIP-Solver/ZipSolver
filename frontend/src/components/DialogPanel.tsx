@@ -22,7 +22,7 @@ export default function DialogPanel(
 
         SUCCESS: {
             container:
-                "border-green-300 bg-green-50 text-green-800",
+                "alert-success",
 
             icon:
                 "✓"
@@ -31,7 +31,7 @@ export default function DialogPanel(
 
         ERROR: {
             container:
-                "border-red-300 bg-red-50 text-red-800",
+                "alert-error",
 
             icon:
                 "✕"
@@ -40,7 +40,7 @@ export default function DialogPanel(
 
         WARNING: {
             container:
-                "border-yellow-300 bg-yellow-50 text-yellow-800",
+                "alert-warning",
 
             icon:
                 "!"
@@ -49,7 +49,7 @@ export default function DialogPanel(
 
         INFO: {
             container:
-                "border-blue-300 bg-blue-50 text-blue-800",
+                "alert-info",
 
             icon:
                 "i"
@@ -93,8 +93,7 @@ export default function DialogPanel(
                     justify-center
 
                     rounded-full
-
-                    bg-white
+                    dialog-icon
 
                     font-bold
                 "

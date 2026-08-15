@@ -5,19 +5,23 @@ interface NavbarProps {
 
   advancedMode: boolean;
   onToggleAdvanced: () => void;
+  isDarkTheme: boolean;
+  onToggleTheme: () => void;
 }
 
 export default function Navbar({
   onOpenHelp,
   advancedMode,
   onToggleAdvanced,
+  isDarkTheme,
+  onToggleTheme,
 }: NavbarProps) {
 
   return (
     <nav
       className="
                 bg-chrome/90
-                shadow-[0_12px_32px_rgba(102,63,24,0.08)]
+                shadow-[0_12px_32px_rgba(23,14,9,0.18)]
                 border-b
                 border-footer-border
                 backdrop-blur-md
@@ -92,11 +96,12 @@ export default function Navbar({
                             rounded-lg
                             font-semibold
                             transition-colors
+                            ui-transition
 
                             ${advancedMode
                 ? `
                                         bg-primary
-                                        text-white
+                                        text-on-primary
                                     `
                 : `
                                         text-text
@@ -121,6 +126,7 @@ export default function Navbar({
                             text-footer-text
                             hover:bg-surface
                             transition-colors
+                            ui-transition
                         "
             aria-label="Open help"
           >
@@ -129,19 +135,21 @@ export default function Navbar({
             </span>
           </button>
 
-          {/* Theme placeholder for future theme switching logic */}
           <button
+            onClick={onToggleTheme}
             className="
                             p-2
                             rounded-lg
                             text-footer-text
                             hover:bg-surface
                             transition-colors
+                            ui-transition
                         "
             aria-label="Toggle theme"
+            title={isDarkTheme ? "Switch to light theme" : "Switch to dark theme"}
           >
             <span className="text-xl">
-              🌙
+              {isDarkTheme ? "☀️" : "🌙"}
             </span>
           </button>
         </div>

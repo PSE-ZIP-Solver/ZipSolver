@@ -39,6 +39,26 @@ const MIN_GRID_PIXELS = 300;
 const GRID_GAP_PX = 1;
 const WALL_THICKNESS_PX = 6;
 
+function readThemeColor(variableName: string, fallback: string) {
+	if (typeof window === "undefined") {
+		return fallback;
+	}
+
+	const value = getComputedStyle(document.documentElement)
+		.getPropertyValue(variableName)
+		.trim();
+
+	return value || fallback;
+}
+
+function isDarkThemeActive() {
+	if (typeof document === "undefined") {
+		return false;
+	}
+
+	return document.documentElement.classList.contains("dark");
+}
+
 function isBefore(a: Position, b: Position) {
 	if (a[0] !== b[0]) return a[0] < b[0];
 	return a[1] < b[1];
@@ -174,17 +194,19 @@ export default function Grid({
 		const duration = 650;
 		let raf = 0;
 		const startedAt = performance.now();
+		const solutionGlow = readThemeColor("--color-path-highlight-glow", "rgba(249, 115, 22, 0.28)");
 
 		const draw = (now: number) => {
 			const animationProgress = Math.min(1, (now - startedAt) / duration);
 			const visibleSegments = animationProgress * (solutionPathToRender.length - 1);
+			const darkTheme = isDarkThemeActive();
 
 			ctx.clearRect(0, 0, gridPixels, gridPixels);
 
 			ctx.lineWidth = Math.max(2, cellSize * 0.16);
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.shadowColor = "rgba(249, 115, 22, 0.28)";
+			ctx.shadowColor = solutionGlow;
 			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
 
 			for (let i = 1; i < solutionPathToRender.length; i += 1) {
@@ -206,13 +228,18 @@ export default function Grid({
 				const currentY = prevY + (currY - prevY) * segmentProgress;
 
 				const tintProgress = i / solutionPathToRender.length;
-				const hue = 48 - tintProgress * 36;
-				const lightness = 66 - tintProgress * 12;
+				const hue = darkTheme
+					? 34 - tintProgress * 10
+					: 48 - tintProgress * 36;
+				const saturation = darkTheme ? 64 : 100;
+				const lightness = darkTheme
+					? 62 - tintProgress * 8
+					: 66 - tintProgress * 12;
 
 				ctx.beginPath();
 				ctx.moveTo(prevX, prevY);
 				ctx.lineTo(currentX, currentY);
-				ctx.strokeStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+				ctx.strokeStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 				ctx.stroke();
 			}
 
@@ -248,17 +275,19 @@ export default function Grid({
 		const duration = 650;
 		let raf = 0;
 		const startedAt = performance.now();
+		const hintGlow = readThemeColor("--color-hint-border", "rgba(52, 211, 153, 0.30)");
 
 		const draw = (now: number) => {
 			const animationProgress = Math.min(1, (now - startedAt) / duration);
 			const visibleSegments = animationProgress * (hintPath.length - 1);
+			const darkTheme = isDarkThemeActive();
 
 			ctx.clearRect(0, 0, gridPixels, gridPixels);
 
 			ctx.lineWidth = Math.max(2, cellSize * 0.15);
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.shadowColor = "rgba(52, 211, 153, 0.30)";
+			ctx.shadowColor = hintGlow;
 			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
 
 			for (let i = 1; i < hintPath.length; i += 1) {
@@ -280,13 +309,18 @@ export default function Grid({
 				const currentY = prevY + (currY - prevY) * segmentProgress;
 
 				const tintProgress = i / hintPath.length;
-				const hue = 156 - tintProgress * 16;
-				const lightness = 58 - tintProgress * 8;
+				const hue = darkTheme
+					? 154 - tintProgress * 12
+					: 156 - tintProgress * 16;
+				const saturation = darkTheme ? 48 : 78;
+				const lightness = darkTheme
+					? 56 - tintProgress * 8
+					: 58 - tintProgress * 8;
 
 				ctx.beginPath();
 				ctx.moveTo(prevX, prevY);
 				ctx.lineTo(currentX, currentY);
-				ctx.strokeStyle = `hsl(${hue}, 78%, ${lightness}%)`;
+				ctx.strokeStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 				ctx.stroke();
 			}
 
@@ -317,11 +351,14 @@ export default function Grid({
 
 		if (pathToRender.length < 2) return;
 
+		const playerPathColor = readThemeColor("--color-path-player", "rgba(234, 106, 26, 0.95)");
+		const playerPathGlow = readThemeColor("--color-path-player-glow", "rgba(234, 106, 26, 0.25)");
+
 		ctx.lineWidth = Math.max(2.5, cellSize * 0.18);
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
-		ctx.strokeStyle = "rgba(234, 106, 26, 0.95)";
-		ctx.shadowColor = "rgba(234, 106, 26, 0.25)";
+		ctx.strokeStyle = playerPathColor;
+		ctx.shadowColor = playerPathGlow;
 		ctx.shadowBlur = Math.max(6, cellSize * 0.12);
 
 		ctx.beginPath();
@@ -343,7 +380,7 @@ export default function Grid({
 			className="flex w-full justify-center select-none"
 		>
 			<div
-				className="grid-board relative overflow-hidden rounded-2xl border transition-colors duration-200"
+				className="grid-board relative overflow-hidden rounded-2xl border transition-colors ui-transition"
 				style={{
 					width: gridPixels,
 					height: gridPixels,
@@ -397,7 +434,7 @@ export default function Grid({
 								key={index}
 								className={[
 									"grid-cell relative flex items-center justify-center",
-									"transition-colors duration-150",
+									"transition-colors ui-transition",
 									editMode === "WALLS"
 										? "cursor-default"
 										: "cursor-pointer",
@@ -439,11 +476,11 @@ export default function Grid({
 								}}
 							>
 								{isActive && (
-									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_rgba(234,106,26,0.18)]" />
+									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_var(--color-path-highlight-glow)]" />
 								)}
 
 								{isHint && !isActive && (
-									<div className="absolute inset-0 rounded-xl border border-dashed border-emerald-500/70 bg-emerald-500/10" />
+									<div className="absolute inset-0 rounded-xl border border-dashed border-hint-border bg-hint-bg" />
 								)}
 
 								{editMode === "WALLS" && col < board.boardSize - 1 && !rightWallExists && (
@@ -461,8 +498,8 @@ export default function Grid({
 												absolute right-0 top-1/2 h-[52%] w-1.5
 												-translate-y-1/2 translate-x-1/2 rounded-full
 												bg-primary/20 opacity-70
-												shadow-[0_0_12px_rgba(249,115,22,0.18)]
-												transition-opacity duration-200
+												shadow-[0_0_12px_var(--color-path-highlight-glow)]
+												transition-opacity ui-transition
 												animate-pulse hover:bg-primary/35
 											"
 										/>
@@ -484,8 +521,8 @@ export default function Grid({
 												absolute bottom-0 left-1/2 h-1.5 w-[52%]
 												-translate-x-1/2 translate-y-1/2 rounded-full
 												bg-primary/20 opacity-70
-												shadow-[0_0_12px_rgba(249,115,22,0.18)]
-												transition-opacity duration-200
+												shadow-[0_0_12px_var(--color-path-highlight-glow)]
+												transition-opacity ui-transition
 												animate-pulse hover:bg-primary/35
 											"
 										/>
@@ -515,7 +552,7 @@ export default function Grid({
 						return (
 							<div
 								key={key}
-								className="grid-waypoint absolute flex items-center justify-center rounded-full text-white"
+								className="grid-waypoint absolute flex items-center justify-center rounded-full text-on-primary"
 								style={{
 									width: markerSize,
 									height: markerSize,
@@ -560,7 +597,7 @@ export default function Grid({
 									key={renderKey}
 									role="button"
 									aria-label={wallLabel}
-									className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-200"
+									className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity ui-transition"
 									style={{
 										left: x,
 										top: y,
@@ -592,7 +629,7 @@ export default function Grid({
 								key={renderKey}
 								role="button"
 								aria-label={wallLabel}
-								className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-200"
+								className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity ui-transition"
 								style={{
 									left: x,
 									top: y,

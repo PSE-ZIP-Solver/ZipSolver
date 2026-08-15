@@ -35,9 +35,9 @@ function formatValue(
 
 const accents = [
 	"text-primary",
-	"text-blue-500",
-	"text-green-500",
-	"text-purple-500",
+	"text-[var(--color-metric-accent-2)]",
+	"text-[var(--color-metric-accent-3)]",
+	"text-[var(--color-metric-accent-4)]",
 ];
 
 
@@ -121,6 +121,7 @@ export default function MetricsPanel({
                                     p-3
 
                                     transition-all
+									ui-transition
 
                                     hover:scale-[1.02]
                                     hover:shadow-md
