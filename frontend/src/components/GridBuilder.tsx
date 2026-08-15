@@ -59,6 +59,25 @@ import {
 
 type SolveFlow = "SOLVE" | "PLAY_PRECHECK" | "HINT_RETRY";
 
+const intermediateWaypointMessages = [
+    "Nice checkpoint!",
+    "Great momentum!",
+    "Keep it up!",
+] as const;
+
+function getRandomIntermediateWaypointMessage() {
+    const randomIndex = Math.floor(Math.random() * intermediateWaypointMessages.length);
+    return intermediateWaypointMessages[randomIndex];
+}
+
+function createEmptyBoard(size: GridSize): BoardConfig {
+    return {
+        boardSize: size,
+        waypoints: [],
+        walls: [],
+    };
+}
+
 export default function GridBuilder() {
 
     /*
@@ -120,12 +139,27 @@ export default function GridBuilder() {
     const [pathShakeVersion, setPathShakeVersion] =
         useState(0);
 
+    const [victoryAnimationVersion, setVictoryAnimationVersion] =
+        useState(0);
+
     const [playModeState, setPlayModeState] =
         useState(createPlayModeState(board.waypoints[0] ?? null));
 
 
+    const boardsBySizeRef =
+        useRef<Record<GridSize, BoardConfig>>({
+            6: createEmptyBoard(6),
+            7: createEmptyBoard(7),
+            8: createEmptyBoard(8),
+        });
+
+
     const sharedBoardLoadedRef =
         useRef(false);
+
+    useEffect(() => {
+        boardsBySizeRef.current[board.boardSize] = board;
+    }, [board]);
 
     useEffect(() => {
 
@@ -182,14 +216,17 @@ export default function GridBuilder() {
         size: GridSize
     ) {
 
-        setBoard({
-            boardSize: size,
-            waypoints: [],
-            walls: [],
-        });
+        if (size === board.boardSize)
+            return;
+
+        const cachedBoard =
+            boardsBySizeRef.current[size] ??
+            createEmptyBoard(size);
+
+        setBoard(cachedBoard);
 
         clearDerivedSolverState();
-        setPlayModeState(resetPlayModeState());
+        setPlayModeState(resetPlayModeState(cachedBoard.waypoints[0] ?? null));
     }
 
 
@@ -219,6 +256,12 @@ export default function GridBuilder() {
                 return;
             }
 
+            if (!isValidGameMove(currentPosition, position, board)) {
+                setPathShakeVersion((previous) => previous + 1);
+                showMessage("WARNING", dialogMessages.play.invalidMove);
+                return;
+            }
+
             const expectedWaypoint = getExpectedNextWaypoint(playModeState, board);
             const targetIsWaypoint = board.waypoints.some((waypoint) => waypoint[0] === position[0] && waypoint[1] === position[1]);
 
@@ -226,14 +269,10 @@ export default function GridBuilder() {
                 const isExpectedWaypoint = position[0] === expectedWaypoint[0] && position[1] === expectedWaypoint[1];
 
                 if (!isExpectedWaypoint) {
+                    setPathShakeVersion((previous) => previous + 1);
                     showMessage("WARNING", dialogMessages.play.waypointOrder);
                     return;
                 }
-            }
-
-            if (!isValidGameMove(currentPosition, position, board)) {
-                showMessage("WARNING", dialogMessages.play.invalidMove);
-                return;
             }
 
             if (isCellAlreadyVisited(playModeState, position)) {
@@ -247,9 +286,14 @@ export default function GridBuilder() {
                 visitedCells: [...playModeState.visitedCells, position],
             };
 
+            const reachedWaypointIndex = board.waypoints.findIndex(
+                ([row, col]) => row === position[0] && col === position[1]
+            );
+
             setPlayModeState((previous) => appendVisitedCell(previous, position));
 
             if (hasCompletedAllWaypoints(nextState, board)) {
+                setVictoryAnimationVersion((previous) => previous + 1);
                 showMessage("SUCCESS", dialogMessages.play.solved);
                 return;
             }
@@ -261,6 +305,15 @@ export default function GridBuilder() {
 
             if (reachedLastWaypoint) {
                 showMessage("INFO", dialogMessages.play.lastWaypointOnly);
+                return;
+            }
+
+            const isIntermediateWaypoint =
+                reachedWaypointIndex > 0 &&
+                reachedWaypointIndex < board.waypoints.length - 1;
+
+            if (isIntermediateWaypoint) {
+                showMessage("INFO", getRandomIntermediateWaypointMessage());
                 return;
             }
             return;
@@ -876,6 +929,10 @@ export default function GridBuilder() {
 
     }
 
+    const nextWaypoint = viewMode === "PLAY"
+        ? getExpectedNextWaypoint(playModeState, board)
+        : null;
+
 
     /*
      * ============================
@@ -919,11 +976,13 @@ export default function GridBuilder() {
                     editMode={editMode}
                     playerPath={playModeState.visitedCells}
                     activePosition={getActivePosition(playModeState, board.waypoints[0] ?? null)}
+                    nextWaypoint={nextWaypoint}
                     hintPosition={null}
                     hintPath={hintPath}
                     hintPathVersion={hintPathVersion}
                     isPlayMode={viewMode === "PLAY"}
                     pathShakeVersion={pathShakeVersion}
+                    victoryVersion={victoryAnimationVersion}
                     onCellClick={handleCellClick}
                     onWallClick={handleWallClick}
                 />

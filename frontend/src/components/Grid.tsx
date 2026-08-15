@@ -25,10 +25,12 @@ interface GridProps {
 	editMode: EditMode;
 	playerPath: Position[];
 	activePosition: Position | null;
+	nextWaypoint: Position | null;
 	hintPosition: Position | null;
 	hintPath: SolutionPath | null;
 	hintPathVersion?: number;
 	isPlayMode: boolean;
+	victoryVersion?: number;
 	onCellClick: (position: Position) => void;
 	onWallClick: (wall: Wall) => void;
 	pathShakeVersion?: number;
@@ -82,10 +84,12 @@ export default function Grid({
 	editMode,
 	playerPath,
 	activePosition,
+	nextWaypoint,
 	hintPosition,
 	hintPath,
 	hintPathVersion = 0,
 	isPlayMode,
+	victoryVersion = 0,
 	onCellClick,
 	onWallClick,
 	pathShakeVersion = 0
@@ -99,6 +103,36 @@ export default function Grid({
 	const [containerWidth, setContainerWidth] = useState(0);
 	const [hoveredCell, setHoveredCell] = useState<number | null>(null);
 	const [isPointerDown, setIsPointerDown] = useState(false);
+	const [isVictoryAnimating, setIsVictoryAnimating] = useState(false);
+	const lastAnimatedVictoryVersionRef = useRef(victoryVersion);
+
+	useEffect(() => {
+		if (victoryVersion <= lastAnimatedVictoryVersionRef.current) {
+			return;
+		}
+
+		lastAnimatedVictoryVersionRef.current = victoryVersion;
+
+		if (!isPlayMode) {
+			return;
+		}
+
+		setIsVictoryAnimating(true);
+
+		const timeoutId = window.setTimeout(() => {
+			setIsVictoryAnimating(false);
+		}, 1600);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [isPlayMode, victoryVersion]);
+
+	useEffect(() => {
+		if (!isPlayMode) {
+			setIsVictoryAnimating(false);
+		}
+	}, [isPlayMode]);
 
 	useEffect(() => {
 		const element = containerRef.current;
@@ -140,6 +174,7 @@ export default function Grid({
 	}, [board.waypoints]);
 
 	const activeCellKey = activePosition ? `${activePosition[0]},${activePosition[1]}` : null;
+	const nextWaypointKey = nextWaypoint ? `${nextWaypoint[0]},${nextWaypoint[1]}` : null;
 	const hintCellKey = hintPosition ? `${hintPosition[0]},${hintPosition[1]}` : null;
 	const startPosition = board.waypoints[0] ?? null;
 	const pathToRender = startPosition && playerPath.length > 0
@@ -387,6 +422,8 @@ export default function Grid({
 				style={{
 					width: gridPixels,
 					height: gridPixels,
+					touchAction: isPlayMode ? "none" : "auto",
+					overscrollBehavior: isPlayMode ? "contain" : "auto",
 				}}
 			>
 				<canvas
@@ -407,6 +444,36 @@ export default function Grid({
 						className="absolute inset-0"
 					/>
 				</div>
+
+				{isVictoryAnimating && (
+					<div className="grid-victory-overlay absolute inset-0 z-60 pointer-events-none">
+						<div className="grid-victory-radiance" />
+						<div className="grid-victory-badge">
+							<span className="grid-victory-title">Congratulations!</span>
+						</div>
+						<div className="grid-victory-confetti-layer" aria-hidden="true">
+							{Array.from({ length: 16 }).map((_, index) => (
+								<span
+									key={`confetti-${index}`}
+									className="grid-victory-confetti"
+									style={{
+										left: `${6 + ((index * 13) % 88)}%`,
+										animationDelay: `${index * 45}ms`,
+										animationDuration: `${860 + (index % 4) * 140}ms`,
+										background: [
+											"#f5d66a",
+											"#f29b4b",
+											"#f06c55",
+											"#6cd5b8",
+											"#7cc8ff",
+											"#d4a4ff",
+										][index % 6],
+									}}
+								/>
+							))}
+						</div>
+					</div>
+				)}
 
 				<div
 					className="grid-lines absolute inset-0 z-10 grid"
@@ -543,6 +610,7 @@ export default function Grid({
 						const key = `${row},${col}`;
 						const waypointIndex = waypointIndexByCell.get(key);
 						const isWaypoint = waypointIndex !== undefined;
+						const isNextWaypoint = isPlayMode && nextWaypointKey === key && activeCellKey !== key;
 
 						if (!isWaypoint) {
 							return null;
@@ -555,14 +623,19 @@ export default function Grid({
 						return (
 							<div
 								key={key}
-								className="grid-waypoint absolute flex items-center justify-center rounded-full text-on-primary"
+								className={[
+									"grid-waypoint absolute flex items-center justify-center rounded-full text-on-primary",
+									isNextWaypoint ? "grid-waypoint--next" : "",
+								].join(" ")}
 								style={{
 									width: markerSize,
 									height: markerSize,
 									fontSize: Math.round(cellSize * 0.28),
 									left,
 									top,
-									animation: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
+									animation: isNextWaypoint
+										? `zip-pop 220ms ease-out ${waypointIndex * 30}ms both, zip-waypoint-next-glow 1050ms ease-in-out ${220 + waypointIndex * 30}ms infinite`
+										: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
 								}}
 							>
 								{waypointIndex + 1}
