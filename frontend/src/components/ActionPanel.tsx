@@ -54,7 +54,7 @@ export default function ActionPanel({
           "
         >
           <SolveIcon />
-          {isSolving ? "Solving..." : "Solve"}
+          {isSolving ? "Solving..." : "Show Solution"}
         </button>
 
         <div className="flex rounded-xl border border-board-border bg-background/70 p-1">

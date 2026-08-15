@@ -222,7 +222,6 @@ export default function GridBuilder({
 
             if (previousPosition && position[0] === previousPosition[0] && position[1] === previousPosition[1]) {
                 setPlayModeState((previous) => undoVisitedCell(previous));
-                showMessage("INFO", dialogMessages.play.lastMoveUndone);
                 return;
             }
 
@@ -270,8 +269,6 @@ export default function GridBuilder({
                 showMessage("INFO", dialogMessages.play.lastWaypointOnly);
                 return;
             }
-
-            showMessage("INFO", dialogMessages.play.movedTo(position));
             return;
         }
 
@@ -611,6 +608,21 @@ export default function GridBuilder({
     }
 
 
+    function getNormalizedSolutionPath(solutionPath: SolutionPath) {
+        const startCell = board.waypoints[0] ?? null;
+
+        if (!startCell || solutionPath.length === 0) {
+            return solutionPath;
+        }
+
+        if (solutionPath[0][0] === startCell[0] && solutionPath[0][1] === startCell[1]) {
+            return solutionPath;
+        }
+
+        return [startCell, ...solutionPath];
+    }
+
+
     async function handleHint() {
         if (viewMode !== "PLAY") {
             showMessage("WARNING", dialogMessages.play.switchToPlayFirst);
@@ -648,13 +660,47 @@ export default function GridBuilder({
     }
 
 
+    async function handleShowSolutionInPlay() {
+        let availableSolution = playSolution;
+
+        if (!availableSolution) {
+            const response = await handleSolve("HINT_RETRY");
+
+            if (response?.success && response.solutionPath) {
+                availableSolution = response.solutionPath;
+                setPlaySolution(response.solutionPath);
+            }
+        }
+
+        if (!availableSolution) {
+            setHintPath(null);
+            showMessage("WARNING", dialogMessages.play.unableToSolveForHint);
+            return;
+        }
+
+        setHintPath(getNormalizedSolutionPath(availableSolution));
+        setHintPathVersion((previous) => previous + 1);
+    }
+
+
     async function handleSolveClick() {
+        if (viewMode === "PLAY") {
+            await handleShowSolutionInPlay();
+            return;
+        }
+
         await handleSolve("SOLVE");
     }
 
 
     async function handlePlayModeEnter() {
+        setEditMode("NUMBERS");
         await handleSolve("PLAY_PRECHECK");
+    }
+
+
+    function handleClearPlayPath() {
+        setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
     }
 
 
@@ -756,6 +802,7 @@ export default function GridBuilder({
         setHintPath(null);
 
         if (mode === "PLAY") {
+            setEditMode("NUMBERS");
             setPlayModeState(createPlayModeState(board.waypoints[0] ?? null));
             await handlePlayModeEnter();
             return;
@@ -771,6 +818,12 @@ export default function GridBuilder({
         }
 
         const handleKeyDown = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+                event.preventDefault();
+                setPlayModeState((previous) => undoVisitedCell(previous));
+                return;
+            }
+
             const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
 
             if (!currentPosition) {
@@ -868,7 +921,7 @@ export default function GridBuilder({
                     editMode={editMode}
                     playerPath={playModeState.visitedCells}
                     activePosition={getActivePosition(playModeState, board.waypoints[0] ?? null)}
-                    hintPosition={hintPath && hintPath.length > 1 ? hintPath[1] : null}
+                    hintPosition={null}
                     hintPath={hintPath}
                     hintPathVersion={hintPathVersion}
                     isPlayMode={viewMode === "PLAY"}
@@ -901,9 +954,9 @@ export default function GridBuilder({
                         onGridSizeChange={handleGridSizeChange}
                         onEditModeChange={handleModeChange}
                         onHint={handleHint}
+                        onClearSolution={handleClearPlayPath}
                         onUndo={() => {
                             setPlayModeState((previous) => undoVisitedCell(previous));
-                            showMessage("INFO", dialogMessages.play.lastMoveUndone);
                         }}
                     />
                 </div>

@@ -10,13 +10,11 @@ export const dialogMessages = {
     play: {
         addWaypointFirst: "Add at least one waypoint before playing",
         alreadyOnCell: "You are already on this cell",
-        lastMoveUndone: "Last move undone",
         waypointOrder: "Visit the waypoints in order",
         invalidMove: "That move is not valid",
         alreadyVisited: "You have already visited this cell",
         solved: "Puzzle solved! You visited every cell and all waypoints in order",
         lastWaypointOnly: "You reached the last waypoint, but you still need to visit every cell",
-        movedTo: (position: [number, number]) => `Moved to (${position[0] + 1}, ${position[1] + 1})`,
         switchToPlayFirst: "Switch to Play mode first",
         hintPathShown: "Hint path to the next waypoint has been highlighted",
         hintUnavailableForCurrentPath: "Hint is not available for your current path",
