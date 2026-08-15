@@ -2,6 +2,7 @@ import type { ViewMode } from "../types/grid";
 
 interface ActionPanelProps {
   canSolve: boolean;
+  canPlay: boolean;
   isSolving: boolean;
   viewMode: ViewMode;
 
@@ -13,6 +14,7 @@ interface ActionPanelProps {
 
 export default function ActionPanel({
   canSolve,
+  canPlay,
   isSolving,
   viewMode,
   onSolve,
@@ -60,6 +62,7 @@ export default function ActionPanel({
         <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
           {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
             const isActive = viewMode === mode;
+            const isModeDisabled = isSolving || (mode === "PLAY" && !canPlay);
 
             return (
               <button
@@ -68,7 +71,7 @@ export default function ActionPanel({
                 onClick={() => {
                   void onViewModeChange(mode);
                 }}
-                disabled={isSolving}
+                disabled={isModeDisabled}
                 className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   isActive
                     ? "bg-primary text-white shadow-sm"

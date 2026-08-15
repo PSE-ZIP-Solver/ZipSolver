@@ -701,10 +701,14 @@ export default function GridBuilder({
 
     function handleClearPlayPath() {
         setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
+        setHintPath(null);
     }
 
 
     function handleReset() {
+
+        setViewMode("BUILD");
+        setEditMode("NUMBERS");
 
         setBoard(previous => ({
             boardSize: previous.boardSize,
@@ -970,6 +974,7 @@ export default function GridBuilder({
                 <div className="order-4 lg:order-3">
                     <ActionPanel
                         canSolve={board.waypoints.length >= 2}
+                        canPlay={board.waypoints.length >= 2}
                         isSolving={isSolving}
                         viewMode={viewMode}
                         onSolve={handleSolveClick}
