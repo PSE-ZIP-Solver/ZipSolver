@@ -46,6 +46,71 @@ class BoardSamplingEnv(gym.Env):
         return self.env.game
 
 
+def generate_mixed_training_boards(
+    boardSize: int,
+    nrFullRangeBoards: int,
+    nrSparseBoards: int,
+    fullRangeMaxWalls: int,
+    fullRangeMaxWaypoints: int,
+    sparseMaxWalls: int,
+    sparseMaxWaypoints: int,
+) -> list[Board]:
+    """
+    Generate a mixed training pool containing both full-range and sparse boards.
+
+    The purpose of the mixed pool is to improve performance on sparse boards
+    without forgetting previously learned full-range board configurations.
+    """
+    boards: list[Board] = []
+
+    # Full-range boards.
+    for _ in range(nrFullRangeBoards):
+        nrOfWaypoints = random.randint(0, fullRangeMaxWaypoints)
+        nrOfWalls = random.randint(0, fullRangeMaxWalls)
+
+        boards.append(
+            BoardGenerator.generate(
+                boardSize,
+                nrOfWaypoints,
+                nrOfWalls,
+                1,
+            )[0]
+        )
+
+    # Sparse boards.
+    for _ in range(nrSparseBoards):
+        nrOfWaypoints = random.randint(0, sparseMaxWaypoints)
+        nrOfWalls = random.randint(0, sparseMaxWalls)
+
+        boards.append(
+            BoardGenerator.generate(
+                boardSize,
+                nrOfWaypoints,
+                nrOfWalls,
+                1,
+            )[0]
+        )
+
+    # Shuffle so that the two board groups are not stored in separate blocks.
+    random.shuffle(boards)
+
+    return boards
+
+
+def save_training_board_pool(
+    boards: list[Board],
+    trainingBoardsPath: str,
+):
+    """Save an externally generated training board pool."""
+    path = Path(trainingBoardsPath)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open("wb") as file:
+        pickle.dump(boards, file)
+
+    print(f"Saved training boards to {path}")
+
+
 class AgentTrainer:
     def __init__(
         self,
@@ -313,7 +378,7 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.2,
+                initial_eps=0.3,
                 final_eps=0.05,
                 fraction=0.8,
             )
@@ -514,17 +579,37 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 0
-    NR_OF_WALLS = 5
-    MIN_NR_OF_WAYPOINTS = 0
-    NR_OF_WAYPOINTS = 10
 
-    USE_SAVED_TRAINING_BOARDS = True
-    LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-sparse-2000boards-0to5walls-0to10wp.pkl")
+    # Full-range limits.
+    MIN_NR_OF_WALLS = 0
+    NR_OF_WALLS = 25
+    MIN_NR_OF_WAYPOINTS = 0
+    NR_OF_WAYPOINTS = 34
+
+    # Mixed training pool:
+    # 60 % full-range boards + 40 % sparse boards.
+    NR_FULL_RANGE_TRAINING_BOARDS = 1800
+    NR_SPARSE_TRAINING_BOARDS = 1200
+    NR_TRAINING_BOARDS = (
+        NR_FULL_RANGE_TRAINING_BOARDS
+        + NR_SPARSE_TRAINING_BOARDS
+    )
+
+    SPARSE_MAX_WALLS = 5
+    SPARSE_MAX_WAYPOINTS = 10
+
+    USE_SAVED_TRAINING_BOARDS = False
+    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
+    TRAINING_BOARDS_PATH = (
+        "offline_training/training_boards/"
+        "6x6-mixed-3000boards-60fullrange-40sparse.pkl"
+    )
 
     USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-0to5walls-0to10wp-1000boards.pkl"
+    EVALUATION_BOARDS_PATH = (
+        "offline_training/evaluation_boards/"
+        "6x6-evaluation-0to25walls-0to34wp-1000boards.pkl"
+    )
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
@@ -533,26 +618,46 @@ if __name__ == "__main__":
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
 
+    # Create a new mixed pool for the first mixed-training run.
+    mixedTrainingBoards = None
+
+    if not USE_SAVED_TRAINING_BOARDS:
+        mixedTrainingBoards = generate_mixed_training_boards(
+            boardSize=6,
+            nrFullRangeBoards=NR_FULL_RANGE_TRAINING_BOARDS,
+            nrSparseBoards=NR_SPARSE_TRAINING_BOARDS,
+            fullRangeMaxWalls=NR_OF_WALLS,
+            fullRangeMaxWaypoints=NR_OF_WAYPOINTS,
+            sparseMaxWalls=SPARSE_MAX_WALLS,
+            sparseMaxWaypoints=SPARSE_MAX_WAYPOINTS,
+        )
+
+        save_training_board_pool(
+            mixedTrainingBoards,
+            TRAINING_BOARDS_PATH,
+        )
+
     trainer = AgentTrainer(
         boardSize=6,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
         modelPath="offline_training/trained_models/trained-model.zip",
-        minNrOfWalls=MIN_NR_OF_WALLS, 
+        minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         # number of training boards in the training pool
-        nrTrainingBoards=2000,
+        nrTrainingBoards=NR_TRAINING_BOARDS,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=1000, 
+        nrEvaluationBoards=1000,
 
         # Total time steps
-        timestepsPerBoard= 2_000_000,
+        timestepsPerBoard=2_000_000,
 
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
+        trainingBoards=mixedTrainingBoards,
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
         trainingBoardsPath=TRAINING_BOARDS_PATH,
@@ -568,11 +673,20 @@ if __name__ == "__main__":
             trainer.show_first_training_board_run(agent)
 
     if PRINT_TRAINING_BOARDS:
-        trainer.print_boards(trainer.trainingBoards, "Boards used during training")
+        trainer.print_boards(
+            trainer.trainingBoards,
+            "Boards used during training",
+        )
 
     if EVALUATE_TRAINING_BOARDS:
-        trainingResult = trainer.evaluate(agent, trainer.trainingBoards)
-        trainer.print_result("Evaluation result on training boards", trainingResult)
+        trainingResult = trainer.evaluate(
+            agent,
+            trainer.trainingBoards,
+        )
+        trainer.print_result(
+            "Evaluation result on training boards",
+            trainingResult,
+        )
 
     if EVALUATE_EVALUATION_BOARDS:
         evaluationResult = trainer.evaluate(
