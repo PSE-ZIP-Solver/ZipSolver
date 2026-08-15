@@ -46,57 +46,6 @@ class BoardSamplingEnv(gym.Env):
         return self.env.game
 
 
-def generate_mixed_training_boards(
-    boardSize: int,
-    nrFullRangeBoards: int,
-    nrSparseBoards: int,
-    fullRangeMaxWalls: int,
-    fullRangeMaxWaypoints: int,
-    sparseMaxWalls: int,
-    sparseMaxWaypoints: int,
-) -> list[Board]:
-    """
-    Generate a mixed training pool containing both full-range and sparse boards.
-
-    The purpose of the mixed pool is to improve performance on sparse boards
-    without forgetting previously learned full-range board configurations.
-    """
-    boards: list[Board] = []
-
-    # Full-range boards.
-    for _ in range(nrFullRangeBoards):
-        nrOfWaypoints = random.randint(0, fullRangeMaxWaypoints)
-        nrOfWalls = random.randint(0, fullRangeMaxWalls)
-
-        boards.append(
-            BoardGenerator.generate(
-                boardSize,
-                nrOfWaypoints,
-                nrOfWalls,
-                1,
-            )[0]
-        )
-
-    # Sparse boards.
-    for _ in range(nrSparseBoards):
-        nrOfWaypoints = random.randint(0, sparseMaxWaypoints)
-        nrOfWalls = random.randint(0, sparseMaxWalls)
-
-        boards.append(
-            BoardGenerator.generate(
-                boardSize,
-                nrOfWaypoints,
-                nrOfWalls,
-                1,
-            )[0]
-        )
-
-    # Shuffle so that the two board groups are not stored in separate blocks.
-    random.shuffle(boards)
-
-    return boards
-
-
 def save_training_board_pool(
     boards: list[Board],
     trainingBoardsPath: str,
@@ -109,6 +58,39 @@ def save_training_board_pool(
         pickle.dump(boards, file)
 
     print(f"Saved training boards to {path}")
+
+
+def load_training_board_pool(
+    trainingBoardsPath: str,
+    expectedNumberBoards: int | None = None,
+) -> list[Board]:
+    """Load an externally generated training board pool."""
+    path = Path(trainingBoardsPath)
+
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Training board file not found: {path}"
+        )
+
+    with path.open("rb") as file:
+        boards = pickle.load(file)
+
+    if not isinstance(boards, list) or not boards:
+        raise ValueError(
+            "The saved training board file is empty or invalid."
+        )
+
+    if (
+        expectedNumberBoards is not None
+        and len(boards) != expectedNumberBoards
+    ):
+        raise ValueError(
+            f"Saved training set contains {len(boards)} boards, but "
+            f"{expectedNumberBoards} boards were expected."
+        )
+
+    print(f"Loaded training boards from {path}")
+    return boards
 
 
 class AgentTrainer:
@@ -175,7 +157,9 @@ class AgentTrainer:
         self.evaluationBoardsPath = Path(evaluationBoardsPath)
 
         if not 0 <= self.minNrOfWalls <= nrOfWalls:
-            raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
+            raise ValueError(
+                "minNrOfWalls must be between 0 and nrOfWalls."
+            )
 
         if not 0 <= self.minNrOfWaypoints <= nrOfWaypoints:
             raise ValueError(
@@ -184,6 +168,7 @@ class AgentTrainer:
 
         if trainingBoards is not None:
             self.trainingBoards = trainingBoards
+
         elif useSavedTrainingBoards:
             self.trainingBoards = self._load_training_boards()
             missingBoards = nrTrainingBoards - len(self.trainingBoards)
@@ -208,6 +193,7 @@ class AgentTrainer:
                 )
                 self._save_training_boards()
                 print(f"Added {missingBoards} new training boards.")
+
         else:
             self.trainingBoards = self._generate_random_boards(
                 boardSize,
@@ -222,10 +208,15 @@ class AgentTrainer:
 
         if evaluationBoards is not None:
             self.evaluationBoards = evaluationBoards
-        elif useSavedEvaluationBoards and self.evaluationBoardsPath.exists():
+
+        elif (
+            useSavedEvaluationBoards
+            and self.evaluationBoardsPath.exists()
+        ):
             self.evaluationBoards = self._load_evaluation_boards(
                 nrEvaluationBoards
             )
+
         else:
             self.evaluationBoards = self._generate_random_boards(
                 boardSize,
@@ -242,33 +233,56 @@ class AgentTrainer:
 
     def _save_training_boards(self):
         """Save the generated training board pool for later training runs."""
-        self.trainingBoardsPath.parent.mkdir(parents=True, exist_ok=True)
+        self.trainingBoardsPath.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         with self.trainingBoardsPath.open("wb") as file:
             pickle.dump(self.trainingBoards, file)
-        print(f"Saved training boards to {self.trainingBoardsPath}")
+
+        print(
+            f"Saved training boards to "
+            f"{self.trainingBoardsPath}"
+        )
 
     def _load_training_boards(self) -> list[Board]:
         """Load the training board pool created during an earlier run."""
         if not self.trainingBoardsPath.exists():
             raise FileNotFoundError(
-                f"Training board file not found: {self.trainingBoardsPath}"
+                f"Training board file not found: "
+                f"{self.trainingBoardsPath}"
             )
 
         with self.trainingBoardsPath.open("rb") as file:
             boards = pickle.load(file)
 
         if not isinstance(boards, list) or not boards:
-            raise ValueError("The saved training board file is empty or invalid.")
+            raise ValueError(
+                "The saved training board file is empty or invalid."
+            )
 
-        print(f"Loaded training boards from {self.trainingBoardsPath}")
+        print(
+            f"Loaded training boards from "
+            f"{self.trainingBoardsPath}"
+        )
+
         return boards
 
     def _save_evaluation_boards(self):
         """Save one fixed evaluation board set for comparable future runs."""
-        self.evaluationBoardsPath.parent.mkdir(parents=True, exist_ok=True)
+        self.evaluationBoardsPath.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         with self.evaluationBoardsPath.open("wb") as file:
             pickle.dump(self.evaluationBoards, file)
-        print(f"Saved evaluation boards to {self.evaluationBoardsPath}")
+
+        print(
+            f"Saved evaluation boards to "
+            f"{self.evaluationBoardsPath}"
+        )
 
     def _load_evaluation_boards(
         self,
@@ -279,7 +293,9 @@ class AgentTrainer:
             boards = pickle.load(file)
 
         if not isinstance(boards, list) or not boards:
-            raise ValueError("The saved evaluation board file is empty or invalid.")
+            raise ValueError(
+                "The saved evaluation board file is empty or invalid."
+            )
 
         if len(boards) != expectedNumberBoards:
             raise ValueError(
@@ -287,7 +303,11 @@ class AgentTrainer:
                 f"nrEvaluationBoards is {expectedNumberBoards}."
             )
 
-        print(f"Loaded evaluation boards from {self.evaluationBoardsPath}")
+        print(
+            f"Loaded evaluation boards from "
+            f"{self.evaluationBoardsPath}"
+        )
+
         return boards
 
     def _generate_random_boards(
@@ -312,8 +332,12 @@ class AgentTrainer:
                 if randomizeBoardComplexity
                 else maxIntermediateWaypoints
             )
+
             nrOfWalls = (
-                random.randint(minWalls, maxWalls)
+                random.randint(
+                    minWalls,
+                    maxWalls,
+                )
                 if randomizeBoardComplexity
                 else maxWalls
             )
@@ -329,52 +353,270 @@ class AgentTrainer:
 
         return boards
 
+    def collect_failed_boards(
+        self,
+        agent: RLAgent,
+        boardSize: int,
+        targetFailedBoards: int,
+        minWalls: int,
+        maxWalls: int,
+        minWaypoints: int,
+        maxWaypoints: int,
+        boardType: str,
+        maxGeneratedBoards: int | None = None,
+    ) -> list[Board]:
+        """
+        Generate new boards and keep only boards that the current agent fails.
+
+        These boards can then be reused as hard training examples.
+        """
+        if targetFailedBoards <= 0:
+            return []
+
+        if maxGeneratedBoards is None:
+            maxGeneratedBoards = targetFailedBoards * 20
+
+        failedBoards: list[Board] = []
+        generatedBoards = 0
+
+        print(
+            f"\nCollecting {targetFailedBoards} failed "
+            f"{boardType} boards..."
+        )
+
+        while (
+            len(failedBoards) < targetFailedBoards
+            and generatedBoards < maxGeneratedBoards
+        ):
+            nrOfWaypoints = random.randint(
+                minWaypoints,
+                maxWaypoints,
+            )
+
+            nrOfWalls = random.randint(
+                minWalls,
+                maxWalls,
+            )
+
+            board = BoardGenerator.generate(
+                boardSize,
+                nrOfWaypoints,
+                nrOfWalls,
+                1,
+            )[0]
+
+            generatedBoards += 1
+
+            solved, _ = self._run_board(
+                agent,
+                board,
+            )
+
+            if not solved:
+                failedBoards.append(board)
+
+            if (
+                generatedBoards % 250 == 0
+                or len(failedBoards) == targetFailedBoards
+            ):
+                print(
+                    f"{boardType}: generated "
+                    f"{generatedBoards}, failed "
+                    f"{len(failedBoards)}/"
+                    f"{targetFailedBoards}"
+                )
+
+        if len(failedBoards) < targetFailedBoards:
+            raise RuntimeError(
+                f"Could only collect {len(failedBoards)} failed "
+                f"{boardType} boards after generating "
+                f"{generatedBoards} boards."
+            )
+
+        print(
+            f"Finished {boardType} mining: "
+            f"{len(failedBoards)} failed boards collected "
+            f"from {generatedBoards} generated boards."
+        )
+
+        return failedBoards
+
+    def create_hard_example_training_pool(
+        self,
+        agent: RLAgent,
+        boardSize: int,
+        nrFailedFullRangeBoards: int,
+        nrFailedSparseBoards: int,
+        nrRandomFullRangeBoards: int,
+        fullRangeMaxWalls: int,
+        fullRangeMaxWaypoints: int,
+        sparseMaxWalls: int,
+        sparseMaxWaypoints: int,
+    ) -> list[Board]:
+        """
+        Create a hard-example training pool.
+
+        The pool contains:
+        - failed full-range boards,
+        - failed sparse boards,
+        - normal random full-range boards to reduce catastrophic forgetting.
+        """
+        failedFullRangeBoards = self.collect_failed_boards(
+            agent=agent,
+            boardSize=boardSize,
+            targetFailedBoards=nrFailedFullRangeBoards,
+            minWalls=0,
+            maxWalls=fullRangeMaxWalls,
+            minWaypoints=0,
+            maxWaypoints=fullRangeMaxWaypoints,
+            boardType="full-range",
+        )
+
+        failedSparseBoards = self.collect_failed_boards(
+            agent=agent,
+            boardSize=boardSize,
+            targetFailedBoards=nrFailedSparseBoards,
+            minWalls=0,
+            maxWalls=sparseMaxWalls,
+            minWaypoints=0,
+            maxWaypoints=sparseMaxWaypoints,
+            boardType="sparse",
+        )
+
+        randomFullRangeBoards = self._generate_random_boards(
+            boardSize=boardSize,
+            minIntermediateWaypoints=0,
+            maxIntermediateWaypoints=fullRangeMaxWaypoints,
+            minWalls=0,
+            maxWalls=fullRangeMaxWalls,
+            numberBoards=nrRandomFullRangeBoards,
+            randomizeBoardComplexity=True,
+        )
+
+        hardTrainingBoards = (
+            failedFullRangeBoards
+            + failedSparseBoards
+            + randomFullRangeBoards
+        )
+
+        random.shuffle(hardTrainingBoards)
+
+        print(
+            f"\nCreated hard-example training pool with "
+            f"{len(hardTrainingBoards)} boards:"
+        )
+        print(
+            f"Failed full-range: "
+            f"{len(failedFullRangeBoards)}"
+        )
+        print(
+            f"Failed sparse: "
+            f"{len(failedSparseBoards)}"
+        )
+        print(
+            f"Random full-range: "
+            f"{len(randomFullRangeBoards)}"
+        )
+
+        return hardTrainingBoards
+
     @staticmethod
     def _get_sb3_model(agent: RLAgent):
         """Return the Stable-Baselines model stored inside RLAgent."""
-        model = getattr(agent, "_model", None)
+        model = getattr(
+            agent,
+            "_model",
+            None,
+        )
+
         if model is None:
             raise AttributeError(
-                "RLAgent must store its Stable-Baselines model in self._model."
+                "RLAgent must store its Stable-Baselines model "
+                "in self._model."
             )
+
         return model
 
     @staticmethod
-    def _replay_buffer_path(modelPath: str) -> Path:
+    def _replay_buffer_path(
+        modelPath: str,
+    ) -> Path:
         """Create a replay-buffer path next to the corresponding model file."""
         modelFile = Path(modelPath)
-        return modelFile.with_name(f"{modelFile.stem}_replay_buffer.pkl")
+
+        return modelFile.with_name(
+            f"{modelFile.stem}_replay_buffer.pkl"
+        )
 
     def train(self) -> RLAgent:
         """Train one RLAgent across randomly sampled training boards."""
         if not self.trainingBoards:
-            raise ValueError("Cannot train without at least one training board.")
+            raise ValueError(
+                "Cannot train without at least one training board."
+            )
 
         modelFile = Path(self.modelPath)
-        replayBufferFile = self._replay_buffer_path(self.modelPath)
+        replayBufferFile = self._replay_buffer_path(
+            self.modelPath
+        )
 
         if self.resetModel:
-            for file in (modelFile, replayBufferFile):
+            for file in (
+                modelFile,
+                replayBufferFile,
+            ):
                 if file.exists():
-                    print(f"Resetting training data: deleting {file}")
+                    print(
+                        f"Resetting training data: deleting {file}"
+                    )
                     file.unlink()
 
-        trainEnv = Monitor(BoardSamplingEnv(self.trainingBoards))
-        if self.loadExistingModel and modelFile.exists():
-            print(f"Loading existing model from {self.modelPath}")
+        trainEnv = Monitor(
+            BoardSamplingEnv(
+                self.trainingBoards
+            )
+        )
+
+        if (
+            self.loadExistingModel
+            and modelFile.exists()
+        ):
+            print(
+                f"Loading existing model from "
+                f"{self.modelPath}"
+            )
+
             agent = RLAgent(
                 trainEnv,
                 model_path=self.modelPath,
                 tensorboard_log="./logs/zip_dqn/6x6/",
             )
 
-            if self.loadReplayBuffer and replayBufferFile.exists():
-                self._get_sb3_model(agent).load_replay_buffer(replayBufferFile)
-                print(f"Loaded replay buffer from {replayBufferFile}")
+            if (
+                self.loadReplayBuffer
+                and replayBufferFile.exists()
+            ):
+                self._get_sb3_model(
+                    agent
+                ).load_replay_buffer(
+                    replayBufferFile
+                )
+
+                print(
+                    f"Loaded replay buffer from "
+                    f"{replayBufferFile}"
+                )
+
             elif self.loadReplayBuffer:
-                print(f"No replay buffer found at {replayBufferFile}")
+                print(
+                    f"No replay buffer found at "
+                    f"{replayBufferFile}"
+                )
+
             else:
-                print("Starting with an empty replay buffer.")
+                print(
+                    "Starting with an empty replay buffer."
+                )
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
@@ -382,8 +624,10 @@ class AgentTrainer:
                 final_eps=0.05,
                 fraction=0.8,
             )
+
         else:
             print("Creating new agent")
+
             agent = RLAgent(
                 trainEnv,
                 learning_rate=1e-4,              # Controls how strongly the network weights are changed during each gradient/network update.
@@ -407,26 +651,54 @@ class AgentTrainer:
             if self._totalTimesteps is not None
             else 100_000
         )
-        print(f"Training on {len(self.trainingBoards)} boards.")
-        print(f"Total timesteps: {totalTimesteps}")
+
+        print(
+            f"Training on "
+            f"{len(self.trainingBoards)} boards."
+        )
+
+        print(
+            f"Total timesteps: "
+            f"{totalTimesteps}"
+        )
 
         # True resets only the SB3 step counter / exploration schedule.
         # It does not delete the loaded model weights.
-        agent.learn(total_timesteps=totalTimesteps, reset_num_timesteps=True)
+        agent.learn(
+            total_timesteps=totalTimesteps,
+            reset_num_timesteps=True,
+        )
+
         return agent
 
     def load_saved_agent(self) -> RLAgent:
         """Load a saved model without further training."""
-        if not Path(self.modelPath).exists():
-            raise FileNotFoundError(f"Model file not found: {self.modelPath}")
+        if not Path(
+            self.modelPath
+        ).exists():
+            raise FileNotFoundError(
+                f"Model file not found: "
+                f"{self.modelPath}"
+            )
 
-        boards = self.evaluationBoards or self.trainingBoards
+        boards = (
+            self.evaluationBoards
+            or self.trainingBoards
+        )
+
         if not boards:
-            raise ValueError("At least one board is required to load the model.")
+            raise ValueError(
+                "At least one board is required to load the model."
+            )
 
         # The loaded model needs one compatible environment.
         # During evaluation, evaluate() switches the environment for every board.
-        return RLAgent(RLEnvironment(boards[0]), model_path=self.modelPath)
+        return RLAgent(
+            RLEnvironment(
+                boards[0]
+            ),
+            model_path=self.modelPath,
+        )
 
     def evaluate(
         self,
@@ -436,9 +708,19 @@ class AgentTrainer:
         boardType: str = "evaluation",
     ) -> TrainingResult:
         """Evaluate a trained RLAgent on the provided boards."""
-        boards = self.evaluationBoards if boards is None else boards
+        boards = (
+            self.evaluationBoards
+            if boards is None
+            else boards
+        )
+
         if not boards:
-            return TrainingResult(0, 0, 0.0, 0.0)
+            return TrainingResult(
+                0,
+                0,
+                0.0,
+                0.0,
+            )
 
         solveCount = 0
         rewards = 0.0
@@ -446,13 +728,24 @@ class AgentTrainer:
         firstFailedBoard = None
 
         for board in boards:
-            solved, boardReward = self._run_board(agent, board)
+            solved, boardReward = self._run_board(
+                agent,
+                board,
+            )
+
             rewards += boardReward
             solveCount += int(solved)
 
-            if solved and firstSolvedBoard is None:
+            if (
+                solved
+                and firstSolvedBoard is None
+            ):
                 firstSolvedBoard = board
-            elif not solved and firstFailedBoard is None:
+
+            elif (
+                not solved
+                and firstFailedBoard is None
+            ):
                 firstFailedBoard = board
 
         if showExamples:
@@ -462,14 +755,17 @@ class AgentTrainer:
                 f"Example solved {boardType} board",
                 f"No solved {boardType} board found.",
             )
+
             self._show_example(
                 agent,
                 firstFailedBoard,
                 f"Example failed {boardType} board",
-                f"No failed {boardType} board found. The agent solved all boards.",
+                f"No failed {boardType} board found. "
+                f"The agent solved all boards.",
             )
 
         totalBoards = len(boards)
+
         return TrainingResult(
             solveCount,
             totalBoards,
@@ -477,29 +773,66 @@ class AgentTrainer:
             solveCount / totalBoards,
         )
 
-    def evaluate_saved_model(self, showExamples: bool = False) -> TrainingResult:
+    def evaluate_saved_model(
+        self,
+        showExamples: bool = False,
+    ) -> TrainingResult:
         """Load a saved model and evaluate it without further training."""
-        return self.evaluate(self.load_saved_agent(), showExamples=showExamples)
+        return self.evaluate(
+            self.load_saved_agent(),
+            showExamples=showExamples,
+        )
 
-    def evaluate_with_examples(self, agent: RLAgent) -> TrainingResult:
+    def evaluate_with_examples(
+        self,
+        agent: RLAgent,
+    ) -> TrainingResult:
         """Evaluate the agent and afterwards show one solved and one failed example."""
-        return self.evaluate(agent, showExamples=True)
+        return self.evaluate(
+            agent,
+            showExamples=True,
+        )
 
-    def _run_board(self, agent: RLAgent, board: Board) -> tuple[bool, float]:
+    def _run_board(
+        self,
+        agent: RLAgent,
+        board: Board,
+    ) -> tuple[bool, float]:
         """Run one deterministic evaluation episode."""
         env = RLEnvironment(board)
+
         agent.set_env(env)
+
         observation, _ = env.reset()
-        terminated = truncated = False
+
+        terminated = False
+        truncated = False
         rewardSum = 0.0
 
-        while not terminated and not truncated:
-            action = agent.predict(observation, deterministic=True)
-            observation, reward, terminated, truncated, _ = env.step(int(action))
+        while (
+            not terminated
+            and not truncated
+        ):
+            action = agent.predict(
+                observation,
+                deterministic=True,
+            )
+
+            observation, reward, terminated, truncated, _ = (
+                env.step(
+                    int(action)
+                )
+            )
+
             rewardSum += float(reward)
 
-        solved = terminated and env.game.isFinished()
+        solved = (
+            terminated
+            and env.game.isFinished()
+        )
+
         env.close()
+
         return solved, rewardSum
 
     def _show_example(
@@ -511,28 +844,53 @@ class AgentTrainer:
     ):
         """Show an example board if one is available."""
         if board is None:
-            print(f"\n{missingMessage}")
+            print(
+                f"\n{missingMessage}"
+            )
             return
-        self._show_agent_run(agent, board, title)
 
-    def _show_agent_run(self, agent: RLAgent, board: Board, title: str):
+        self._show_agent_run(
+            agent,
+            board,
+            title,
+        )
+
+    def _show_agent_run(
+        self,
+        agent: RLAgent,
+        board: Board,
+        title: str,
+    ):
         """Render one deterministic agent run on a given board."""
-        print(f"\n{title}:")
+        print(
+            f"\n{title}:"
+        )
+
         env = RLEnvironment(board)
         agent.set_env(env)
+
         result = agent.solve(
             deterministic=True,
             max_steps=env.config.max_steps,
             render=True,
         )
-        print("\nRun result:")
+
+        print(
+            "\nRun result:"
+        )
         print(result)
+
         env.close()
 
-    def show_first_training_board_run(self, agent: RLAgent):
+    def show_first_training_board_run(
+        self,
+        agent: RLAgent,
+    ):
         """Render a deterministic run on the first board used during training."""
         if not self.trainingBoards:
-            print("\nNo training board available.")
+            print(
+                "\nNo training board available."
+            )
             return
 
         self._show_agent_run(
@@ -541,40 +899,104 @@ class AgentTrainer:
             "Deterministic run on first training board after training",
         )
 
-    def print_boards(self, boards: list[Board], title: str):
+    def print_boards(
+        self,
+        boards: list[Board],
+        title: str,
+    ):
         """Print the initial state of the provided boards."""
-        print(f"\n{title}:")
-        for index, board in enumerate(boards, start=1):
-            print(f"\nBoard {index}:")
+        print(
+            f"\n{title}:"
+        )
+
+        for index, board in enumerate(
+            boards,
+            start=1,
+        ):
+            print(
+                f"\nBoard {index}:"
+            )
+
             env = RLEnvironment(board)
             env.reset()
-            renderedBoard = env.render("ansi")
+
+            renderedBoard = env.render(
+                "ansi"
+            )
+
             if renderedBoard is not None:
-                print(renderedBoard)
+                print(
+                    renderedBoard
+                )
+
             env.close()
 
     @staticmethod
-    def print_result(title: str, result: TrainingResult):
+    def print_result(
+        title: str,
+        result: TrainingResult,
+    ):
         """Print one evaluation result."""
-        print(f"\n{title}:")
-        print("Solved:", result.getSolveCount)
-        print("Total Boards:", result.getTotalBoards)
-        print("Average reward:", result.getAverageReward)
-        print("Success rate:", result.getSuccessRate)
+        print(
+            f"\n{title}:"
+        )
+        print(
+            "Solved:",
+            result.getSolveCount,
+        )
+        print(
+            "Total Boards:",
+            result.getTotalBoards,
+        )
+        print(
+            "Average reward:",
+            result.getAverageReward,
+        )
+        print(
+            "Success rate:",
+            result.getSuccessRate,
+        )
 
-    def save(self, agent: RLAgent, modelPath: str | None = None):
+    def save(
+        self,
+        agent: RLAgent,
+        modelPath: str | None = None,
+    ):
         """Save the trained agent and its replay buffer."""
-        path = modelPath if modelPath else self.modelPath
+        path = (
+            modelPath
+            if modelPath
+            else self.modelPath
+        )
+
         if not path:
-            raise ValueError("A valid model path is required.")
+            raise ValueError(
+                "A valid model path is required."
+            )
 
         modelFile = Path(path)
-        modelFile.parent.mkdir(parents=True, exist_ok=True)
+
+        modelFile.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
         agent.save(path)
 
-        replayBufferFile = self._replay_buffer_path(path)
-        self._get_sb3_model(agent).save_replay_buffer(replayBufferFile)
-        print(f"Saved replay buffer to {replayBufferFile}")
+        replayBufferFile = self._replay_buffer_path(
+            path
+        )
+
+        self._get_sb3_model(
+            agent
+        ).save_replay_buffer(
+            replayBufferFile
+        )
+
+        print(
+            f"Saved replay buffer to "
+            f"{replayBufferFile}"
+        )
 
 
 if __name__ == "__main__":
@@ -586,26 +1008,43 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 0
     NR_OF_WAYPOINTS = 34
 
-    # Mixed training pool:
-    # 60 % full-range boards + 40 % sparse boards.
-    NR_FULL_RANGE_TRAINING_BOARDS = 1800
-    NR_SPARSE_TRAINING_BOARDS = 1200
-    NR_TRAINING_BOARDS = (
-        NR_FULL_RANGE_TRAINING_BOARDS
-        + NR_SPARSE_TRAINING_BOARDS
-    )
-
+    # Sparse-board limits.
     SPARSE_MAX_WALLS = 5
     SPARSE_MAX_WAYPOINTS = 10
 
-    USE_SAVED_TRAINING_BOARDS = False
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = (
+    # Hard-example training pool:
+    # 40 % failed full-range boards
+    # 40 % failed sparse boards
+    # 20 % normal random full-range boards
+    NR_FAILED_FULL_RANGE_BOARDS = 1200
+    NR_FAILED_SPARSE_BOARDS = 1200
+    NR_RANDOM_FULL_RANGE_BOARDS = 600
+
+    NR_TRAINING_BOARDS = (
+        NR_FAILED_FULL_RANGE_BOARDS
+        + NR_FAILED_SPARSE_BOARDS
+        + NR_RANDOM_FULL_RANGE_BOARDS
+    )
+
+    CREATE_HARD_EXAMPLE_POOL = True
+
+    HARD_EXAMPLE_TRAINING_BOARDS_PATH = (
+        "offline_training/training_boards/"
+        "6x6-hard-examples-3000boards-"
+        "40failedfull-40failedsparse-20random.pkl"
+    )
+
+    # Existing mixed training pool is only used while loading the current agent
+    # before the new hard-example pool is generated.
+    CURRENT_TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/"
         "6x6-mixed-3000boards-60fullrange-40sparse.pkl"
     )
 
+    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
+
     USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
+
     EVALUATION_BOARDS_PATH = (
         "offline_training/evaluation_boards/"
         "6x6-evaluation-0to25walls-0to34wp-1000boards.pkl"
@@ -618,30 +1057,75 @@ if __name__ == "__main__":
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
 
-    # Create a new mixed pool for the first mixed-training run.
-    mixedTrainingBoards = None
+    MODEL_PATH = (
+        "offline_training/trained_models/"
+        "trained-model.zip"
+    )
 
-    if not USE_SAVED_TRAINING_BOARDS:
-        mixedTrainingBoards = generate_mixed_training_boards(
-            boardSize=6,
-            nrFullRangeBoards=NR_FULL_RANGE_TRAINING_BOARDS,
-            nrSparseBoards=NR_SPARSE_TRAINING_BOARDS,
-            fullRangeMaxWalls=NR_OF_WALLS,
-            fullRangeMaxWaypoints=NR_OF_WAYPOINTS,
-            sparseMaxWalls=SPARSE_MAX_WALLS,
-            sparseMaxWaypoints=SPARSE_MAX_WAYPOINTS,
+    # First create a trainer only for loading the current trained agent
+    # and for running deterministic hard-example mining.
+    miningTrainer = AgentTrainer(
+        boardSize=6,
+        nrOfWalls=NR_OF_WALLS,
+        nrOfWaypoints=NR_OF_WAYPOINTS,
+        modelPath=MODEL_PATH,
+        minNrOfWalls=MIN_NR_OF_WALLS,
+        minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
+
+        nrTrainingBoards=3000,
+        nrEvaluationBoards=1000,
+
+        timestepsPerBoard=None,
+
+        loadExistingModel=True,
+        resetModel=False,
+        randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
+
+        useSavedTrainingBoards=True,
+        loadReplayBuffer=False,
+        trainingBoardsPath=CURRENT_TRAINING_BOARDS_PATH,
+
+        useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
+        evaluationBoardsPath=EVALUATION_BOARDS_PATH,
+    )
+
+    currentAgent = miningTrainer.load_saved_agent()
+
+    if CREATE_HARD_EXAMPLE_POOL:
+        hardTrainingBoards = (
+            miningTrainer.create_hard_example_training_pool(
+                agent=currentAgent,
+                boardSize=6,
+
+                nrFailedFullRangeBoards=NR_FAILED_FULL_RANGE_BOARDS,
+                nrFailedSparseBoards=NR_FAILED_SPARSE_BOARDS,
+                nrRandomFullRangeBoards=NR_RANDOM_FULL_RANGE_BOARDS,
+
+                fullRangeMaxWalls=NR_OF_WALLS,
+                fullRangeMaxWaypoints=NR_OF_WAYPOINTS,
+
+                sparseMaxWalls=SPARSE_MAX_WALLS,
+                sparseMaxWaypoints=SPARSE_MAX_WAYPOINTS,
+            )
         )
 
         save_training_board_pool(
-            mixedTrainingBoards,
-            TRAINING_BOARDS_PATH,
+            hardTrainingBoards,
+            HARD_EXAMPLE_TRAINING_BOARDS_PATH,
         )
 
+    else:
+        hardTrainingBoards = load_training_board_pool(
+            HARD_EXAMPLE_TRAINING_BOARDS_PATH,
+            expectedNumberBoards=NR_TRAINING_BOARDS,
+        )
+
+    # Train the current model on the newly generated hard-example pool.
     trainer = AgentTrainer(
         boardSize=6,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/trained-model.zip",
+        modelPath=MODEL_PATH,
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
@@ -652,25 +1136,38 @@ if __name__ == "__main__":
         nrEvaluationBoards=1000,
 
         # Total time steps
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard=3_000_000,
 
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
-        trainingBoards=mixedTrainingBoards,
-        useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
+
+        # Hard-example pool is passed directly.
+        trainingBoards=hardTrainingBoards,
+
+        # Do not load the old replay buffer because it belongs
+        # to the previous training distribution.
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
-        trainingBoardsPath=TRAINING_BOARDS_PATH,
+
+        trainingBoardsPath=HARD_EXAMPLE_TRAINING_BOARDS_PATH,
+
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
     )
 
-    agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
+    agent = (
+        trainer.train()
+        if TRAIN_MODEL
+        else trainer.load_saved_agent()
+    )
+
     if TRAIN_MODEL:
         trainer.save(agent)
 
         if SHOW_FIRST_TRAINING_RUN:
-            trainer.show_first_training_board_run(agent)
+            trainer.show_first_training_board_run(
+                agent
+            )
 
     if PRINT_TRAINING_BOARDS:
         trainer.print_boards(
@@ -683,6 +1180,7 @@ if __name__ == "__main__":
             agent,
             trainer.trainingBoards,
         )
+
         trainer.print_result(
             "Evaluation result on training boards",
             trainingResult,
@@ -694,6 +1192,7 @@ if __name__ == "__main__":
             trainer.evaluationBoards,
             showExamples=SHOW_EVALUATION_EXAMPLES,
         )
+
         trainer.print_result(
             "Evaluation result on unseen evaluation boards",
             evaluationResult,
