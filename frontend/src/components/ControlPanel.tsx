@@ -19,6 +19,8 @@ interface ControlPanelProps {
 
     onHint: () => void;
 
+    onClearSolution: () => void;
+
     onUndo: () => void;
 }
 
@@ -44,6 +46,7 @@ export default function ControlPanel({
     onGridSizeChange,
     onEditModeChange,
     onHint,
+    onClearSolution,
     onUndo,
 }: ControlPanelProps) {
 
@@ -74,20 +77,28 @@ export default function ControlPanel({
             ) : (
                 <div className="flex flex-col gap-2">
                     <h2 className="text-sm font-semibold text-text">Play mode</h2>
-                    <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={onHint}
+                        disabled={isSolving}
+                        className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        Take Hint
+                    </button>
+                    <div className="grid grid-cols-2 gap-2">
                         <button
                             type="button"
-                            onClick={onHint}
+                            onClick={onClearSolution}
                             disabled={isSolving}
-                            className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-board-border bg-background/80 px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Take Hint
+                            Clear Solution
                         </button>
                         <button
                             type="button"
                             onClick={onUndo}
                             disabled={isSolving}
-                            className="flex-1 rounded-lg border border-board-border bg-background/80 px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-board-border bg-background/80 px-4 py-2 text-sm font-semibold text-text transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Undo
                         </button>

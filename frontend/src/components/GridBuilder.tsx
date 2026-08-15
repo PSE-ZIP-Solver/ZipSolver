@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-import Grid from "./Grid";
+import Grid from "./Grid.tsx";
 import ControlPanel from "./ControlPanel";
 import DialogPanel from "./DialogPanel";
 import ActionPanel from "./ActionPanel";
 import MetricsPanel from "./MetricsPanel";
-import ExamplesSection from "./ExamplesSection"; 
+import ExamplesSection from "./ExamplesSection";
 
 import {
     type EditMode,
@@ -21,7 +21,8 @@ import {
 
 import {
     type SolutionPath,
-    type SolverMetrics
+    type SolverMetrics,
+    type SolverResponse
 } from "../types/solver";
 
 import {
@@ -49,7 +50,6 @@ import {
     createPlayModeState,
     getActivePosition,
     getExpectedNextWaypoint,
-    getHintPosition as getPlayHintPosition,
     hasCompletedAllWaypoints,
     isCellAlreadyVisited,
     resetPlayModeState,
@@ -60,6 +60,8 @@ import {
 interface GridBuilderProps {
     advancedMode: boolean;
 }
+
+type SolveFlow = "SOLVE" | "PLAY_PRECHECK" | "HINT_RETRY";
 
 export default function GridBuilder({
     advancedMode
@@ -80,6 +82,15 @@ export default function GridBuilder({
      */
     const [solution, setSolution] =
         useState<SolutionPath | null>(null);
+
+    const [playSolution, setPlaySolution] =
+        useState<SolutionPath | null>(null);
+
+    const [hintPath, setHintPath] =
+        useState<SolutionPath | null>(null);
+
+    const [hintPathVersion, setHintPathVersion] =
+        useState(0);
 
     const [metrics, setMetrics] =
         useState<SolverMetrics | null>(null);
@@ -143,6 +154,8 @@ export default function GridBuilder({
         setBoard(sharedBoard);
 
         setSolution(null);
+        setPlaySolution(null);
+        setHintPath(null);
         setMetrics(null);
         setPlayModeState(resetPlayModeState(sharedBoard.waypoints[0] ?? null));
 
@@ -156,6 +169,14 @@ export default function GridBuilder({
         );
 
     }, []);
+
+
+    function clearDerivedSolverState() {
+        setSolution(null);
+        setPlaySolution(null);
+        setHintPath(null);
+        setMetrics(null);
+    }
 
 
     /*
@@ -173,8 +194,7 @@ export default function GridBuilder({
             walls: [],
         });
 
-        setSolution(null);
-        setMetrics(null);
+        clearDerivedSolverState();
         setPlayModeState(resetPlayModeState());
     }
 
@@ -202,7 +222,6 @@ export default function GridBuilder({
 
             if (previousPosition && position[0] === previousPosition[0] && position[1] === previousPosition[1]) {
                 setPlayModeState((previous) => undoVisitedCell(previous));
-                showMessage("INFO", dialogMessages.play.lastMoveUndone);
                 return;
             }
 
@@ -250,8 +269,6 @@ export default function GridBuilder({
                 showMessage("INFO", dialogMessages.play.lastWaypointOnly);
                 return;
             }
-
-            showMessage("INFO", dialogMessages.play.movedTo(position));
             return;
         }
 
@@ -305,8 +322,7 @@ export default function GridBuilder({
         }));
 
 
-        setSolution(null);
-        setMetrics(null);
+        clearDerivedSolverState();
     }
 
 
@@ -371,8 +387,7 @@ export default function GridBuilder({
         }));
 
 
-        setSolution(null);
-        setMetrics(null);
+        clearDerivedSolverState();
     }
 
 
@@ -382,118 +397,25 @@ export default function GridBuilder({
      * Solver
      * ============================
      */
-    async function handleSolve() {
-
-        if (board.waypoints.length < 2) {
-
-            showMessage(
-                "WARNING",
-                dialogMessages.solve.addWaypointsFirst
-            );
-
-            return;
-        }
-
-
+    async function requestSolverResult() {
         try {
 
             setIsSolving(true);
-
 
             const response = await solvePuzzle(board);
 
             setMetrics(response.metrics ?? null);
 
-
-            if (response.success && response.solutionPath) {
-
-                setSolution(response.solutionPath);
-
-                showMessage(
-                    response.solverUsed === "RLSolver" ? "SUCCESS" : "WARNING",
-                    response.message
-                );
-
-
-                return;
-            }
-
-
-            if (response.success) {
-
-                setSolution(null);
-
-                showMessage(
-                    "ERROR",
-                    response.message
-                );
-
-                return;
-            }
-
-
-            setSolution(null);
-
-
-            switch (response.status) {
-
-                case "UNSOLVABLE":
-
-                    showMessage(
-                        "WARNING",
-                        response.message
-                    );
-
-                    break;
-
-
-                case "TIMEOUT":
-
-                    showMessage(
-                        "ERROR",
-                        response.message
-                    );
-
-                    break;
-
-
-                case "FAILED":
-
-                    showMessage(
-                        "ERROR",
-                        response.message
-                    );
-
-                    break;
-
-
-                default:
-
-                    showMessage(
-                        "ERROR",
-                        response.message
-                    );
-
-                    break;
-            }
-
-
+            return response;
         }
 
         catch (error) {
 
             console.error(error);
 
-
-            setSolution(null);
             setMetrics(null);
 
-
-            showMessage(
-                "ERROR",
-                dialogMessages.solve.requestFailed
-            );
-
+            return null;
         }
 
         finally {
@@ -501,12 +423,292 @@ export default function GridBuilder({
             setIsSolving(false);
 
         }
-
     }
 
 
+    function handleSolveResponse(response: SolverResponse | null) {
+
+        if (!response) {
+            setSolution(null);
+
+            showMessage(
+                "ERROR",
+                dialogMessages.solve.requestFailed
+            );
+
+            return;
+        }
+
+
+        if (response.success && response.solutionPath) {
+
+            setSolution(response.solutionPath);
+            setPlaySolution(response.solutionPath);
+            setHintPath(null);
+
+            showMessage(
+                response.solverUsed === "RLSolver" ? "SUCCESS" : "WARNING",
+                response.message
+            );
+
+            return;
+        }
+
+
+        if (response.success) {
+
+            setSolution(null);
+
+            showMessage(
+                "ERROR",
+                response.message
+            );
+
+            return;
+        }
+
+
+        setSolution(null);
+
+        switch (response.status) {
+
+            case "UNSOLVABLE":
+
+                showMessage(
+                    "WARNING",
+                    response.message
+                );
+
+                break;
+
+
+            case "TIMEOUT":
+
+                showMessage(
+                    "ERROR",
+                    response.message
+                );
+
+                break;
+
+
+            case "FAILED":
+
+                showMessage(
+                    "ERROR",
+                    response.message
+                );
+
+                break;
+
+
+            default:
+
+                showMessage(
+                    "ERROR",
+                    response.message
+                );
+
+                break;
+        }
+    }
+
+
+    function handlePlayPrecheckResponse(response: SolverResponse | null) {
+
+        setSolution(null);
+        setHintPath(null);
+
+        if (response?.success && response.solutionPath) {
+            setPlaySolution(response.solutionPath);
+
+            showMessage(
+                "INFO",
+                dialogMessages.mode.playEnabled
+            );
+
+            return;
+        }
+
+        setPlaySolution(null);
+
+        showMessage(
+            "WARNING",
+            dialogMessages.mode.playEnabledWithoutGuarantee
+        );
+    }
+
+
+    async function handleSolve(flow: SolveFlow) {
+
+        if (flow === "SOLVE" && board.waypoints.length < 2) {
+
+            showMessage(
+                "WARNING",
+                dialogMessages.solve.addWaypointsFirst
+            );
+
+            return null;
+        }
+
+        const response = await requestSolverResult();
+
+        if (flow === "SOLVE") {
+            handleSolveResponse(response);
+        }
+
+        if (flow === "PLAY_PRECHECK") {
+            handlePlayPrecheckResponse(response);
+        }
+
+        return response;
+    }
+
+
+    function getHintPathToNextWaypoint(solutionPath: SolutionPath) {
+        const nextWaypoint = getExpectedNextWaypoint(playModeState, board);
+        const startCell = board.waypoints[0] ?? null;
+
+        if (!startCell || !nextWaypoint) {
+            return null;
+        }
+
+        const normalizedSolution = solutionPath.length > 0
+            ? (
+                solutionPath[0][0] === startCell[0] && solutionPath[0][1] === startCell[1]
+                    ? solutionPath
+                    : [startCell, ...solutionPath]
+            )
+            : solutionPath;
+
+        if (normalizedSolution.length === 0) {
+            return null;
+        }
+
+        const startIndex = normalizedSolution.findIndex(
+            ([row, col]) => row === startCell[0] && col === startCell[1]
+        );
+
+        if (startIndex < 0) {
+            return null;
+        }
+
+        const targetIndex = normalizedSolution.findIndex(
+            ([row, col], index) =>
+                index >= startIndex &&
+                row === nextWaypoint[0] &&
+                col === nextWaypoint[1]
+        );
+
+        if (targetIndex <= startIndex) {
+            return null;
+        }
+
+        return normalizedSolution.slice(startIndex, targetIndex + 1);
+    }
+
+
+    function getNormalizedSolutionPath(solutionPath: SolutionPath) {
+        const startCell = board.waypoints[0] ?? null;
+
+        if (!startCell || solutionPath.length === 0) {
+            return solutionPath;
+        }
+
+        if (solutionPath[0][0] === startCell[0] && solutionPath[0][1] === startCell[1]) {
+            return solutionPath;
+        }
+
+        return [startCell, ...solutionPath];
+    }
+
+
+    async function handleHint() {
+        if (viewMode !== "PLAY") {
+            showMessage("WARNING", dialogMessages.play.switchToPlayFirst);
+            return;
+        }
+
+        let availableSolution = playSolution;
+
+        if (!availableSolution) {
+            const response = await handleSolve("HINT_RETRY");
+
+            if (response?.success && response.solutionPath) {
+                availableSolution = response.solutionPath;
+                setPlaySolution(response.solutionPath);
+            }
+        }
+
+        if (!availableSolution) {
+            setHintPath(null);
+            showMessage("WARNING", dialogMessages.play.unableToSolveForHint);
+            return;
+        }
+
+        const nextHintPath = getHintPathToNextWaypoint(availableSolution);
+
+        if (!nextHintPath || nextHintPath.length < 2) {
+            setHintPath(null);
+            showMessage("WARNING", dialogMessages.play.hintUnavailableForCurrentPath);
+            return;
+        }
+
+        setHintPath(nextHintPath);
+        setHintPathVersion((previous) => previous + 1);
+        showMessage("INFO", dialogMessages.play.hintPathShown);
+    }
+
+
+    async function handleShowSolutionInPlay() {
+        let availableSolution = playSolution;
+
+        if (!availableSolution) {
+            const response = await handleSolve("HINT_RETRY");
+
+            if (response?.success && response.solutionPath) {
+                availableSolution = response.solutionPath;
+                setPlaySolution(response.solutionPath);
+            }
+        }
+
+        if (!availableSolution) {
+            setHintPath(null);
+            showMessage("WARNING", dialogMessages.play.unableToSolveForHint);
+            return;
+        }
+
+        setHintPath(getNormalizedSolutionPath(availableSolution));
+        setHintPathVersion((previous) => previous + 1);
+    }
+
+
+    async function handleSolveClick() {
+        if (viewMode === "PLAY") {
+            await handleShowSolutionInPlay();
+            return;
+        }
+
+        await handleSolve("SOLVE");
+    }
+
+
+    async function handlePlayModeEnter() {
+        setEditMode("NUMBERS");
+        await handleSolve("PLAY_PRECHECK");
+    }
+
+
+    function handleClearPlayPath() {
+        setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
+        setHintPath(null);
+    }
+
 
     function handleReset() {
+
+        setViewMode("BUILD");
+        setEditMode("NUMBERS");
 
         setBoard(previous => ({
             boardSize: previous.boardSize,
@@ -514,8 +716,7 @@ export default function GridBuilder({
             walls: []
         }));
 
-        setSolution(null);
-        setMetrics(null);
+        clearDerivedSolverState();
         setPlayModeState(resetPlayModeState());
 
 
@@ -576,11 +777,10 @@ export default function GridBuilder({
     }
 
 
-    
+
     function handleSelectExample(exampleBoard: BoardConfig, name: string) {
         setBoard(exampleBoard);
-        setSolution(null);
-        setMetrics(null);
+        clearDerivedSolverState();
         setPlayModeState(resetPlayModeState(exampleBoard.waypoints[0] ?? null));
 
         showMessage(
@@ -590,45 +790,25 @@ export default function GridBuilder({
     }
 
 
-    function handleHint() {
-        if (viewMode !== "PLAY") {
-            showMessage("WARNING", dialogMessages.play.switchToPlayFirst);
-            return;
-        }
-
-        const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
-        const suggestedPosition = getPlayHintPosition(solution, playModeState, board);
-
-        if (!currentPosition || !suggestedPosition) {
-            showMessage("WARNING", dialogMessages.play.hintLocked);
-            return;
-        }
-
-        if (suggestedPosition[0] === currentPosition[0] && suggestedPosition[1] === currentPosition[1]) {
-            showMessage("INFO", dialogMessages.play.hintAlreadyHere);
-            return;
-        }
-
-        if (!isValidGameMove(currentPosition, suggestedPosition, board)) {
-            showMessage("WARNING", dialogMessages.play.hintBlocked);
-            return;
-        }
-
-        setPlayModeState((previous) => appendVisitedCell(previous, suggestedPosition));
-        showMessage("INFO", dialogMessages.play.hintApplied(suggestedPosition));
-    }
-
     function handleModeChange(mode: EditMode) {
         setEditMode(mode);
+        setPlaySolution(null);
+        setHintPath(null);
         setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
     }
 
-    function handleViewModeChange(mode: ViewMode) {
+    async function handleViewModeChange(mode: ViewMode) {
+        if (mode === viewMode) {
+            return;
+        }
+
         setViewMode(mode);
+        setHintPath(null);
 
         if (mode === "PLAY") {
+            setEditMode("NUMBERS");
             setPlayModeState(createPlayModeState(board.waypoints[0] ?? null));
-            showMessage("INFO", dialogMessages.mode.playEnabled);
+            await handlePlayModeEnter();
             return;
         }
 
@@ -642,6 +822,12 @@ export default function GridBuilder({
         }
 
         const handleKeyDown = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+                event.preventDefault();
+                setPlayModeState((previous) => undoVisitedCell(previous));
+                return;
+            }
+
             const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
 
             if (!currentPosition) {
@@ -735,11 +921,13 @@ export default function GridBuilder({
             <div className="order-3 lg:order-1 lg:col-start-1">
                 <Grid
                     board={board}
-                    solution={solution}
+                    solution={viewMode === "BUILD" ? solution : null}
                     editMode={editMode}
                     playerPath={playModeState.visitedCells}
                     activePosition={getActivePosition(playModeState, board.waypoints[0] ?? null)}
-                    hintPosition={getPlayHintPosition(solution, playModeState, board)}
+                    hintPosition={null}
+                    hintPath={hintPath}
+                    hintPathVersion={hintPathVersion}
                     isPlayMode={viewMode === "PLAY"}
                     pathShakeVersion={pathShakeVersion}
                     onCellClick={handleCellClick}
@@ -757,7 +945,7 @@ export default function GridBuilder({
 
 
             {/* --- RIGHT COLUMN (Desktop Wrapper) --- */}
-            
+
             <div className="contents lg:flex lg:flex-col lg:gap-4 lg:col-start-2 lg:row-span-2 lg:order-1">
 
                 {/* Controls */}
@@ -770,9 +958,9 @@ export default function GridBuilder({
                         onGridSizeChange={handleGridSizeChange}
                         onEditModeChange={handleModeChange}
                         onHint={handleHint}
+                        onClearSolution={handleClearPlayPath}
                         onUndo={() => {
                             setPlayModeState((previous) => undoVisitedCell(previous));
-                            showMessage("INFO", "Last move undone");
                         }}
                     />
                 </div>
@@ -786,9 +974,10 @@ export default function GridBuilder({
                 <div className="order-4 lg:order-3">
                     <ActionPanel
                         canSolve={board.waypoints.length >= 2}
+                        canPlay={board.waypoints.length >= 2}
                         isSolving={isSolving}
                         viewMode={viewMode}
-                        onSolve={handleSolve}
+                        onSolve={handleSolveClick}
                         onViewModeChange={handleViewModeChange}
                         onReset={handleReset}
                         onShare={handleShare}
