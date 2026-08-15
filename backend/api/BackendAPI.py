@@ -223,8 +223,12 @@ class BackendAPI:
         # Pull best-effort warnings the extractor attached (e.g. low-confidence waypoint
         # numbering) out of the dict before it feeds the interpreter / PuzzleRequest, which
         # only expect board fields.
+        # The detector emits structured warnings ({code, message, cell}); older shapes
+        # (bare strings) are still accepted so the endpoint never 500s on a warning. The
+        # code is the discriminator the frontend switches on, so it must reflect what
+        # actually went wrong rather than being stamped with one constant.
         raw_warnings = board_dict.pop("_warnings", []) or []
-        import_warnings = [ImportWarning(code="WAYPOINT_ORDER_UNCERTAIN",message=str(w)) for w in raw_warnings]
+        import_warnings = [self._to_import_warning(w) for w in raw_warnings]
 
         # Reuse the solve-path front half: dict -> Board -> semantic validation.
         # buildBoard accepts a dict, so the extractor output feeds it directly.
@@ -239,6 +243,22 @@ class BackendAPI:
             errors=result.errors,
             warnings=import_warnings,
         )
+
+    @staticmethod
+    def _to_import_warning(raw: object) -> ImportWarning:
+        """Normalise one extractor warning into an ImportWarning.
+
+        Accepts the structured dict the detector now produces and degrades gracefully to a
+        generic code for any legacy string, so a warning can never turn a successful import
+        into a 500.
+        """
+        if isinstance(raw, dict):
+            return ImportWarning(
+                code=str(raw.get("code") or "IMPORT_WARNING"),
+                message=str(raw.get("message") or ""),
+                cell=raw.get("cell"),
+            )
+        return ImportWarning(code="IMPORT_WARNING", message=str(raw), cell=None)
 
     def healthCheck(self) -> HealthStatus:
         """GET /api/health — cheap in-process liveness/readiness probe (§3.2.1).

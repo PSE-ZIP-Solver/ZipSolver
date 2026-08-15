@@ -19,6 +19,9 @@ class SolverResponse(BaseModel):
     status: SolverStatus
     success: bool
     solution_path: list[Coordinate] | None = Field(default=None, alias="solutionPath")
-    solver_used: str | None = Field(default=None, alias="solverUsed")  # "RL" | "DFS" | None
+    # Emitted by SolverController as the concrete class name: "RLSolver" |
+    # "AlgorithmicSolver". Supersedes the design doc's "RL" | "DFS" (§5.5.2); the
+    # frontend's SolverUsedType union already matches these values.
+    solver_used: str | None = Field(default=None, alias="solverUsed")
     message: str = ""
     metrics: SolverMetrics

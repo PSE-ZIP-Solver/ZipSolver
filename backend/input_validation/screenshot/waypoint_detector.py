@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from backend.input_validation.screenshot.errors import ScreenshotError
 from backend.input_validation.screenshot.errors import UnreadableImageError
@@ -68,7 +68,7 @@ class WaypointDetector:
         Returns:
             List[List[int]]: [x, y] coordinates in visit order (index 0 == waypoint 1).
         """
-        self.last_warnings: List[str] = []
+        self.last_warnings: List[Dict[str, Any]] = []
 
         if image_data is None or image_data.size == 0:
             raise UnreadableImageError("Image data cannot be None or empty.")
@@ -80,7 +80,15 @@ class WaypointDetector:
         marked_cells: List[Tuple[int, int]] = []          # every cell that HAS a marker
         numeral_to_cell: Dict[int, Tuple[int, int]] = {}  # confidently-read numerals
 
-        if disc_cells:
+        # One flag drives both decisions below. Previously the branch used truthiness
+        # (`if disc_cells:`) while the "trust the position" guard used identity
+        # (`disc_cells is not None`). An EMPTY dict — what GridLocalizer returns when it
+        # finds no discs at all — satisfied the second but not the first, so every cell on
+        # the board was scanned AND every miss was promoted to a detected marker. A
+        # board-less screenshot came back as n^2 phantom waypoints.
+        has_disc_positions = bool(disc_cells)
+
+        if has_disc_positions:
             iterator = [
                 (cell, self._disc_bbox(center, cell_bounds.get(cell)))
                 for cell, center in disc_cells.items()
@@ -90,7 +98,7 @@ class WaypointDetector:
 
         for (grid_x, grid_y), bbox in iterator:
             raw = self._detect_marker_and_read(image_data, bbox, theme)
-            if disc_cells is not None and raw is None:
+            if has_disc_positions and raw is None:
                 # Position is trusted (came from global detection); only the number failed.
                 raw = "?"
             if raw is None:
@@ -101,18 +109,26 @@ class WaypointDetector:
             if numeral is None:
                 # A detected-but-unreadable marker ('?') is not fatal under best-effort:
                 # the position still counts, we just couldn't read its number.
-                self.last_warnings.append(
-                    f"Marker at cell ({grid_x}, {grid_y}) could not be read; "
-                    "using detected order."
-                )
+                self.last_warnings.append({
+                    "code": "WAYPOINT_NUMBER_UNREADABLE",
+                    "message": (
+                        f"Marker at cell ({grid_x}, {grid_y}) could not be read; "
+                        "using detected order."
+                    ),
+                    "cell": [int(grid_x), int(grid_y)],
+                })
                 continue
 
             if numeral in numeral_to_cell:
                 # Duplicate read -> low confidence in numbering, not a fatal error.
-                self.last_warnings.append(
-                    f"Waypoint number {numeral} was read more than once; "
-                    "numbering may be wrong — please verify the order."
-                )
+                self.last_warnings.append({
+                    "code": "WAYPOINT_NUMBER_DUPLICATE",
+                    "message": (
+                        f"Waypoint number {numeral} was read more than once; "
+                        "numbering may be wrong — please verify the order."
+                    ),
+                    "cell": [int(grid_x), int(grid_y)],
+                })
                 continue
             numeral_to_cell[numeral] = (int(grid_x), int(grid_y))
 
@@ -138,10 +154,14 @@ class WaypointDetector:
         # waypoint POSITIONS (which are reliable) and gives a stable, if possibly-wrong,
         # visit order for the user to correct.
         if not self.last_warnings:
-            self.last_warnings.append(
-                "Waypoint numbers could not be read confidently; "
-                "order was inferred — please verify."
-            )
+            self.last_warnings.append({
+                "code": "WAYPOINT_ORDER_INFERRED",
+                "message": (
+                    "Waypoint numbers could not be read confidently; "
+                    "order was inferred — please verify."
+                ),
+                "cell": None,
+            })
         ordered = sorted(marked_cells, key=lambda c: (c[1], c[0]))  # row-major
         return [[x, y] for (x, y) in ordered]
 

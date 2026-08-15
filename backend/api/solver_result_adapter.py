@@ -33,6 +33,25 @@ def _get(obj: Any, *names: str, default: Any = None) -> Any:
     return default
 
 
+def _coerce_status(raw: Any) -> SolverStatus | None:
+    """Normalise any solver-side status onto the API enum.
+
+    The solver package defines its own ``SolverStatus(Enum)``, which is a *different*
+    object from the API's ``SolverStatus(str, Enum)`` — comparing the two directly is
+    always False, and handing the internal member to Pydantic fails validation. Match on
+    the underlying value instead. Returns None when no usable status was supplied, which
+    tells the caller to fall back to the success bool.
+    """
+    if raw is None:
+        return None
+    if isinstance(raw, SolverStatus):
+        return raw
+    try:
+        return SolverStatus(getattr(raw, "value", raw))
+    except ValueError:
+        return None
+
+
 def _coerce_metrics(raw: Any) -> SolverMetrics:
     """Map onto SolverMetrics.
 
@@ -43,6 +62,11 @@ def _coerce_metrics(raw: Any) -> SolverMetrics:
     """
     if isinstance(raw, SolverMetrics):
         return raw
+    if raw is None:
+        # A missing metrics object is an anticipated condition (the controller's
+        # internal-error branch), not a contract violation. Report explicit zeros rather
+        # than letting `_get` silently produce the same values by accident.
+        return SolverMetrics(runtimeMs=0, steps=0, attempts=1)
     runtime = _get(raw, "runtimeMs", "runtime_ms", "getRuntimeMs", default=0)
     steps = _get(raw, "steps", "getSteps", default=0)
     attempts = _get(raw, "attempts", "getAttempts", default=1)
@@ -64,7 +88,7 @@ def to_solver_response(result: Any) -> SolverResponse:
 
     # Prefer an explicit status if the object already has one; otherwise derive it from
     # the success bool (the controller-collapse case).
-    status = _get(result, "status", "getStatus")
+    status = _coerce_status(_get(result, "status", "getStatus"))
     if status is not None:
         # Status is authoritative — derive success from it so the two can't disagree.
         success = status == SolverStatus.SOLVED
