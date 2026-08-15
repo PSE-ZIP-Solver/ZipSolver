@@ -387,6 +387,8 @@ export default function Grid({
 				style={{
 					width: gridPixels,
 					height: gridPixels,
+					touchAction: isPlayMode ? "none" : "auto",
+					overscrollBehavior: isPlayMode ? "contain" : "auto",
 				}}
 			>
 				<canvas
