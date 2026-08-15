@@ -2,9 +2,9 @@ export const dialogMessages = {
     welcome: "Welcome to ZipSolver! Build a puzzle or try some of our examples!",
 
     mode: {
-        playEnabled: "Play mode enabled. Give it a try!",
+        playEnabled: "Play mode: Arrows or tap to move, Ctrl+Z or button to undo, take a hint if you get stuck!",
         playEnabledWithoutGuarantee: "Play mode enabled, but we could not verify that this puzzle is solvable",
-        buildEnabled: "Build mode enabled. Continue editing your puzzle",
+        buildEnabled: "Build mode: Continue editing your puzzle!",
     },
 
     play: {
