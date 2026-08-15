@@ -3,16 +3,12 @@ import logo from "../assets/logoNoBg.png";
 interface NavbarProps {
   onOpenHelp: () => void;
 
-  advancedMode: boolean;
-  onToggleAdvanced: () => void;
   isDarkTheme: boolean;
   onToggleTheme: () => void;
 }
 
 export default function Navbar({
   onOpenHelp,
-  advancedMode,
-  onToggleAdvanced,
   isDarkTheme,
   onToggleTheme,
 }: NavbarProps) {
@@ -86,33 +82,24 @@ export default function Navbar({
                     "
         >
 
-          {/* Advanced */}
-
+          {/* Advanced toggle disabled by product decision.
           <button
-            onClick={onToggleAdvanced}
-            className={`
+            className="
                             px-3
                             py-2
                             rounded-lg
                             font-semibold
                             transition-colors
                             ui-transition
-
-                            ${advancedMode
-                ? `
-                                        bg-primary
-                                        text-on-primary
-                                    `
-                : `
-                                        text-text
-                                        hover:bg-surface
-                                    `
-              }
-                        `}
+                            text-text
+                            hover:bg-surface
+                        "
             aria-label="Toggle advanced mode"
+            disabled
           >
             ⚙️ Advanced
           </button>
+          */}
 
 
 

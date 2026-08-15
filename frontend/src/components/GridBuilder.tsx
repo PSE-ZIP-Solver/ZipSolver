@@ -57,15 +57,9 @@ import {
 } from "../utils/playMode";
 
 
-interface GridBuilderProps {
-    advancedMode: boolean;
-}
-
 type SolveFlow = "SOLVE" | "PLAY_PRECHECK" | "HINT_RETRY";
 
-export default function GridBuilder({
-    advancedMode
-}: GridBuilderProps) {
+export default function GridBuilder() {
 
     /*
      * Current puzzle configuration
@@ -985,11 +979,9 @@ export default function GridBuilder({
                 </div>
 
                 {/* Metrics */}
-                {advancedMode && (
-                    <div className="order-5 lg:order-4">
-                        <MetricsPanel metrics={metrics} />
-                    </div>
-                )}
+                <div className="order-5 lg:order-4">
+                    <MetricsPanel metrics={metrics} />
+                </div>
 
             </div>
 

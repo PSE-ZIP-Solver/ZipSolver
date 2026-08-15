@@ -7,7 +7,6 @@ import GridBuilder from './components/GridBuilder.tsx';
 
 export const App: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [advancedMode, setAdvancedMode] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(() => {
     if (typeof document === "undefined") {
       return false;
@@ -38,24 +37,12 @@ export const App: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-transparent text-text">
       <Navbar
         onOpenHelp={() => setIsHelpOpen(true)}
-        advancedMode={
-          advancedMode
-        }
         isDarkTheme={isDarkTheme}
-        onToggleAdvanced={() =>
-          setAdvancedMode(
-            previous => !previous
-          )
-        }
         onToggleTheme={() => setIsDarkTheme((previous) => !previous)}
       />
 
       <main className="flex-1 w-full px-4 py-6 sm:px-6 lg:px-8">
-        <GridBuilder
-          advancedMode={
-            advancedMode
-          }
-        />
+        <GridBuilder />
       </main>
 
       <Footer />
