@@ -58,7 +58,8 @@ export default function MetricsPanel({
 
 
 	const entries =
-		Object.entries(displayedMetrics);
+		Object.entries(displayedMetrics)
+			.filter(([key]) => key !== "attempts");
 
 
 
