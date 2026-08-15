@@ -23,6 +23,10 @@ export function appendVisitedCell(state: PlayModeState, cell: Position): PlayMod
 }
 
 export function undoVisitedCell(state: PlayModeState): PlayModeState {
+    if (state.visitedCells.length <= 1) {
+        return state;
+    }
+
     return {
         ...state,
         visitedCells: state.visitedCells.slice(0, -1),

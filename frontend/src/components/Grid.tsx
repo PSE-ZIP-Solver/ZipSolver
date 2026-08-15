@@ -26,6 +26,8 @@ interface GridProps {
 	playerPath: Position[];
 	activePosition: Position | null;
 	hintPosition: Position | null;
+	hintPath: SolutionPath | null;
+	hintPathVersion?: number;
 	isPlayMode: boolean;
 	onCellClick: (position: Position) => void;
 	onWallClick: (wall: Wall) => void;
@@ -61,6 +63,8 @@ export default function Grid({
 	playerPath,
 	activePosition,
 	hintPosition,
+	hintPath,
+	hintPathVersion = 0,
 	isPlayMode,
 	onCellClick,
 	onWallClick,
@@ -69,6 +73,7 @@ export default function Grid({
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	const hintPathCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const playerPathCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
 	const [containerWidth, setContainerWidth] = useState(0);
@@ -222,6 +227,80 @@ export default function Grid({
 	}, [cellSize, gridPixels, solutionPathToRender, stride]);
 
 	useEffect(() => {
+		const canvas = hintPathCanvasRef.current;
+		if (!canvas || !gridPixels) return;
+
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = Math.round(gridPixels * dpr);
+		canvas.height = Math.round(gridPixels * dpr);
+		canvas.style.width = `${gridPixels}px`;
+		canvas.style.height = `${gridPixels}px`;
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, gridPixels, gridPixels);
+
+		if (!hintPath || hintPath.length < 2) {
+			return;
+		}
+
+		const duration = 650;
+		let raf = 0;
+		const startedAt = performance.now();
+
+		const draw = (now: number) => {
+			const animationProgress = Math.min(1, (now - startedAt) / duration);
+			const visibleSegments = animationProgress * (hintPath.length - 1);
+
+			ctx.clearRect(0, 0, gridPixels, gridPixels);
+
+			ctx.lineWidth = Math.max(2, cellSize * 0.15);
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.shadowColor = "rgba(52, 211, 153, 0.30)";
+			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
+
+			for (let i = 1; i < hintPath.length; i += 1) {
+				if (i > Math.ceil(visibleSegments)) break;
+
+				const previous = hintPath[i - 1];
+				const current = hintPath[i];
+				const segmentProgress = Math.max(
+					0,
+					Math.min(1, visibleSegments - (i - 1))
+				);
+
+				const prevX = previous[1] * stride + cellSize / 2;
+				const prevY = previous[0] * stride + cellSize / 2;
+				const currX = current[1] * stride + cellSize / 2;
+				const currY = current[0] * stride + cellSize / 2;
+
+				const currentX = prevX + (currX - prevX) * segmentProgress;
+				const currentY = prevY + (currY - prevY) * segmentProgress;
+
+				const tintProgress = i / hintPath.length;
+				const hue = 156 - tintProgress * 16;
+				const lightness = 58 - tintProgress * 8;
+
+				ctx.beginPath();
+				ctx.moveTo(prevX, prevY);
+				ctx.lineTo(currentX, currentY);
+				ctx.strokeStyle = `hsl(${hue}, 78%, ${lightness}%)`;
+				ctx.stroke();
+			}
+
+			if (animationProgress < 1) {
+				raf = requestAnimationFrame(draw);
+			}
+		};
+
+		raf = requestAnimationFrame(draw);
+
+		return () => cancelAnimationFrame(raf);
+	}, [cellSize, gridPixels, hintPath, hintPathVersion, stride]);
+
+	useEffect(() => {
 		const canvas = playerPathCanvasRef.current;
 		if (!canvas || !gridPixels) return;
 
@@ -274,9 +353,13 @@ export default function Grid({
 					ref={canvasRef}
 					className="pointer-events-none absolute inset-0 z-20"
 				/>
+				<canvas
+					ref={hintPathCanvasRef}
+					className="pointer-events-none absolute inset-0 z-30"
+				/>
 				<div
 					key={pathShakeVersion}
-					className="pointer-events-none absolute inset-0 z-20"
+					className="pointer-events-none absolute inset-0 z-40"
 					style={{ animation: pathShakeVersion > 0 ? "zip-path-shake 220ms ease-in-out" : undefined }}
 				>
 					<canvas
@@ -299,16 +382,16 @@ export default function Grid({
 						const key = `${row},${col}`;
 						const isHovered = hoveredCell === index;
 
-							const isActive = activeCellKey === key;
-							const isHint = hintCellKey === key;
-							const rightWallExists =
-								col < board.boardSize - 1
-									? wallSet.has(getWallKey([row, col], [row, col + 1]))
-									: false;
-							const bottomWallExists =
-								row < board.boardSize - 1
-									? wallSet.has(getWallKey([row, col], [row + 1, col]))
-									: false;
+						const isActive = activeCellKey === key;
+						const isHint = hintCellKey === key;
+						const rightWallExists =
+							col < board.boardSize - 1
+								? wallSet.has(getWallKey([row, col], [row, col + 1]))
+								: false;
+						const bottomWallExists =
+							row < board.boardSize - 1
+								? wallSet.has(getWallKey([row, col], [row + 1, col]))
+								: false;
 						return (
 							<div
 								key={index}
@@ -317,9 +400,8 @@ export default function Grid({
 									"transition-colors duration-150",
 									editMode === "WALLS"
 										? "cursor-default"
-										: "cursor-pointer"
-									,
-										(editMode === "NUMBERS" && isHovered)
+										: "cursor-pointer",
+									(editMode === "NUMBERS" && isHovered)
 										? "grid-cell--hovered"
 										: ""
 								].join(" ")}
@@ -361,7 +443,7 @@ export default function Grid({
 								)}
 
 								{isHint && !isActive && (
-									<div className="absolute inset-0 rounded-xl border border-dashed border-primary/60 bg-primary/10" />
+									<div className="absolute inset-0 rounded-xl border border-dashed border-emerald-500/70 bg-emerald-500/10" />
 								)}
 
 								{editMode === "WALLS" && col < board.boardSize - 1 && !rightWallExists && (
@@ -414,7 +496,7 @@ export default function Grid({
 					})}
 				</div>
 
-				<div className="pointer-events-none absolute inset-0 z-40">
+				<div className="pointer-events-none absolute inset-0 z-50">
 					{Array.from({ length: board.boardSize * board.boardSize }).map((_, index) => {
 						const row = Math.floor(index / board.boardSize);
 						const col = index % board.boardSize;
@@ -449,7 +531,7 @@ export default function Grid({
 					})}
 				</div>
 
-				<div className="pointer-events-none absolute inset-0 z-30">
+				<div className="pointer-events-none absolute inset-0 z-40">
 					{board.walls.map((wall, index) => {
 						const [aRow, aCol] = wall.neighborA;
 						const [bRow, bCol] = wall.neighborB;

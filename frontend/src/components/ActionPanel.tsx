@@ -6,7 +6,7 @@ interface ActionPanelProps {
   viewMode: ViewMode;
 
   onSolve: () => void;
-  onViewModeChange: (mode: ViewMode) => void;
+  onViewModeChange: (mode: ViewMode) => void | Promise<void>;
   onReset: () => void;
   onShare: () => void;
 }
@@ -65,12 +65,15 @@ export default function ActionPanel({
               <button
                 key={mode}
                 type="button"
-                onClick={() => onViewModeChange(mode)}
+                onClick={() => {
+                  void onViewModeChange(mode);
+                }}
+                disabled={isSolving}
                 className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   isActive
                     ? "bg-primary text-white shadow-sm"
                     : "text-text hover:bg-primary/10"
-                }`}
+                } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {mode === "BUILD" ? "Build" : "Play"}
               </button>

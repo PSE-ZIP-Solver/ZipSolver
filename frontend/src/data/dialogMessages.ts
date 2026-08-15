@@ -3,6 +3,7 @@ export const dialogMessages = {
 
     mode: {
         playEnabled: "Play mode enabled. Give it a try!",
+        playEnabledWithoutGuarantee: "Play mode enabled, but we could not verify that this puzzle is solvable",
         buildEnabled: "Build mode enabled. Continue editing your puzzle",
     },
 
@@ -17,10 +18,9 @@ export const dialogMessages = {
         lastWaypointOnly: "You reached the last waypoint, but you still need to visit every cell",
         movedTo: (position: [number, number]) => `Moved to (${position[0] + 1}, ${position[1] + 1})`,
         switchToPlayFirst: "Switch to Play mode first",
-        hintLocked: "Solve the puzzle to unlock hints",
-        hintAlreadyHere: "You are already on the suggested cell",
-        hintBlocked: "The hinted move is blocked by a wall",
-        hintApplied: (position: [number, number]) => `Hint applied to (${position[0] + 1}, ${position[1] + 1})`,
+        hintPathShown: "Hint path to the next waypoint has been highlighted",
+        hintUnavailableForCurrentPath: "Hint is not available for your current path",
+        unableToSolveForHint: "The system cannot solve this puzzle, so hints are unavailable",
     },
 
     solve: {
