@@ -294,6 +294,11 @@ body {
   box-shadow: 0 14px 28px var(--color-waypoint-shadow);
 }
 
+.grid-waypoint--next {
+  outline: 2px solid color-mix(in oklab, var(--color-board-cell) 68%, var(--color-waypoint-start));
+  outline-offset: 2px;
+}
+
 .grid-wall {
   background: linear-gradient(180deg, var(--color-wall-start), var(--color-board-wall));
   box-shadow: 0 0 14px var(--color-wall-shadow);
@@ -403,5 +408,21 @@ body {
   }
   80% {
     transform: translateX(3px);
+  }
+}
+
+@keyframes zip-waypoint-next-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 14px 28px var(--color-waypoint-shadow),
+      0 0 0 0 rgba(255, 255, 255, 0.32);
+  }
+
+  50% {
+    box-shadow:
+      0 14px 28px var(--color-waypoint-shadow),
+      0 0 0 8px rgba(255, 255, 255, 0.06),
+      0 0 24px color-mix(in oklab, var(--color-waypoint-start) 72%, white 28%);
   }
 }

@@ -25,6 +25,7 @@ interface GridProps {
 	editMode: EditMode;
 	playerPath: Position[];
 	activePosition: Position | null;
+	nextWaypoint: Position | null;
 	hintPosition: Position | null;
 	hintPath: SolutionPath | null;
 	hintPathVersion?: number;
@@ -82,6 +83,7 @@ export default function Grid({
 	editMode,
 	playerPath,
 	activePosition,
+	nextWaypoint,
 	hintPosition,
 	hintPath,
 	hintPathVersion = 0,
@@ -140,6 +142,7 @@ export default function Grid({
 	}, [board.waypoints]);
 
 	const activeCellKey = activePosition ? `${activePosition[0]},${activePosition[1]}` : null;
+	const nextWaypointKey = nextWaypoint ? `${nextWaypoint[0]},${nextWaypoint[1]}` : null;
 	const hintCellKey = hintPosition ? `${hintPosition[0]},${hintPosition[1]}` : null;
 	const startPosition = board.waypoints[0] ?? null;
 	const pathToRender = startPosition && playerPath.length > 0
@@ -545,6 +548,7 @@ export default function Grid({
 						const key = `${row},${col}`;
 						const waypointIndex = waypointIndexByCell.get(key);
 						const isWaypoint = waypointIndex !== undefined;
+						const isNextWaypoint = isPlayMode && nextWaypointKey === key && activeCellKey !== key;
 
 						if (!isWaypoint) {
 							return null;
@@ -557,14 +561,19 @@ export default function Grid({
 						return (
 							<div
 								key={key}
-								className="grid-waypoint absolute flex items-center justify-center rounded-full text-on-primary"
+								className={[
+									"grid-waypoint absolute flex items-center justify-center rounded-full text-on-primary",
+									isNextWaypoint ? "grid-waypoint--next" : "",
+								].join(" ")}
 								style={{
 									width: markerSize,
 									height: markerSize,
 									fontSize: Math.round(cellSize * 0.28),
 									left,
 									top,
-									animation: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
+									animation: isNextWaypoint
+										? `zip-pop 220ms ease-out ${waypointIndex * 30}ms both, zip-waypoint-next-glow 1050ms ease-in-out ${220 + waypointIndex * 30}ms infinite`
+										: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
 								}}
 							>
 								{waypointIndex + 1}

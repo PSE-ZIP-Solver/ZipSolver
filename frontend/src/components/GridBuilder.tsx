@@ -59,6 +59,17 @@ import {
 
 type SolveFlow = "SOLVE" | "PLAY_PRECHECK" | "HINT_RETRY";
 
+const intermediateWaypointMessages = [
+    "Nice checkpoint!",
+    "Great momentum!",
+    "Keep it up!",
+] as const;
+
+function getRandomIntermediateWaypointMessage() {
+    const randomIndex = Math.floor(Math.random() * intermediateWaypointMessages.length);
+    return intermediateWaypointMessages[randomIndex];
+}
+
 function createEmptyBoard(size: GridSize): BoardConfig {
     return {
         boardSize: size,
@@ -272,6 +283,10 @@ export default function GridBuilder() {
                 visitedCells: [...playModeState.visitedCells, position],
             };
 
+            const reachedWaypointIndex = board.waypoints.findIndex(
+                ([row, col]) => row === position[0] && col === position[1]
+            );
+
             setPlayModeState((previous) => appendVisitedCell(previous, position));
 
             if (hasCompletedAllWaypoints(nextState, board)) {
@@ -286,6 +301,15 @@ export default function GridBuilder() {
 
             if (reachedLastWaypoint) {
                 showMessage("INFO", dialogMessages.play.lastWaypointOnly);
+                return;
+            }
+
+            const isIntermediateWaypoint =
+                reachedWaypointIndex > 0 &&
+                reachedWaypointIndex < board.waypoints.length - 1;
+
+            if (isIntermediateWaypoint) {
+                showMessage("INFO", getRandomIntermediateWaypointMessage());
                 return;
             }
             return;
@@ -901,6 +925,10 @@ export default function GridBuilder() {
 
     }
 
+    const nextWaypoint = viewMode === "PLAY"
+        ? getExpectedNextWaypoint(playModeState, board)
+        : null;
+
 
     /*
      * ============================
@@ -944,6 +972,7 @@ export default function GridBuilder() {
                     editMode={editMode}
                     playerPath={playModeState.visitedCells}
                     activePosition={getActivePosition(playModeState, board.waypoints[0] ?? null)}
+                    nextWaypoint={nextWaypoint}
                     hintPosition={null}
                     hintPath={hintPath}
                     hintPathVersion={hintPathVersion}
