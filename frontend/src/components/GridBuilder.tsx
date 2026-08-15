@@ -59,6 +59,14 @@ import {
 
 type SolveFlow = "SOLVE" | "PLAY_PRECHECK" | "HINT_RETRY";
 
+function createEmptyBoard(size: GridSize): BoardConfig {
+    return {
+        boardSize: size,
+        waypoints: [],
+        walls: [],
+    };
+}
+
 export default function GridBuilder() {
 
     /*
@@ -124,8 +132,20 @@ export default function GridBuilder() {
         useState(createPlayModeState(board.waypoints[0] ?? null));
 
 
+    const boardsBySizeRef =
+        useRef<Record<GridSize, BoardConfig>>({
+            6: createEmptyBoard(6),
+            7: createEmptyBoard(7),
+            8: createEmptyBoard(8),
+        });
+
+
     const sharedBoardLoadedRef =
         useRef(false);
+
+    useEffect(() => {
+        boardsBySizeRef.current[board.boardSize] = board;
+    }, [board]);
 
     useEffect(() => {
 
@@ -182,14 +202,17 @@ export default function GridBuilder() {
         size: GridSize
     ) {
 
-        setBoard({
-            boardSize: size,
-            waypoints: [],
-            walls: [],
-        });
+        if (size === board.boardSize)
+            return;
+
+        const cachedBoard =
+            boardsBySizeRef.current[size] ??
+            createEmptyBoard(size);
+
+        setBoard(cachedBoard);
 
         clearDerivedSolverState();
-        setPlayModeState(resetPlayModeState());
+        setPlayModeState(resetPlayModeState(cachedBoard.waypoints[0] ?? null));
     }
 
 
