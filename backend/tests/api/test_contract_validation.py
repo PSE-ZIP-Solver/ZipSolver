@@ -341,6 +341,7 @@ class TestErrorResponse:
             "INVALID_WALLS",
             "NO_BOARD_DETECTED",
             "AMBIGUOUS_BOARD",
+            "PAYLOAD_TOO_LARGE",
             "INTERNAL_ERROR",
         }
 

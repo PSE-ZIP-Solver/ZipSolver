@@ -2,6 +2,7 @@ import json
 from typing import Any, Dict, Union, cast
 
 
+from backend.input_validation.errors import BoardParseError, DuplicateWallError
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic import Position
 
@@ -32,9 +33,14 @@ class JsonInterpreter:
     """
 
     ALLOWED_BOARD_SIZES = (6, 7, 8)
-    
-    
-    # TODO remove if not used!
+
+    # Retained deliberately, not dead code. ``verifySyntax`` is the all-or-nothing gate for
+    # the *file* path — a board configuration read from disk (the reference
+    # ``board_configuration.json``, fixtures, CLI use) where a single boolean verdict is
+    # what the caller wants. The HTTP path deliberately does NOT use it: an endpoint has to
+    # report *which* rule failed as a structured 422, which a bool cannot express, so
+    # requests go through ``buildBoard`` + ``InputValidator`` instead. Two callers, two
+    # contracts, one rule set.
     @staticmethod
     def verifySyntax(file: Union[str, dict, Any]) -> bool:
         """
@@ -90,7 +96,13 @@ class JsonInterpreter:
         structured 422 rather than a blanket ValueError. Running the semantic checks here
         too would collapse those into a 400 and lose the per-error detail.
 
-        Raises ValueError only when the payload is too malformed to build a Board at all.
+        The single exception is duplicate walls: the Board's wall set is lossy, so that
+        rule is unobservable downstream and must be enforced against the ordered payload
+        list. It raises ``DuplicateWallError``, which carries the 422 INVALID_WALLS code so
+        the API still reports it as the semantic failure it is (see ``errors.py``).
+
+        Raises ``BoardParseError``/``ValueError`` when the payload is too malformed to
+        build a Board at all.
         """
         data = JsonInterpreter._load(file)
 
@@ -121,11 +133,27 @@ class JsonInterpreter:
             x, y = _point(raw)
             board.addWaypoint(Position(x, y), order)
 
+        # Duplicate walls are rejected HERE and nowhere else. Board keeps walls in a set
+        # with order-independent equality, so {A,B} and {B,A} silently collapse on insert;
+        # once that has happened InputValidator has no way to observe — let alone report —
+        # the duplicate. The ordered payload list is the last point at which the rule of
+        # §5.5.1 is checkable, so the check runs before the Board is populated.
+        seen_walls: set[frozenset[tuple[int, int]]] = set()
+
         for wall in data["walls"]:
             if not isinstance(wall, dict) or "neighborA" not in wall or "neighborB" not in wall:
                 raise ValueError("Each wall must have neighborA and neighborB.")
             ax, ay = _point(wall["neighborA"])
             bx, by = _point(wall["neighborB"])
+
+            key = frozenset({(ax, ay), (bx, by)})
+            if key in seen_walls:
+                raise DuplicateWallError(
+                    f"Duplicate wall between ({ax}, {ay}) and ({bx}, {by}). "
+                    "A wall may only be declared once, in either cell order."
+                )
+            seen_walls.add(key)
+
             board.addWall(Position(ax, ay), Position(bx, by))
 
         return board

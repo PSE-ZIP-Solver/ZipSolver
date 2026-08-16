@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Callable, Protocol, overload, Literal
+from typing import Callable, Protocol
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend.input_validation.errors import BoardParseError
+from backend.input_validation.validation_dtos import ValidationError
 from backend.puzzle_logic.board import Board
 from backend.solution_path import SolutionPath
 from backend.api.dtos.ArchitectureInfo import ArchitectureInfo
@@ -91,8 +93,29 @@ class ArchitectureUnavailableError(Exception):
     """
 
 
+# ── Payload limits (§3.2.1, "payload limits & content negotiation") ──
+# Two caps, because the two endpoints carry fundamentally different payloads. A JSON board
+# is a few hundred bytes even at 8x8 with every wall declared; anything approaching 256 KiB
+# is a mistake or an attempt to make the server do parsing work on our dime. Screenshots
+# are legitimately larger, and their own 10 MiB ceiling already lives in ImageLoader — this
+# mirrors it at the edge so the body is refused before it is buffered rather than after.
+MAX_JSON_BODY_BYTES = 256 * 1024
+MAX_UPLOAD_BODY_BYTES = 10 * 1024 * 1024
+
+#: Image types the screenshot pipeline can actually decode. Anything else is rejected at
+#: the boundary with a clear message rather than being handed to OpenCV to fail obscurely.
+ALLOWED_UPLOAD_CONTENT_TYPES = frozenset(
+    {"image/png", "image/jpeg", "image/jpg", "image/webp"}
+)
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _limit_for(path: str) -> int:
+    """Body-size ceiling for a request path."""
+    return MAX_UPLOAD_BODY_BYTES if path == "/api/import" else MAX_JSON_BODY_BYTES
 
 
 def _code_from_result(result: ValidationResult) -> ErrorCode:
@@ -134,12 +157,56 @@ class BackendAPI:
 
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=allowed_origins or ["http://localhost:5173"],  # Vite dev origin
+            # Both spellings of the Vite dev origin. Browsers treat "localhost" and
+            # "127.0.0.1" as distinct origins, and Vite prints whichever the host resolves
+            # to, so allowing only one produced CORS failures that looked like backend
+            # outages.
+            allow_origins=allowed_origins
+            or ["http://localhost:5173", "http://127.0.0.1:5173"],
             allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
+        self._register_payload_limit()
         self._register_routes()
         self._register_exception_handlers()
+
+    # ── Payload guard ──
+    def _register_payload_limit(self) -> None:
+        """Reject over-sized bodies before FastAPI parses or buffers them (§3.2.1).
+
+        Runs as middleware rather than per-route validation because by the time a route
+        handler is entered the body has already been read into memory — which is precisely
+        the cost being defended against. ``Content-Length`` is the only signal available
+        pre-read; a chunked request without it falls through to the per-endpoint limits
+        (ImageLoader's 10 MiB cap, Pydantic's own parsing), so this is a cheap first line
+        rather than the only one.
+        """
+
+        @self.app.middleware("http")
+        async def _enforce_payload_limit(request: Request, call_next):
+            declared = request.headers.get("content-length")
+            if declared is not None:
+                try:
+                    size = int(declared)
+                except ValueError:
+                    size = 0
+                limit = _limit_for(request.url.path)
+                if size > limit:
+                    body = ErrorResponse(
+                        status=413,
+                        code=ErrorCode.PAYLOAD_TOO_LARGE,
+                        message=(
+                            f"Request body is {size} bytes, which exceeds the "
+                            f"{limit}-byte limit for this endpoint."
+                        ),
+                        details=None,
+                        timestamp=_now_iso(),
+                    )
+                    return JSONResponse(
+                        status_code=413,
+                        content=body.model_dump(by_alias=True, mode="json"),
+                    )
+            return await call_next(request)
 
     # ── Routing ──
     def _register_routes(self) -> None:
@@ -185,6 +252,31 @@ class BackendAPI:
                 code=ErrorCode.INTERNAL_ERROR,
             )
 
+        # Content negotiation before any decode work. The extractor would eventually fail
+        # on a PDF or a text file, but only after buffering it and running it through
+        # OpenCV — and the resulting message ("Failed to decode image data") tells the user
+        # nothing about what they actually did wrong.
+        content_type = (file.content_type or "").split(";")[0].strip().lower()
+        if content_type not in ALLOWED_UPLOAD_CONTENT_TYPES:
+            raise ScreenshotImportError(
+                f"Unsupported upload type {content_type or 'unknown'!r}. "
+                "Upload a PNG, JPEG, or WebP screenshot.",
+                http_status=400,
+                code=ErrorCode.MALFORMED_REQUEST,
+            )
+
+        # Starlette populates ``size`` from the multipart part when it knows it. Checking
+        # it here refuses an oversized upload without materialising it; ImageLoader repeats
+        # the check on the bytes themselves for the case where size is unknown.
+        declared_size = getattr(file, "size", None)
+        if declared_size is not None and declared_size > MAX_UPLOAD_BODY_BYTES:
+            raise ScreenshotImportError(
+                f"Uploaded image is {declared_size} bytes, which exceeds the "
+                f"{MAX_UPLOAD_BODY_BYTES}-byte limit.",
+                http_status=413,
+                code=ErrorCode.PAYLOAD_TOO_LARGE,
+            )
+
         image_bytes = await file.read()
 
         # ScreenshotExtractor bubbles ValueError (bad/unreadable image, wrong board size)
@@ -223,12 +315,25 @@ class BackendAPI:
         # Pull best-effort warnings the extractor attached (e.g. low-confidence waypoint
         # numbering) out of the dict before it feeds the interpreter / PuzzleRequest, which
         # only expect board fields.
+        # The detector emits structured warnings ({code, message, cell}); older shapes
+        # (bare strings) are still accepted so the endpoint never 500s on a warning. The
+        # code is the discriminator the frontend switches on, so it must reflect what
+        # actually went wrong rather than being stamped with one constant.
         raw_warnings = board_dict.pop("_warnings", []) or []
-        import_warnings = [ImportWarning(code="WAYPOINT_ORDER_UNCERTAIN",message=str(w)) for w in raw_warnings]
+        import_warnings = [self._to_import_warning(w) for w in raw_warnings]
 
         # Reuse the solve-path front half: dict -> Board -> semantic validation.
         # buildBoard accepts a dict, so the extractor output feeds it directly.
-        board = self._interpreter.buildBoard(board_dict)
+        # The extractor emits each cell boundary once, so a duplicate wall is not reachable
+        # here today — but mapping the parse error keeps a future detector change from
+        # turning a recoverable import problem into an opaque 500.
+        try:
+            board = self._interpreter.buildBoard(board_dict)
+        except BoardParseError as exc:
+            raise ScreenshotImportError(
+                str(exc), http_status=exc.http_status, code=ErrorCode(exc.code)
+            ) from exc
+
         result = self._input_validator.validate(board)
 
         extracted = PuzzleRequest.model_validate(board_dict)
@@ -239,6 +344,22 @@ class BackendAPI:
             errors=result.errors,
             warnings=import_warnings,
         )
+
+    @staticmethod
+    def _to_import_warning(raw: object) -> ImportWarning:
+        """Normalise one extractor warning into an ImportWarning.
+
+        Accepts the structured dict the detector now produces and degrades gracefully to a
+        generic code for any legacy string, so a warning can never turn a successful import
+        into a 500.
+        """
+        if isinstance(raw, dict):
+            return ImportWarning(
+                code=str(raw.get("code") or "IMPORT_WARNING"),
+                message=str(raw.get("message") or ""),
+                cell=raw.get("cell"),
+            )
+        return ImportWarning(code="IMPORT_WARNING", message=str(raw), cell=None)
 
     def healthCheck(self) -> HealthStatus:
         """GET /api/health — cheap in-process liveness/readiness probe (§3.2.1).
@@ -260,25 +381,42 @@ class BackendAPI:
             raise ArchitectureUnavailableError()
         return self._architecture_provider.collect()
 
-    @overload
-    def _build_and_validate(self, request: PuzzleRequest, *, return_result: Literal[False] = ...) -> Board: ...
+    def _build_and_validate(self, request: PuzzleRequest) -> Board:
+        """Shared front half: JSON→Board→semantic check.
 
-    @overload
-    def _build_and_validate(self, request: PuzzleRequest, *, return_result: Literal[True]) -> ValidationResult: ...
-
-    def _build_and_validate(
-        self, request: PuzzleRequest, *, return_result: bool = False
-    ) -> Board | ValidationResult:
-        """Shared front half: JSON→Board→semantic check. Raises SemanticValidationError on
-        failure. Returns the ValidationResult for /import, the Board for /solve.
+        Raises SemanticValidationError on failure; returns the validated Board.
         """
         # buildBoard accepts a PuzzleRequest (its _load serialises Pydantic models) or a
         # dict; the import path passes a dict, solve passes the request DTO.
-        board = self._interpreter.buildBoard(request)
+        #
+        # A BoardParseError that carries a 4xx semantic code (currently only duplicate
+        # walls, which the Board's wall set makes unobservable downstream — see
+        # input_validation/errors.py) is re-raised as a SemanticValidationError so it lands
+        # in the same 422 envelope as every other semantic failure, rather than being
+        # flattened into a 400 by the generic shape handler.
+        try:
+            board = self._interpreter.buildBoard(request)
+        except BoardParseError as exc:
+            if exc.http_status == 422:
+                raise SemanticValidationError(
+                    ValidationResult(
+                        valid=False,
+                        message=str(exc),
+                        errors=[
+                            ValidationError(
+                                errorCode=exc.code,
+                                affectedField=exc.affected_field,
+                                message=str(exc),
+                            )
+                        ],
+                    )
+                ) from exc
+            raise
+
         result = self._input_validator.validate(board)
         if not result.valid:
             raise SemanticValidationError(result)
-        return result if return_result else board
+        return board
 
     # ── Exception handlers: map failures onto the ErrorResponse taxonomy (§5.5.5) ──
     def _register_exception_handlers(self) -> None:

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Coordinate = tuple[int, int]
 
@@ -25,3 +25,16 @@ class PuzzleRequest(BaseModel):
     board_size: int = Field(..., alias="boardSize", description="6 | 7 | 8")
     waypoints: list[Coordinate] = Field(..., description="ordered; index defines visit order")
     walls: list[WallDTO] = Field(default_factory=list, description="may be empty")
+
+    @field_validator("board_size", mode="before")
+    @classmethod
+    def _reject_boolean_size(cls, value: object) -> object:
+        """`bool` is a subclass of `int`, so Pydantic silently coerces JSON `true` to 1.
+
+        That turned a type error into a semantic one: the client got 422
+        "Board size 1 is not supported" instead of 400 MALFORMED_REQUEST. Rejecting the
+        bool here keeps shape errors in the shape layer, where the taxonomy puts them.
+        """
+        if isinstance(value, bool):
+            raise ValueError("boardSize must be an integer, not a boolean.")
+        return value

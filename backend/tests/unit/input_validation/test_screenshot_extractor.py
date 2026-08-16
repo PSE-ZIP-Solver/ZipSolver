@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch, call
 
 # Absolute imports reflecting the test package location
 from backend.input_validation.screenshot.screenshot_extractor import ScreenshotExtractor
+from backend.input_validation.screenshot.errors import NoBoardDetectedError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 # Assuming WaypointDetectionError is available to import
@@ -133,27 +134,44 @@ class TestScreenshotExtractor:
             "walls": fake_walls
         }
 
-    def test_empty_board_schema_formatting(self):
+    def test_board_without_waypoints_is_rejected(self):
         """
-        Edge Case / Behavior: 
-        Ensures that if detectors find nothing (empty arrays), the JSON is still correctly 
-        constructed and doesn't fail on missing dictionary keys.
+        Guardrail: a "board" with fewer than two markers is not a Zip board.
+
+        Every Zip puzzle carries at least a start and an end waypoint, so an empty
+        detection means the image contained no puzzle. Emitting a well-formed schema with
+        an empty waypoint list would let a screenshot of anything at all pass as a valid
+        import; it must fail as NO_BOARD_DETECTED instead.
         """
         fake_image = MagicMock()
         self.extractor._image_loader.load_and_preprocess.return_value = fake_image
         self.extractor._palette_detector.detect_theme.return_value = ThemeMode.DARK
         self.extractor._grid_localizer.localize_grid.return_value = (8, {})
-        
+
         self.extractor._waypoint_detector.detect_waypoints.return_value = []
         self.extractor._wall_detector.detect_walls.return_value = []
-        
-        result_json = self.extractor.extract_to_json(b"valid_empty_board")
-        
-        parsed_dict = json.loads(result_json)
+
+        with pytest.raises(NoBoardDetectedError):
+            self.extractor.extract_to_json(b"valid_empty_board")
+
+        # The wall pass must not run once the board has been rejected.
+        self.extractor._wall_detector.detect_walls.assert_not_called()
+
+    def test_minimal_two_waypoint_board_is_accepted(self):
+        """A two-marker board is the smallest legal Zip puzzle and must pass the guardrail."""
+        fake_image = MagicMock()
+        self.extractor._image_loader.load_and_preprocess.return_value = fake_image
+        self.extractor._palette_detector.detect_theme.return_value = ThemeMode.DARK
+        self.extractor._grid_localizer.localize_grid.return_value = (8, {})
+
+        self.extractor._waypoint_detector.detect_waypoints.return_value = [[0, 0], [7, 7]]
+        self.extractor._wall_detector.detect_walls.return_value = []
+
+        parsed_dict = json.loads(self.extractor.extract_to_json(b"valid_min_board"))
         assert parsed_dict == {
             "boardSize": 8,
-            "waypoints": [],
-            "walls": []
+            "waypoints": [[0, 0], [7, 7]],
+            "walls": [],
         }
 
 

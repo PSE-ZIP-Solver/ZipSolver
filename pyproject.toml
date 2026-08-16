@@ -1,8 +1,9 @@
-
 [project]
 name = "zipsolver"
 version = "0.1.0"
-requires-python = ">=3.13"
+# 3.12 is what the project is developed, tested, and demonstrated on; requiring 3.13
+# made `uv sync` refuse to resolve on the actual target interpreter.
+requires-python = ">=3.12"
 
 dependencies = [
     "fastapi>=0.139.2",

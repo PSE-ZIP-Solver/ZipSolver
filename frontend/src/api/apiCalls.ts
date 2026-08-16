@@ -2,6 +2,8 @@ import { apiFetch } from "./apiClient";
 
 import {
     type BoardConfig,
+    type GridSize,
+    type Position,
 } from "../types/board";
 
 import {
@@ -9,13 +11,29 @@ import {
 } from "../types/solver";
 
 import {
-    type ValidationResult,
+    type ImportResult,
 } from "../types/validation";
 
 
+/*
+ * Coordinate conventions (applies to both calls below):
+ *
+ * Frontend: [row, column] = [y, x]
+ * Backend:  [x, y]
+ *
+ * Every coordinate crossing the boundary is therefore swapped.
+ */
+function swap(
+    [a, b]: Position,
+): Position {
+    return [b, a];
+}
+
+
 export async function importPuzzle(
-    file: File
-): Promise<ValidationResult> {
+    file: File,
+    boardSize: GridSize,
+): Promise<ImportResult> {
 
     const formData = new FormData();
 
@@ -24,13 +42,48 @@ export async function importPuzzle(
         file
     );
 
-    return apiFetch(
+    /*
+     * board_size is authoritative.
+     *
+    * The screenshot grid size is provided manually (6/7/8), so the backend never
+    * has to infer it from pixels. Image-only size estimation is unreliable on the
+    * app's low-contrast rendering and mis-sizes even clean captures.
+     */
+    formData.append(
+        "board_size",
+        String(boardSize)
+    );
+
+    const result = await apiFetch<ImportResult>(
         "/api/import",
         {
             method: "POST",
             body: formData,
         }
     );
+
+
+    if (result.board) {
+        result.board = {
+            ...result.board,
+
+            waypoints: result.board.waypoints.map(swap),
+
+            walls: result.board.walls.map((wall) => ({
+                neighborA: swap(wall.neighborA),
+                neighborB: swap(wall.neighborB),
+            })),
+        };
+    }
+
+
+    console.log(
+        "[Frontend] Imported board:",
+        result
+    );
+
+
+    return result;
 }
 
 
@@ -38,31 +91,14 @@ export async function solvePuzzle(
     board: BoardConfig,
 ): Promise<SolverResponse> {
 
-    /*
-     * Coordinate conventions:
-     *
-     * Frontend: [row, column] = [y, x]
-     * Backend:  [x, y]
-     *
-     * Therefore coordinates have to be swapped when
-     * sending the board to the backend.
-     */
     const apiBoard = {
         ...board,
 
-        waypoints: board.waypoints.map(
-            ([row, col]) => [col, row]
-        ),
+        waypoints: board.waypoints.map(swap),
 
         walls: board.walls.map((wall) => ({
-            neighborA: [
-                wall.neighborA[1],
-                wall.neighborA[0],
-            ],
-            neighborB: [
-                wall.neighborB[1],
-                wall.neighborB[0],
-            ],
+            neighborA: swap(wall.neighborA),
+            neighborB: swap(wall.neighborB),
         })),
     };
 
@@ -78,7 +114,7 @@ export async function solvePuzzle(
     );
 
 
-    const response = await apiFetch(
+    const response = await apiFetch<SolverResponse>(
         "/api/solve",
         {
             method: "POST",
@@ -87,19 +123,11 @@ export async function solvePuzzle(
             },
             body: JSON.stringify(apiBoard),
         }
-    ) as SolverResponse;
+    );
 
 
-    /*
-     * Backend solution path is [x, y].
-     *
-     * Convert it back to the frontend convention:
-     * [row, column] = [y, x].
-     */
     if (response.solutionPath) {
-        response.solutionPath = response.solutionPath.map(
-            ([x, y]) => [y, x]
-        );
+        response.solutionPath = response.solutionPath.map(swap);
     }
 
 

@@ -1,32 +1,97 @@
+import { useRef, useState } from "react";
+
 import type { ViewMode } from "../types/grid";
+import type { GridSize } from "../types/board";
+import { IMAGE_ACCEPT_ATTRIBUTE } from "../utils/fileValidation";
+import ImportSizeModal from "./ImportSizeModal";
 
 interface ActionPanelProps {
   canSolve: boolean;
   canPlay: boolean;
   isSolving: boolean;
+  isImporting: boolean;
   viewMode: ViewMode;
 
   onSolve: () => void;
   onViewModeChange: (mode: ViewMode) => void | Promise<void>;
   onReset: () => void;
   onShare: () => void;
+  onImport: (file: File, imageBoardSize: GridSize) => void;
 }
 
 export default function ActionPanel({
   canSolve,
   canPlay,
   isSolving,
+  isImporting,
   viewMode,
   onSolve,
   onViewModeChange,
   onReset,
   onShare,
+  onImport,
 }: ActionPanelProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [importSizeModalOpen, setImportSizeModalOpen] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [pendingBoardSize, setPendingBoardSize] = useState<GridSize>(6);
+
+  const isBusy = isSolving || isImporting;
+
+  function closeImportSizeModal() {
+    setImportSizeModalOpen(false);
+    setPendingImportFile(null);
+    setPendingBoardSize(6);
+  }
+
+  function confirmImportSize() {
+    if (!pendingImportFile) {
+      closeImportSizeModal();
+      return;
+    }
+
+    onImport(pendingImportFile, pendingBoardSize);
+    closeImportSizeModal();
+  }
+
+  function handleFileSelected(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (file) {
+      setPendingImportFile(file);
+      setPendingBoardSize(6);
+      setImportSizeModalOpen(true);
+    }
+  }
+
   return (
-    <section
-      className="panel-card rounded-2xl p-4"
-    >
+    <section className="panel-card rounded-2xl p-4">
       <div className="flex flex-col gap-3">
+        <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
+          {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
+            const isActive = viewMode === mode;
+
+            return (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onViewModeChange(mode)}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-text hover:bg-primary/10"
+                }`}
+              >
+                {mode === "BUILD" ? "Build" : "Play"}
+              </button>
+            );
+          })}
+        </div>
 
         <button
           type="button"
@@ -59,36 +124,53 @@ export default function ActionPanel({
           {isSolving ? "Solving..." : "Show Solution"}
         </button>
 
-        <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
-          {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
-            const isActive = viewMode === mode;
-            const isModeDisabled = isSolving || (mode === "PLAY" && !canPlay);
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={IMAGE_ACCEPT_ATTRIBUTE}
+          onChange={handleFileSelected}
+          className="sr-only"
+          aria-label="Import a puzzle screenshot"
+        />
 
-            return (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => {
-                  void onViewModeChange(mode);
-                }}
-                disabled={isModeDisabled}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ui-transition ${
-                  isActive
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : "text-text hover:bg-primary/10"
-                } disabled:cursor-not-allowed disabled:opacity-50`}
-              >
-                {mode === "BUILD" ? "Build" : "Play"}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isBusy}
+          className="
+            flex
+            min-h-12
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            border
+            border-dashed
+            border-primary/40
+            bg-primary/5
+            px-4
+            py-3
+            text-sm
+            font-semibold
+            text-primary
+            transition-colors
+
+            hover:bg-primary/10
+            hover:border-primary/60
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        >
+          <ImportIcon />
+          {isImporting ? "Reading screenshot..." : "Import from screenshot"}
+        </button>
 
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={onReset}
-            disabled={isSolving}
+            disabled={isBusy}
             className="
               flex
               w-full
@@ -120,7 +202,7 @@ export default function ActionPanel({
           <button
             type="button"
             onClick={onShare}
-            disabled={isSolving}
+            disabled={isBusy}
             className="
               flex
               w-full
@@ -149,9 +231,35 @@ export default function ActionPanel({
             Share
           </button>
         </div>
-
       </div>
+
+      <ImportSizeModal
+        isOpen={importSizeModalOpen}
+        selectedSize={pendingBoardSize}
+        onSelectSize={setPendingBoardSize}
+        onCancel={closeImportSizeModal}
+        onConfirm={confirmImportSize}
+      />
     </section>
+  );
+}
+
+function ImportIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M21 15l-5-5L5 21" />
+    </svg>
   );
 }
 

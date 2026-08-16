@@ -14,6 +14,7 @@ class ErrorCode(str, Enum):
     INVALID_WALLS = "INVALID_WALLS"                    # 422 — non-adjacent / oob / dup wall
     NO_BOARD_DETECTED = "NO_BOARD_DETECTED"            # 422 — no grid found in the image
     AMBIGUOUS_BOARD = "AMBIGUOUS_BOARD"                # 422 — grid found, size not 6/7/8
+    PAYLOAD_TOO_LARGE = "PAYLOAD_TOO_LARGE"            # 413 — body exceeds the fixed cap
     INTERNAL_ERROR = "INTERNAL_ERROR"                  # 500 — unexpected backend fault
 
 

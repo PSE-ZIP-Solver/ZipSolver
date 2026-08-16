@@ -1,5 +1,8 @@
 import json
-from backend.input_validation.screenshot.errors import UnreadableImageError
+from backend.input_validation.screenshot.errors import (
+    NoBoardDetectedError,
+    UnreadableImageError,
+)
 from typing import Any, Dict, Optional
 
 from backend.input_validation.screenshot.image_loader import ImageLoader
@@ -70,6 +73,19 @@ class ScreenshotExtractor:
             image, cell_bounds, theme, disc_cells
         )
         warnings = list(getattr(self._waypoint_detector, "last_warnings", []) or [])
+
+        # NO-BOARD GUARDRAIL. When the caller supplies board_size the localizer never has
+        # to guess, so it also never raises NoBoardDetectedError — leaving zero-waypoint
+        # output as the only remaining signal that the image contained no puzzle. A real
+        # Zip board always carries at least a start and an end marker, so fewer than two
+        # detected markers means "this is not a board", not "this is a board with no
+        # waypoints" (which would misreport as a semantic 422 from InputValidator).
+        if len(waypoints) < 2:
+            raise NoBoardDetectedError(
+                "No Zip puzzle board could be detected in this image. "
+                "Upload a screenshot that shows the full grid with its numbered markers."
+            )
+
         walls = self._wall_detector.detect_walls(image, cell_bounds, theme)
 
         return {

@@ -1,9 +1,10 @@
-
 from __future__ import annotations
 
 import platform
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
+from importlib.util import find_spec
+from pathlib import Path
 from typing import Callable
 
 from backend.api.architecture_provider.ComponentInfo import ComponentInfo
@@ -14,14 +15,15 @@ from backend.api.architecture_provider.RLStackInfo import RLStackInfo
 from backend.api.architecture_provider.RuntimeInfo import RuntimeInfo
 from backend.api.architecture_provider.SolverInfo import SolverInfo
 from backend.api.dtos.ArchitectureInfo import ArchitectureInfo
+from backend.api.version import API_VERSION
 
-_API_VERSION = "1.0.0"
 _UNKNOWN = "unknown"
 
 # Static registries — names/roles are architectural facts, not runtime state (§5.5.6).
 _SOLVERS = [
     SolverInfo(name="RLSolver", kind="reinforcement-learning", default=True),
-    SolverInfo(name="AlgorithmicSolver", kind="DFS", default=False),
+    # "A*" not "DFS": the fallback is a bitmask + flood-fill-pruned A* search.
+    SolverInfo(name="AlgorithmicSolver", kind="A*", default=False),
 ]
 _BACKEND_COMPONENTS = [
     ComponentInfo(name="BackendAPI", role="API entry / routing"),
@@ -32,6 +34,58 @@ _BACKEND_COMPONENTS = [
     ComponentInfo(name="ArchitectureProvider", role="runtime technical inventory"),
 ]
 _FRONTEND = FrontendInfo(framework="React", buildTool="Vite", styling="Tailwind CSS")
+
+# backend/api/architecture_provider/ArchitectureProvider.py -> parents[3] == repo root
+_TRAINED_MODELS_DIR = Path(__file__).resolve().parents[3] / "offline_training" / "trained_models"
+
+
+def available_model_sizes() -> list[int]:
+    """Board sizes that actually have a trained artifact on disk.
+
+    Reads the filesystem directly rather than importing the solver's MODEL_PATHS, because
+    that import pulls in the whole learning stack (gymnasium -> stable-baselines3 -> torch)
+    just to read a path registry. The inventory endpoint must stay answerable on a
+    deployment where those packages are absent.
+
+    Shared with run_api's health probe so GET /api/health and GET /api/architecture can
+    never disagree about whether a model is loaded.
+    """
+    if not _TRAINED_MODELS_DIR.is_dir():
+        return []
+
+    sizes: list[int] = []
+    for size in (6, 7, 8):
+        folder = _TRAINED_MODELS_DIR / f"{size}x{size}"
+        if folder.is_dir() and any(folder.glob("*.zip")):
+            sizes.append(size)
+    return sizes
+
+
+#: Modules the RL inference path imports. Absent any one of them, RLSolver cannot be
+#: constructed and SolverController permanently degrades to the algorithmic fallback.
+_RL_RUNTIME_MODULES = ("gymnasium", "stable_baselines3", "torch")
+
+
+def rl_runtime_available() -> bool:
+    """Whether the RL inference stack can actually be imported.
+
+    Uses ``find_spec`` rather than a real import: answering "could this run?" must not cost
+    the multi-second torch import, and must not have the side effect of loading it into a
+    process that may never need it.
+    """
+    return all(find_spec(name) is not None for name in _RL_RUNTIME_MODULES)
+
+
+def rl_inference_ready() -> bool:
+    """Whether a solve request could genuinely be served by the RL solver.
+
+    Both halves are load-bearing and were previously conflated: an artifact on disk is
+    useless without the runtime to execute it, and the runtime is useless with no weights
+    to load. ``GET /api/health`` reported ``modelLoaded: true`` on a deployment with no
+    gymnasium installed purely because a ``.zip`` existed — while the solver logged
+    "RL solver unavailable" and silently fell back on every request.
+    """
+    return bool(available_model_sizes()) and rl_runtime_available()
 
 
 def _pkg_version(dist_name: str) -> str:
@@ -59,7 +113,7 @@ class ArchitectureProvider:
     def collect(self) -> ArchitectureInfo:
         """Assemble the full ArchitectureInfo snapshot."""
         return ArchitectureInfo(
-            apiVersion=_API_VERSION,
+            apiVersion=API_VERSION,
             buildTimestamp=self._build_timestamp,
             runtime=self._runtime(),
             validation=LibraryInfo(name="Pydantic", version=_pkg_version("pydantic")),
@@ -92,4 +146,12 @@ class ArchitectureProvider:
     def _model_status(self) -> ModelInfo:
         if self._model_status_provider is not None:
             return self._model_status_provider()
-        return ModelInfo(name="zip-dqn", supportedBoardSizes=[6, 7, 8], loaded=False)
+        # Report the sizes an artifact actually exists for rather than the aspirational
+        # {6, 7, 8}. `loaded` additionally requires the RL runtime to be importable, so it
+        # answers "can the RL solver serve a request?" rather than the weaker "does a file
+        # exist?" — and can never contradict GET /api/health, which uses the same helper.
+        return ModelInfo(
+            name="zip-dqn",
+            supportedBoardSizes=available_model_sizes(),
+            loaded=rl_inference_ready(),
+        )

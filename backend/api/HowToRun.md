@@ -7,5 +7,5 @@ npm ci
 npm run build
 npm run lint
 cd ..
-uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8000
+uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8090
 ```
