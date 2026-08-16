@@ -1193,7 +1193,7 @@ if __name__ == "__main__":
             trainer.evaluationBoards,
             showExamples=SHOW_EVALUATION_EXAMPLES,
         )
-
+    
         trainer.print_result(
             "Evaluation result on unseen evaluation boards",
             evaluationResult,
