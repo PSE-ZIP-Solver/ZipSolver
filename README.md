@@ -586,9 +586,11 @@ Check your Python version: `python --version`. The project needs 3.12 or newer.
 
 ## Team
 
-Samoon Bharmal - Backend, API
-Henrik Bruder · Vincent Heddergott · Franz Jakob Lutz  - Backend, Agent and Environment 
-Tillmann Nickels · Dmitrii Russkikh - Frontend
+Samoon Bharmal - Backend, API.
+
+Henrik Bruder, Vincent Heddergott, Franz Jakob Lutz  - Backend, Agent and Environment.
+
+Tillmann Nickels, Dmitrii Russkikh - Frontend.
 
 Supervisors: Tara Gheshlaghi, Seyedehmaryam Ghasemi
 Chair of Dependable Nano Computing (CDNC), Karlsruhe Institute of Technology
