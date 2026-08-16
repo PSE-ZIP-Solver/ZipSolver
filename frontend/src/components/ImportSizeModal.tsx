@@ -45,10 +45,10 @@ export default function ImportSizeModal({
   return createPortal(
     <div
       className="
-        fixed inset-0 z-100
+        fixed inset-0 z-50
         flex items-center justify-center
+        bg-overlay/70
         p-4
-        bg-black/40
         backdrop-blur-sm
       "
       onClick={onCancel}
@@ -59,22 +59,20 @@ export default function ImportSizeModal({
         aria-labelledby="import-size-modal-title"
         onClick={(event) => event.stopPropagation()}
         className="
+          panel-card-strong
           w-full
           max-w-sm
-
+          space-y-5
           rounded-2xl
           border
-          panel-card-strong
-
           p-5
           sm:p-6
-          space-y-5
         "
       >
         <div className="space-y-2">
           <h3
             id="import-size-modal-title"
-            className="text-lg font-bold"
+            className="text-lg font-bold text-text"
           >
             Screenshot grid size
           </h3>
@@ -102,9 +100,10 @@ export default function ImportSizeModal({
                   text-sm
                   font-semibold
                   transition-colors
+                  ui-transition
                   ${selected
-                    ? "border-primary bg-primary text-white"
-                    : "border-board-border bg-white/80 text-text hover:border-primary/40 hover:bg-primary/5"}
+                    ? "border-primary bg-primary text-on-primary shadow-sm"
+                    : "border-board-border bg-surface-soft/80 text-text hover:border-primary/40 hover:bg-primary/5"}
                 `}
               >
                 {size} x {size}
@@ -121,14 +120,15 @@ export default function ImportSizeModal({
               rounded-xl
               border
               border-board-border
-              bg-white/80
+              bg-surface-soft/80
               px-4
               py-2.5
               text-sm
               font-medium
               text-text
               transition-colors
-              hover:bg-background
+              ui-transition
+              hover:bg-surface
             "
           >
             Cancel
@@ -144,8 +144,9 @@ export default function ImportSizeModal({
               py-2.5
               text-sm
               font-semibold
-              text-white
+              text-on-primary
               transition-colors
+              ui-transition
               hover:bg-primary-hover
             "
           >
