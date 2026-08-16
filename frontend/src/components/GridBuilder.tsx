@@ -836,7 +836,10 @@ export default function GridBuilder() {
 
             setBoard(importedBoard);
             setSolution(null);
+            setPlaySolution(null);
+            setHintPath(null);
             setMetrics(null);
+            setEditMode("NUMBERS");
             setViewMode("BUILD");
             setPlayModeState(
                 resetPlayModeState(importedBoard.waypoints[0] ?? null)
