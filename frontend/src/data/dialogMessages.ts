@@ -65,6 +65,6 @@ export const dialogMessages = {
 
         sizeHint: (size: number) =>
             `Reading the screenshot as a ${size}\u00d7${size} board. `
-            + "Change the grid size first if that is wrong",
+            + "Choose a different screenshot size if that is wrong",
     },
 } as const;

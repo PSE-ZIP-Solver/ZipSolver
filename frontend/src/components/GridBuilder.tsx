@@ -520,16 +520,25 @@ export default function GridBuilder({
      * ============================
      * Screenshot import
      * ============================
-     *
-     * The currently selected grid size is sent with the upload and is authoritative:
-     * estimating the size from pixels alone is unreliable on the app's low-contrast
-     * rendering, and the user has already told us the answer in the editor.
-     *
-     * Extraction is best-effort by design. A board that fails semantic validation is
-     * still loaded into the grid, because showing the user what was read and letting
-     * them correct two cells beats making them start over.
      */
-    async function handleImportScreenshot(file: File) {
+    async function handleImportScreenshot(
+        file: File,
+        imageBoardSize: GridSize,
+    ) {
+
+        if (
+            imageBoardSize !== 6 &&
+            imageBoardSize !== 7 &&
+            imageBoardSize !== 8
+        ) {
+
+            showMessage(
+                "WARNING",
+                "Screenshot size must be 6, 7, or 8"
+            );
+
+            return;
+        }
 
         const fileCheck = validateImageFile(file);
 
@@ -550,13 +559,18 @@ export default function GridBuilder({
 
             showMessage(
                 "INFO",
+                dialogMessages.import.sizeHint(imageBoardSize)
+            );
+
+            showMessage(
+                "INFO",
                 dialogMessages.import.started
             );
 
 
             const result = await importPuzzle(
                 file,
-                board.boardSize
+                imageBoardSize
             );
 
 
@@ -582,10 +596,6 @@ export default function GridBuilder({
                 resetPlayModeState(importedBoard.waypoints[0] ?? null)
             );
 
-
-            /*
-             * Three outcomes, three different things the user should do next.
-             */
             if (!result.valid) {
 
                 showMessage(

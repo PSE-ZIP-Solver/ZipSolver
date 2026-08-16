@@ -45,9 +45,9 @@ export async function importPuzzle(
     /*
      * board_size is authoritative.
      *
-     * The user already selected the grid size in the editor, so the backend never
-     * has to infer it from pixels. Image-only size estimation is unreliable on the
-     * app's low-contrast rendering and mis-sizes even clean captures.
+    * The screenshot grid size is provided manually (6/7/8), so the backend never
+    * has to infer it from pixels. Image-only size estimation is unreliable on the
+    * app's low-contrast rendering and mis-sizes even clean captures.
      */
     formData.append(
         "board_size",

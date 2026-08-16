@@ -1,7 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import type { ViewMode } from "../types/grid";
+import type { GridSize } from "../types/board";
 import { IMAGE_ACCEPT_ATTRIBUTE } from "../utils/fileValidation";
+import ImportSizeModal from "./ImportSizeModal";
 
 interface ActionPanelProps {
   canSolve: boolean;
@@ -13,7 +15,7 @@ interface ActionPanelProps {
   onViewModeChange: (mode: ViewMode) => void;
   onReset: () => void;
   onShare: () => void;
-  onImport: (file: File) => void;
+  onImport: (file: File, imageBoardSize: GridSize) => void;
 }
 
 export default function ActionPanel({
@@ -27,37 +29,67 @@ export default function ActionPanel({
   onShare,
   onImport,
 }: ActionPanelProps) {
-  /*
-   * The native file input cannot be styled to match the rest of the panel, so it is kept
-   * off-screen and driven by a real button. `sr-only` rather than `display: none` so the
-   * input stays reachable by assistive technology and keyboard users.
-   */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [importSizeModalOpen, setImportSizeModalOpen] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [pendingBoardSize, setPendingBoardSize] = useState<GridSize>(6);
+
   const isBusy = isSolving || isImporting;
+
+  function closeImportSizeModal() {
+    setImportSizeModalOpen(false);
+    setPendingImportFile(null);
+    setPendingBoardSize(6);
+  }
+
+  function confirmImportSize() {
+    if (!pendingImportFile) {
+      closeImportSizeModal();
+      return;
+    }
+
+    onImport(pendingImportFile, pendingBoardSize);
+    closeImportSizeModal();
+  }
 
   function handleFileSelected(
     event: React.ChangeEvent<HTMLInputElement>,
   ) {
     const file = event.target.files?.[0];
 
-    /*
-     * Reset the input value after every selection. Without it, picking the same file
-     * twice in a row fires no change event, so a user who fixes their screenshot and
-     * re-selects it silently gets nothing.
-     */
     event.target.value = "";
 
     if (file) {
-      onImport(file);
+      setPendingImportFile(file);
+      setPendingBoardSize(6);
+      setImportSizeModalOpen(true);
     }
   }
 
   return (
-    <section
-      className="panel-card rounded-2xl p-4"
-    >
+    <section className="panel-card rounded-2xl p-4">
       <div className="flex flex-col gap-3">
+        <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
+          {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
+            const isActive = viewMode === mode;
+
+            return (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onViewModeChange(mode)}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-text hover:bg-primary/10"
+                }`}
+              >
+                {mode === "BUILD" ? "Build" : "Play"}
+              </button>
+            );
+          })}
+        </div>
 
         <button
           type="button"
@@ -132,27 +164,6 @@ export default function ActionPanel({
           {isImporting ? "Reading screenshot..." : "Import from screenshot"}
         </button>
 
-        <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
-          {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
-            const isActive = viewMode === mode;
-
-            return (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => onViewModeChange(mode)}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  isActive
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-text hover:bg-primary/10"
-                }`}
-              >
-                {mode === "BUILD" ? "Build" : "Play"}
-              </button>
-            );
-          })}
-        </div>
-
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -216,8 +227,15 @@ export default function ActionPanel({
             Share
           </button>
         </div>
-
       </div>
+
+      <ImportSizeModal
+        isOpen={importSizeModalOpen}
+        selectedSize={pendingBoardSize}
+        onSelectSize={setPendingBoardSize}
+        onCancel={closeImportSizeModal}
+        onConfirm={confirmImportSize}
+      />
     </section>
   );
 }
