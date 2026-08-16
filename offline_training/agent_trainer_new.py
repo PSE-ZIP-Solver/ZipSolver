@@ -315,7 +315,7 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.5,
+                initial_eps=0.8,
                 final_eps=0.1,
                 fraction=0.8,
             )
@@ -326,7 +326,7 @@ class AgentTrainer:
             agent = RLAgent(
                 trainEnv,
                 learning_rate=1e-4,              # Controls how strongly the network weights are changed during each gradient/network update.
-                exploration_initial_eps=0.5,     # Initial probability of choosing a random action.
+                exploration_initial_eps=0.8,     # Initial probability of choosing a random action.
                 exploration_final_eps=0.1,      # Final minimum probability of choosing a random action.
                 exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
                 learning_starts=2000,             # Number of steps before the model starts learning.
@@ -334,7 +334,7 @@ class AgentTrainer:
                 batch_size=128,                   # Number of samples used for one training update.
                 train_freq=(1, "step"),          # Update neural network (training) after every completed episode.
                 gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
-                target_update_interval=1000,      # Copy the learned network weights to the target network every 500 steps.
+                target_update_interval=10000,      # Copy the learned network weights to the target network every 500 steps.
                 gamma=0.99,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
                 max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
                 seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
@@ -518,17 +518,17 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 44
+    MIN_NR_OF_WALLS = 30
     NR_OF_WALLS = 45
-    MIN_NR_OF_WAYPOINTS = 44
+    MIN_NR_OF_WAYPOINTS = 30
     NR_OF_WAYPOINTS = 45
 
     USE_SAVED_TRAINING_BOARDS = True
     LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/06-8x8.pkl")
+    TRAINING_BOARDS_PATH = ("offline_training/training_boards/07-8x8.pkl")
 
     USE_SAVED_EVALUATION_BOARDS = False
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/06-8x8.pkl"
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/07-8x8.pkl"
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = True
@@ -541,7 +541,7 @@ if __name__ == "__main__":
         boardSize=8,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/06-8x8.zip",
+        modelPath="offline_training/trained_models/07-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
