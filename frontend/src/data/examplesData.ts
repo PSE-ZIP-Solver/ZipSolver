@@ -9,7 +9,88 @@ export interface ExampleBoard {
 
 
 export const Examples: ExampleBoard[] = [
+            {
+        id: "maze-6x6-vincents-loop",
+        name: "Vincent's Loop",
+        config: {
+            boardSize: 6,
+            waypoints: [
+                [0, 0], // 1
+                [2, 0], // 2
+                [5, 4], // 3
+                [0, 4], // 4
+                [2, 3], // 5
+            ],
+            walls: [
+                { neighborA: [4, 0], neighborB: [4, 1] },
+                { neighborA: [3, 1], neighborB: [3, 2] },
+                { neighborA: [1, 1], neighborB: [1, 2] },
+                { neighborA: [4, 3], neighborB: [5, 3] },
+            ],
+        },
+    },
+
+    {
+        id: "maze-6x6-henriks-corridor",
+        name: "Henrik's Corridor",
+        config: {
+            boardSize: 6,
+            waypoints: [
+                [5, 0], // 1
+                [5, 1], // 2
+                [2, 2], // 3
+                [0, 3], // 4
+                [1, 5], // 5
+                [5, 5], // 6
+            ],
+            walls: [
+                { neighborA: [4, 3], neighborB: [4, 4] },
+                { neighborA: [4, 0], neighborB: [4, 1] },
+                { neighborA: [3, 4], neighborB: [3, 5] },
+                { neighborA: [1, 3], neighborB: [1, 4] },
+                { neighborA: [5, 4], neighborB: [5, 5] },
+                { neighborA: [4, 2], neighborB: [4, 3] },
+            ],
+        },
+    },
     
+    
+    
+    {
+        id: "maze-6x6-tillmanns-breeze",
+        name: "Tillmann's Breeze",
+        config: {
+            boardSize: 6,
+            waypoints: [
+                [4, 0], // 1
+                [2, 2], // 2
+                [1, 4], // 3
+            ],
+            walls: [],
+        },
+    },
+
+    {
+        id: "maze-6x6-vincents-zigzag",
+        name: "Vincent's Zigzag",
+        config: {
+            boardSize: 6,
+            waypoints: [
+                [0, 5], // 1
+                [4, 4], // 2
+                [1, 3], // 3
+                [4, 2], // 4
+                [2, 1], // 5
+                [0, 0], // 6
+            ],
+            walls: [
+                { neighborA: [0, 0], neighborB: [0, 1] },
+                { neighborA: [5, 1], neighborB: [5, 2] },
+                { neighborA: [2, 0], neighborB: [2, 1] },
+            ],
+        },
+    },
+
     {
         id: "maze-6x6-agent-trial",
         name: "Agent's Trial",
