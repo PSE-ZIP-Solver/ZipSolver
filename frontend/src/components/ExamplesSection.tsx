@@ -17,10 +17,10 @@ export default function ExamplesSection({
     );
 
     return (
-        <div className="panel-card rounded-2xl p-4 md:p-6 text-[var(--color-text)]">
+        <div className="panel-card rounded-2xl p-4 md:p-6 text-text">
             <div className="flex justify-between items-baseline mb-1">
                 <h2 className="text-xl font-bold">Examples</h2>
-                <span className="text-xs font-mono bg-[#fbe7d3] text-[var(--color-primary)] border border-[#ead8c8] px-2 py-0.5 rounded-md font-semibold">
+                <span className="text-xs font-mono bg-tag-bg text-primary border border-tag-border px-2 py-0.5 rounded-md font-semibold">
                     {currentBoardSize}×{currentBoardSize}
                 </span>
             </div>
@@ -30,7 +30,7 @@ export default function ExamplesSection({
             </p>
 
             {filteredExamples.length === 0 ? (
-                <div className="text-center py-6 text-sm opacity-60 border border-dashed border-[#ead8c8] rounded-xl">
+                <div className="text-center py-6 text-sm opacity-60 border border-dashed border-tag-border rounded-xl">
                     No templates available for {currentBoardSize}×{currentBoardSize} yet.
                 </div>
             ) : (

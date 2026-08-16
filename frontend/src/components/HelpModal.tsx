@@ -39,7 +39,7 @@ export default function HelpModal({
         fixed inset-0 z-50
         flex items-center justify-center
         p-4
-        bg-black/40
+        bg-overlay
         backdrop-blur-sm
       "
       onClick={onClose}
@@ -68,6 +68,7 @@ export default function HelpModal({
             flex items-center justify-between
             p-4 sm:p-6
             border-b
+            border-footer-border
           "
         >
           <h2
@@ -94,6 +95,7 @@ export default function HelpModal({
               text-xl
               hover:bg-primary/10
               transition-colors
+              ui-transition
             "
           >
             ✕
@@ -135,6 +137,7 @@ export default function HelpModal({
         <div
           className="
             border-t
+            border-footer-border
             p-4
             sm:p-6
 

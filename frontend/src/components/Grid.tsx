@@ -25,8 +25,12 @@ interface GridProps {
 	editMode: EditMode;
 	playerPath: Position[];
 	activePosition: Position | null;
+	nextWaypoint: Position | null;
 	hintPosition: Position | null;
+	hintPath: SolutionPath | null;
+	hintPathVersion?: number;
 	isPlayMode: boolean;
+	victoryVersion?: number;
 	onCellClick: (position: Position) => void;
 	onWallClick: (wall: Wall) => void;
 	pathShakeVersion?: number;
@@ -36,6 +40,26 @@ const MAX_GRID_PIXELS = 600;
 const MIN_GRID_PIXELS = 300;
 const GRID_GAP_PX = 1;
 const WALL_THICKNESS_PX = 6;
+
+function readThemeColor(variableName: string, fallback: string) {
+	if (typeof window === "undefined") {
+		return fallback;
+	}
+
+	const value = getComputedStyle(document.documentElement)
+		.getPropertyValue(variableName)
+		.trim();
+
+	return value || fallback;
+}
+
+function isDarkThemeActive() {
+	if (typeof document === "undefined") {
+		return false;
+	}
+
+	return document.documentElement.classList.contains("dark");
+}
 
 function isBefore(a: Position, b: Position) {
 	if (a[0] !== b[0]) return a[0] < b[0];
@@ -60,8 +84,12 @@ export default function Grid({
 	editMode,
 	playerPath,
 	activePosition,
+	nextWaypoint,
 	hintPosition,
+	hintPath,
+	hintPathVersion = 0,
 	isPlayMode,
+	victoryVersion = 0,
 	onCellClick,
 	onWallClick,
 	pathShakeVersion = 0
@@ -69,11 +97,42 @@ export default function Grid({
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const containerRef = useRef<HTMLDivElement | null>(null);
+	const hintPathCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const playerPathCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
 	const [containerWidth, setContainerWidth] = useState(0);
 	const [hoveredCell, setHoveredCell] = useState<number | null>(null);
 	const [isPointerDown, setIsPointerDown] = useState(false);
+	const [isVictoryAnimating, setIsVictoryAnimating] = useState(false);
+	const lastAnimatedVictoryVersionRef = useRef(victoryVersion);
+
+	useEffect(() => {
+		if (victoryVersion <= lastAnimatedVictoryVersionRef.current) {
+			return;
+		}
+
+		lastAnimatedVictoryVersionRef.current = victoryVersion;
+
+		if (!isPlayMode) {
+			return;
+		}
+
+		setIsVictoryAnimating(true);
+
+		const timeoutId = window.setTimeout(() => {
+			setIsVictoryAnimating(false);
+		}, 1600);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [isPlayMode, victoryVersion]);
+
+	useEffect(() => {
+		if (!isPlayMode) {
+			setIsVictoryAnimating(false);
+		}
+	}, [isPlayMode]);
 
 	useEffect(() => {
 		const element = containerRef.current;
@@ -115,6 +174,7 @@ export default function Grid({
 	}, [board.waypoints]);
 
 	const activeCellKey = activePosition ? `${activePosition[0]},${activePosition[1]}` : null;
+	const nextWaypointKey = nextWaypoint ? `${nextWaypoint[0]},${nextWaypoint[1]}` : null;
 	const hintCellKey = hintPosition ? `${hintPosition[0]},${hintPosition[1]}` : null;
 	const startPosition = board.waypoints[0] ?? null;
 	const pathToRender = startPosition && playerPath.length > 0
@@ -169,17 +229,19 @@ export default function Grid({
 		const duration = 650;
 		let raf = 0;
 		const startedAt = performance.now();
+		const solutionGlow = readThemeColor("--color-path-highlight-glow", "rgba(249, 115, 22, 0.28)");
 
 		const draw = (now: number) => {
 			const animationProgress = Math.min(1, (now - startedAt) / duration);
 			const visibleSegments = animationProgress * (solutionPathToRender.length - 1);
+			const darkTheme = isDarkThemeActive();
 
 			ctx.clearRect(0, 0, gridPixels, gridPixels);
 
 			ctx.lineWidth = Math.max(2, cellSize * 0.16);
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.shadowColor = "rgba(249, 115, 22, 0.28)";
+			ctx.shadowColor = solutionGlow;
 			ctx.shadowBlur = Math.max(4, cellSize * 0.12);
 
 			for (let i = 1; i < solutionPathToRender.length; i += 1) {
@@ -201,13 +263,18 @@ export default function Grid({
 				const currentY = prevY + (currY - prevY) * segmentProgress;
 
 				const tintProgress = i / solutionPathToRender.length;
-				const hue = 48 - tintProgress * 36;
-				const lightness = 66 - tintProgress * 12;
+				const hue = darkTheme
+					? 34 - tintProgress * 10
+					: 48 - tintProgress * 36;
+				const saturation = darkTheme ? 64 : 100;
+				const lightness = darkTheme
+					? 62 - tintProgress * 8
+					: 66 - tintProgress * 12;
 
 				ctx.beginPath();
 				ctx.moveTo(prevX, prevY);
 				ctx.lineTo(currentX, currentY);
-				ctx.strokeStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+				ctx.strokeStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 				ctx.stroke();
 			}
 
@@ -220,6 +287,90 @@ export default function Grid({
 
 		return () => cancelAnimationFrame(raf);
 	}, [cellSize, gridPixels, solutionPathToRender, stride]);
+
+	useEffect(() => {
+		const canvas = hintPathCanvasRef.current;
+		if (!canvas || !gridPixels) return;
+
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+
+		const dpr = window.devicePixelRatio || 1;
+		canvas.width = Math.round(gridPixels * dpr);
+		canvas.height = Math.round(gridPixels * dpr);
+		canvas.style.width = `${gridPixels}px`;
+		canvas.style.height = `${gridPixels}px`;
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		ctx.clearRect(0, 0, gridPixels, gridPixels);
+
+		if (!hintPath || hintPath.length < 2) {
+			return;
+		}
+
+		const duration = 650;
+		let raf = 0;
+		const startedAt = performance.now();
+		const hintGlow = readThemeColor("--color-hint-border", "rgba(52, 211, 153, 0.30)");
+
+		const draw = (now: number) => {
+			const animationProgress = Math.min(1, (now - startedAt) / duration);
+			const visibleSegments = animationProgress * (hintPath.length - 1);
+			const darkTheme = isDarkThemeActive();
+
+			ctx.clearRect(0, 0, gridPixels, gridPixels);
+
+			ctx.lineWidth = Math.max(2, cellSize * 0.15);
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.shadowColor = darkTheme ? hintGlow : "transparent";
+			ctx.shadowBlur = darkTheme ? Math.max(4, cellSize * 0.12) : 0;
+
+			for (let i = 1; i < hintPath.length; i += 1) {
+				if (i > Math.ceil(visibleSegments)) break;
+
+				const previous = hintPath[i - 1];
+				const current = hintPath[i];
+				const segmentProgress = Math.max(
+					0,
+					Math.min(1, visibleSegments - (i - 1))
+				);
+
+				const prevX = previous[1] * stride + cellSize / 2;
+				const prevY = previous[0] * stride + cellSize / 2;
+				const currX = current[1] * stride + cellSize / 2;
+				const currY = current[0] * stride + cellSize / 2;
+
+				const currentX = prevX + (currX - prevX) * segmentProgress;
+				const currentY = prevY + (currY - prevY) * segmentProgress;
+
+				const linearProgress = i / hintPath.length;
+				const tintProgress = darkTheme
+					? linearProgress
+					: Math.pow(linearProgress, 0.72);
+				const hue = darkTheme
+					? 154 - tintProgress * 12
+					: 151 - tintProgress * 4;
+				const saturation = darkTheme ? 48 : 56;
+				const lightness = darkTheme
+					? 56 - tintProgress * 8
+					: 58 - tintProgress * 2.6;
+
+				ctx.beginPath();
+				ctx.moveTo(prevX, prevY);
+				ctx.lineTo(currentX, currentY);
+				ctx.strokeStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+				ctx.stroke();
+			}
+
+			if (animationProgress < 1) {
+				raf = requestAnimationFrame(draw);
+			}
+		};
+
+		raf = requestAnimationFrame(draw);
+
+		return () => cancelAnimationFrame(raf);
+	}, [cellSize, gridPixels, hintPath, hintPathVersion, stride]);
 
 	useEffect(() => {
 		const canvas = playerPathCanvasRef.current;
@@ -238,11 +389,14 @@ export default function Grid({
 
 		if (pathToRender.length < 2) return;
 
+		const playerPathColor = readThemeColor("--color-path-player", "rgba(234, 106, 26, 0.95)");
+		const playerPathGlow = readThemeColor("--color-path-player-glow", "rgba(234, 106, 26, 0.25)");
+
 		ctx.lineWidth = Math.max(2.5, cellSize * 0.18);
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
-		ctx.strokeStyle = "rgba(234, 106, 26, 0.95)";
-		ctx.shadowColor = "rgba(234, 106, 26, 0.25)";
+		ctx.strokeStyle = playerPathColor;
+		ctx.shadowColor = playerPathGlow;
 		ctx.shadowBlur = Math.max(6, cellSize * 0.12);
 
 		ctx.beginPath();
@@ -264,19 +418,25 @@ export default function Grid({
 			className="flex w-full justify-center select-none"
 		>
 			<div
-				className="grid-board relative overflow-hidden rounded-2xl border transition-colors duration-200"
+				className="grid-board relative overflow-hidden rounded-2xl border transition-colors ui-transition"
 				style={{
 					width: gridPixels,
 					height: gridPixels,
+					touchAction: isPlayMode ? "none" : "auto",
+					overscrollBehavior: isPlayMode ? "contain" : "auto",
 				}}
 			>
 				<canvas
 					ref={canvasRef}
 					className="pointer-events-none absolute inset-0 z-20"
 				/>
+				<canvas
+					ref={hintPathCanvasRef}
+					className="pointer-events-none absolute inset-0 z-30"
+				/>
 				<div
 					key={pathShakeVersion}
-					className="pointer-events-none absolute inset-0 z-20"
+					className="pointer-events-none absolute inset-0 z-40"
 					style={{ animation: pathShakeVersion > 0 ? "zip-path-shake 220ms ease-in-out" : undefined }}
 				>
 					<canvas
@@ -284,6 +444,36 @@ export default function Grid({
 						className="absolute inset-0"
 					/>
 				</div>
+
+				{isVictoryAnimating && (
+					<div className="grid-victory-overlay absolute inset-0 z-60 pointer-events-none">
+						<div className="grid-victory-radiance" />
+						<div className="grid-victory-badge">
+							<span className="grid-victory-title">Congratulations!</span>
+						</div>
+						<div className="grid-victory-confetti-layer" aria-hidden="true">
+							{Array.from({ length: 16 }).map((_, index) => (
+								<span
+									key={`confetti-${index}`}
+									className="grid-victory-confetti"
+									style={{
+										left: `${6 + ((index * 13) % 88)}%`,
+										animationDelay: `${index * 45}ms`,
+										animationDuration: `${860 + (index % 4) * 140}ms`,
+										background: [
+											"#f5d66a",
+											"#f29b4b",
+											"#f06c55",
+											"#6cd5b8",
+											"#7cc8ff",
+											"#d4a4ff",
+										][index % 6],
+									}}
+								/>
+							))}
+						</div>
+					</div>
+				)}
 
 				<div
 					className="grid-lines absolute inset-0 z-10 grid"
@@ -299,27 +489,26 @@ export default function Grid({
 						const key = `${row},${col}`;
 						const isHovered = hoveredCell === index;
 
-							const isActive = activeCellKey === key;
-							const isHint = hintCellKey === key;
-							const rightWallExists =
-								col < board.boardSize - 1
-									? wallSet.has(getWallKey([row, col], [row, col + 1]))
-									: false;
-							const bottomWallExists =
-								row < board.boardSize - 1
-									? wallSet.has(getWallKey([row, col], [row + 1, col]))
-									: false;
+						const isActive = activeCellKey === key;
+						const isHint = hintCellKey === key;
+						const rightWallExists =
+							col < board.boardSize - 1
+								? wallSet.has(getWallKey([row, col], [row, col + 1]))
+								: false;
+						const bottomWallExists =
+							row < board.boardSize - 1
+								? wallSet.has(getWallKey([row, col], [row + 1, col]))
+								: false;
 						return (
 							<div
 								key={index}
 								className={[
 									"grid-cell relative flex items-center justify-center",
-									"transition-colors duration-150",
+									"transition-colors ui-transition",
 									editMode === "WALLS"
 										? "cursor-default"
-										: "cursor-pointer"
-									,
-										(editMode === "NUMBERS" && isHovered)
+										: "cursor-pointer",
+									(editMode === "NUMBERS" && isHovered)
 										? "grid-cell--hovered"
 										: ""
 								].join(" ")}
@@ -357,11 +546,11 @@ export default function Grid({
 								}}
 							>
 								{isActive && (
-									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_rgba(234,106,26,0.18)]" />
+									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_var(--color-path-highlight-glow)]" />
 								)}
 
 								{isHint && !isActive && (
-									<div className="absolute inset-0 rounded-xl border border-dashed border-primary/60 bg-primary/10" />
+									<div className="absolute inset-0 rounded-xl border border-dashed border-hint-border bg-hint-bg" />
 								)}
 
 								{editMode === "WALLS" && col < board.boardSize - 1 && !rightWallExists && (
@@ -379,8 +568,8 @@ export default function Grid({
 												absolute right-0 top-1/2 h-[52%] w-1.5
 												-translate-y-1/2 translate-x-1/2 rounded-full
 												bg-primary/20 opacity-70
-												shadow-[0_0_12px_rgba(249,115,22,0.18)]
-												transition-opacity duration-200
+												shadow-[0_0_12px_var(--color-path-highlight-glow)]
+												transition-opacity ui-transition
 												animate-pulse hover:bg-primary/35
 											"
 										/>
@@ -402,8 +591,8 @@ export default function Grid({
 												absolute bottom-0 left-1/2 h-1.5 w-[52%]
 												-translate-x-1/2 translate-y-1/2 rounded-full
 												bg-primary/20 opacity-70
-												shadow-[0_0_12px_rgba(249,115,22,0.18)]
-												transition-opacity duration-200
+												shadow-[0_0_12px_var(--color-path-highlight-glow)]
+												transition-opacity ui-transition
 												animate-pulse hover:bg-primary/35
 											"
 										/>
@@ -414,13 +603,14 @@ export default function Grid({
 					})}
 				</div>
 
-				<div className="pointer-events-none absolute inset-0 z-40">
+				<div className="pointer-events-none absolute inset-0 z-50">
 					{Array.from({ length: board.boardSize * board.boardSize }).map((_, index) => {
 						const row = Math.floor(index / board.boardSize);
 						const col = index % board.boardSize;
 						const key = `${row},${col}`;
 						const waypointIndex = waypointIndexByCell.get(key);
 						const isWaypoint = waypointIndex !== undefined;
+						const isNextWaypoint = isPlayMode && nextWaypointKey === key && activeCellKey !== key;
 
 						if (!isWaypoint) {
 							return null;
@@ -433,14 +623,19 @@ export default function Grid({
 						return (
 							<div
 								key={key}
-								className="grid-waypoint absolute flex items-center justify-center rounded-full text-white"
+								className={[
+									"grid-waypoint absolute flex items-center justify-center rounded-full text-on-primary",
+									isNextWaypoint ? "grid-waypoint--next" : "",
+								].join(" ")}
 								style={{
 									width: markerSize,
 									height: markerSize,
 									fontSize: Math.round(cellSize * 0.28),
 									left,
 									top,
-									animation: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
+									animation: isNextWaypoint
+										? `zip-pop 220ms ease-out ${waypointIndex * 30}ms both, zip-waypoint-next-glow 1050ms ease-in-out ${220 + waypointIndex * 30}ms infinite`
+										: `zip-pop 220ms ease-out ${waypointIndex * 30}ms both`
 								}}
 							>
 								{waypointIndex + 1}
@@ -449,7 +644,7 @@ export default function Grid({
 					})}
 				</div>
 
-				<div className="pointer-events-none absolute inset-0 z-30">
+				<div className="pointer-events-none absolute inset-0 z-40">
 					{board.walls.map((wall, index) => {
 						const [aRow, aCol] = wall.neighborA;
 						const [bRow, bCol] = wall.neighborB;
@@ -478,7 +673,7 @@ export default function Grid({
 									key={renderKey}
 									role="button"
 									aria-label={wallLabel}
-									className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-200"
+									className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity ui-transition"
 									style={{
 										left: x,
 										top: y,
@@ -510,7 +705,7 @@ export default function Grid({
 								key={renderKey}
 								role="button"
 								aria-label={wallLabel}
-								className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity duration-200"
+								className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity ui-transition"
 								style={{
 									left: x,
 									top: y,

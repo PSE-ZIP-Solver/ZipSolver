@@ -16,19 +16,19 @@ export default function ExampleCard({
             onClick={onSelect}
             className="
                 flex flex-col items-center p-3 w-full
-                bg-[var(--color-board-cell)] hover:bg-[var(--color-board-cell-hover)]
-                border border-[var(--color-board-border)] hover:border-[var(--color-primary)]
+                bg-board-cell hover:bg-board-cell-hover
+                border border-board-border hover:border-primary
                 rounded-xl shadow-xs hover:shadow-md
-                transition-all duration-150 group cursor-pointer
+                transition-all ui-transition group cursor-pointer
             "
         >
             {/* Mini Grid Preview */}
-            <div className="w-32 h-32 bg-[var(--color-background)] border border-[var(--color-board-border)] rounded-lg relative mb-3 flex items-center justify-center p-1 overflow-hidden">
+            <div className="w-32 h-32 bg-background border border-board-border rounded-lg relative mb-3 flex items-center justify-center p-1 overflow-hidden">
                 <MiniGridPreview config={config} />
             </div>
 
             {/* Title and Gridsize */}
-            <span className="font-semibold text-sm text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
+            <span className="font-semibold text-sm text-text group-hover:text-primary transition-colors ui-transition">
                 {title}
             </span>
             <span className="text-xs opacity-60">
@@ -67,7 +67,7 @@ function MiniGridPreview({ config }: { config: BoardConfig }) {
 
     return (
         <div
-            className="grid w-full h-full gap-[1px] bg-[var(--color-board-gridline)] rounded overflow-hidden relative"
+            className="grid w-full h-full gap-px bg-board-gridline rounded overflow-hidden relative"
             style={{
                 gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`,
                 gridTemplateRows: `repeat(${size}, minmax(0, 1fr))`,
@@ -85,21 +85,21 @@ function MiniGridPreview({ config }: { config: BoardConfig }) {
                 const wallBottom = hasWall(r, c, 'bottom');
 
                 return (
-                    <div key={idx} className="bg-[var(--color-board-cell)] relative flex items-center justify-center">
+                    <div key={idx} className="bg-board-cell relative flex items-center justify-center">
                         
                         {wallRight && (
-                            <div className="grid-wall absolute right-0 top-0 bottom-0 w-[2px] z-20 translate-x-1/2 pointer-events-none" />
+                            <div className="grid-wall absolute right-0 top-0 bottom-0 w-0.5 z-20 translate-x-1/2 pointer-events-none" />
                         )}
 
                         {wallBottom && (
-                            <div className="grid-wall absolute bottom-0 left-0 right-0 h-[2px] z-20 translate-y-1/2 pointer-events-none" />
+                            <div className="grid-wall absolute bottom-0 left-0 right-0 h-0.5 z-20 translate-y-1/2 pointer-events-none" />
                         )}
 
                         {wpIndex !== -1 && (
                             <span 
                                 className={`
                                     ${badgeSizeClass} 
-                                    grid-waypoint rounded-full font-bold text-white 
+                                    grid-waypoint rounded-full font-bold text-on-primary 
                                     flex items-center justify-center z-10 leading-none
                                 `}
                             >

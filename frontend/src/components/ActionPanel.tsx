@@ -7,12 +7,13 @@ import ImportSizeModal from "./ImportSizeModal";
 
 interface ActionPanelProps {
   canSolve: boolean;
+  canPlay: boolean;
   isSolving: boolean;
   isImporting: boolean;
   viewMode: ViewMode;
 
   onSolve: () => void;
-  onViewModeChange: (mode: ViewMode) => void;
+  onViewModeChange: (mode: ViewMode) => void | Promise<void>;
   onReset: () => void;
   onShare: () => void;
   onImport: (file: File, imageBoardSize: GridSize) => void;
@@ -20,6 +21,7 @@ interface ActionPanelProps {
 
 export default function ActionPanel({
   canSolve,
+  canPlay,
   isSolving,
   isImporting,
   viewMode,
@@ -108,10 +110,10 @@ export default function ActionPanel({
             py-4
             text-base
             font-semibold
-            text-white
-            shadow-sm
-            shadow-orange-500/20
+            text-on-primary
+            shadow-[0_10px_24px_var(--color-path-highlight-glow)]
             transition-colors
+            ui-transition
 
             hover:bg-primary-hover
             disabled:cursor-not-allowed
@@ -119,7 +121,7 @@ export default function ActionPanel({
           "
         >
           <SolveIcon />
-          {isSolving ? "Solving..." : "Solve"}
+          {isSolving ? "Solving..." : "Show Solution"}
         </button>
 
         <input
@@ -177,17 +179,18 @@ export default function ActionPanel({
               gap-2
               rounded-xl
               border
-              border-rose-200
-              bg-white/80
+              border-danger-border
+              bg-danger-surface
               px-4
               py-3
               text-sm
               font-medium
-              text-red-600
+              text-danger-text
               transition-colors
+              ui-transition
 
-              hover:bg-rose-50
-              hover:border-rose-300
+              hover:bg-danger-surface-hover
+              hover:border-danger-border-hover
               disabled:cursor-not-allowed
               disabled:opacity-50
             "
@@ -209,13 +212,14 @@ export default function ActionPanel({
               rounded-xl
               border
               border-board-border
-              bg-white/75
+              bg-surface-soft/80
               px-4
               py-3
               text-sm
               font-medium
               text-text
               transition-colors
+              ui-transition
 
               hover:bg-background
               hover:border-primary/20
