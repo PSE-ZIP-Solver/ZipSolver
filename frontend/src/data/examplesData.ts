@@ -9,25 +9,7 @@ export interface ExampleBoard {
 
 
 export const Examples: ExampleBoard[] = [
-    {
-        id: "board-8x8-1",
-        name: "Imported Board",
-        config: {
-            boardSize: 8,
-            waypoints: [
-                [3, 2],
-                [1, 3],
-                [3, 4],
-                [5, 4],
-                [1, 5],
-                [4, 6],
-                [6, 6],
-                [3, 7],
-            ],
-            walls: [],
-        },
-    },
-
+    
     {
         id: "maze-6x6-agent-trial",
         name: "Agent's Trial",
