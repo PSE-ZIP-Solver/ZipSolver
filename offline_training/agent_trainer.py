@@ -620,10 +620,11 @@ class AgentTrainer:
 
             # Lower exploration for fine-tuning an already trained model.
             agent.set_exploration_schedule(
-                initial_eps=0.3,
+                initial_eps=0.2,
                 final_eps=0.05,
                 fraction=0.8,
             )
+            #agent.verbose = 0
 
         else:
             print("Creating new agent")
@@ -1026,7 +1027,7 @@ if __name__ == "__main__":
         + NR_RANDOM_FULL_RANGE_BOARDS
     )
 
-    CREATE_HARD_EXAMPLE_POOL = True
+    CREATE_HARD_EXAMPLE_POOL = False
 
     HARD_EXAMPLE_TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/"
@@ -1041,13 +1042,13 @@ if __name__ == "__main__":
         "6x6-mixed-3000boards-60fullrange-40sparse.pkl"
     )
 
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
+    LOAD_REPLAY_BUFFER = True # only True for several runs on same training set (continue session)
 
     USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
 
     EVALUATION_BOARDS_PATH = (
         "offline_training/evaluation_boards/"
-        "6x6-evaluation-0to25walls-0to34wp-1000boards.pkl"
+        "6x6-evaluation-0to5walls-0to10wp-1000boards.pkl"
     )
 
     TRAIN_MODEL = True
@@ -1136,7 +1137,7 @@ if __name__ == "__main__":
         nrEvaluationBoards=1000,
 
         # Total time steps
-        timestepsPerBoard=3_000_000,
+        timestepsPerBoard=1_000_000,
 
         loadExistingModel=True,
         resetModel=False,
