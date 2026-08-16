@@ -75,17 +75,21 @@ export default function ActionPanel({
         <div className="flex rounded-xl border border-board-border bg-background/70 p-1">
           {(["BUILD", "PLAY"] as ViewMode[]).map((mode) => {
             const isActive = viewMode === mode;
+            const isModeDisabled = isSolving || (mode === "PLAY" && !canPlay);
 
             return (
               <button
                 key={mode}
                 type="button"
-                onClick={() => onViewModeChange(mode)}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                onClick={() => {
+                  void onViewModeChange(mode);
+                }}
+                disabled={isModeDisabled}
+                className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ui-transition ${
                   isActive
-                    ? "bg-primary text-white shadow-sm"
+                    ? "bg-primary text-on-primary shadow-sm"
                     : "text-text hover:bg-primary/10"
-                }`}
+                } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {mode === "BUILD" ? "Build" : "Play"}
               </button>
