@@ -1048,19 +1048,19 @@ if __name__ == "__main__":
 
     EVALUATION_BOARDS_PATH = (
         "offline_training/evaluation_boards/"
-        "6x6-evaluation-0to5walls-0to10wp-1000boards.pkl"
+        "6x6-evaluation-10to25-100boards.pkl"
     )
 
-    TRAIN_MODEL = True
+    TRAIN_MODEL = False
     PRINT_TRAINING_BOARDS = False
     SHOW_FIRST_TRAINING_RUN = False
-    EVALUATE_TRAINING_BOARDS = True
+    EVALUATE_TRAINING_BOARDS = False
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
 
     MODEL_PATH = (
-        "offline_training/trained_models/"
-        "trained-model.zip"
+        "offline_training/trained_models/6x6/"
+        "6x6-agent.zip"
     )
 
     # First create a trainer only for loading the current trained agent
@@ -1074,7 +1074,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
 
         nrTrainingBoards=3000,
-        nrEvaluationBoards=1000,
+        nrEvaluationBoards=100,
 
         timestepsPerBoard=None,
 
@@ -1134,7 +1134,7 @@ if __name__ == "__main__":
         nrTrainingBoards=NR_TRAINING_BOARDS,
 
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=1000,
+        nrEvaluationBoards=100,
 
         # Total time steps
         timestepsPerBoard=1_000_000,
