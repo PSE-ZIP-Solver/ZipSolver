@@ -16,23 +16,41 @@ MAX_DIMENSION = 2048
 
 
 class ImageLoader:
-    """Handles safe decoding and normalization of uploaded image bytes."""
+    """
+    Handles safe decoding, orientation correction, and normalization of graphic bytes.
+
+    Responsibility:
+        Serves as the secure entry gateway for volatile user-provided payloads, translating 
+        multipart forms securely into deterministic mathematical arrays ready for internal 
+        vision mapping while preventing memory exhaustion.
+
+    Implementation Details:
+        Functions statelessly, applying hard temporal file size and resolution limits directly. 
+        Explicitly defers the import of heavy machine learning and graphic libraries directly 
+        into execution methods, heavily suppressing application initialization overhead and 
+        blocking fatal pipeline exceptions triggered by test discovery tools.
+    """
 
     def load_and_preprocess(self, image_bytes: bytes) -> "np.ndarray":
         """
-        Decodes raw bytes into a usable image array.
-
-        HOW IT WORKS:
-        1. Fast-Fails if image_bytes is None, empty, or exceeds a strict megabyte limit.
-        2. Lazily imports `cv2` and `PIL`.
-        3. Uses PIL to safely parse EXIF data and apply rotation corrections.
-        4. Decodes to a numpy array, capping the maximum resolution to prevent ML bottlenecks.
+        Decodes raw transport bytes into a spatially corrected mathematical image structure.
 
         Args:
-            image_bytes (bytes): Raw uploaded multipart/form-data payload.
+            image_bytes: The raw unstructured byte stream extracted from the remote payload.
 
         Returns:
-            np.ndarray: Preprocessed, scaled, and correctly rotated BGR image.
+            A mathematically constrained multi-dimensional array mapping BGR color space.
+
+        Raises:
+            UnreadableImageError: If the payload violates absolute volume restrictions, is missing, 
+                or fundamentally fails structural pixel decoding protocols.
+
+        Implementation Details:
+            Executes defensive volume assertions instantly, halting execution before launching 
+            expensive IO interpreters. Translates raw phone camera inputs referencing embedded 
+            EXIF metadata to structurally rotate the image into absolute mathematical planes. 
+            Resamples massive dimensions iteratively maintaining physical ratios prior to 
+            channeling colors back to BGR formatting standard required by internal vision tools.
         """
         # FAST_FAIL_IF_BYTES_INVALID — before importing anything heavy.
         if image_bytes is None or len(image_bytes) == 0:

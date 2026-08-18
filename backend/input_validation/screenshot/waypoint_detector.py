@@ -9,12 +9,18 @@ if TYPE_CHECKING:
 
 
 class WaypointDetectionError(ScreenshotError):
-    """Raised when waypoints cannot be fully or sequentially resolved.
+    """
+    Identifies localized sequence breaks occurring explicitly across parsed marker digits.
 
-    A board was located and sized, but its numerals are inconsistent — an unreadable
-    marker, a gap in the sequence, or a duplicate. 422 with INVALID_WAYPOINTS, matching
-    the semantic-waypoint failures the validator raises, so the frontend handles both the
-    same way.
+    Responsibility:
+        Informs the execution lifecycle when recognized markers mathematically contradict 
+        strict serialization rules, signaling missing links, impossible duplicates, or entirely 
+        illegible milestone glyphs.
+
+    Implementation Details:
+        Assigns standard 422 HTTP outputs mirroring identical failures thrown by the deeper 
+        semantic validator matrix. Allows frontend operators to uniformly process topological 
+        reading crashes regardless of their origin layer.
     """
 
     code = "INVALID_WAYPOINTS"
@@ -22,14 +28,35 @@ class WaypointDetectionError(ScreenshotError):
 
 
 class WaypointDetector:
-    """Identifies and reads the numerals inside grid cells (Waypoints)."""
+    """
+    Identifies, segments, and processes central digits defining sequence markers.
+
+    Responsibility:
+        Coordinates internal evaluation loops crossing pre-computed graphical grids scanning for 
+        specific saturation matrices before extracting bounded character shapes determining sequential 
+        traversal layouts.
+
+    Implementation Details:
+        Maintains an aggregated best-effort pipeline structure natively absorbing and reporting 
+        low-confidence detection states dynamically while safely falling back onto deterministic 
+        reading logic arrays explicitly minimizing generalized pipeline crashes caused by weak OCR mapping.
+    """
 
     def _disc_bbox(self, center, fallback_bbox):
-        """Build a square bbox centred on a disc (cx, cy, r) for precise digit cropping.
+        """
+        Maps targeted dimensional boxes prioritizing identified circle focal maps.
 
-        Falls back to the cell bbox if the centre is missing. Using the disc's own centre
-        (rather than the cell box) keeps the numeral centred even when the disc straddles a
-        cell boundary — the exact case per-cell detection got wrong.
+        Args:
+            center: The discrete focal coordinate map indicating identified disk properties.
+            fallback_bbox: The localized grid parameters deployed aggressively upon missed detections.
+
+        Returns:
+            The normalized spatial coordinate package definitively bounding the operational disk.
+
+        Implementation Details:
+            Extracts coordinates actively overriding generalized node blocks by centering strictly 
+            upon detected radius parameters ensuring cropped boundaries prevent severe glyph clipping 
+            especially along straddled boundaries.
         """
         if center is None:
             return fallback_bbox
@@ -47,26 +74,27 @@ class WaypointDetector:
         disc_cells: "Optional[Dict[Tuple[int, int], Tuple[float, float, float]]]" = None,
     ) -> List[List[int]]:
         """
-        Scans the localized cells to detect markers and reads their sequential numbers.
-        Formats the return exactly to the JSON schema: ordered List[[x, y]].
+        Scans localized bounds systematically interpreting mathematical layout markers.
 
-        Best-effort contract: waypoint *positions* are detected reliably, but the printed
-        numbers are read with OCR that can misfire on real screenshots. Rather than reject
-        the whole board when the read is imperfect, the numbers are trusted only when they
-        form a clean 1..k permutation; otherwise the waypoints are ordered deterministically
-        (reading order) and a warning is recorded via ``self.last_warnings`` for the caller
-        to surface. This keeps a slightly-misread board usable (the user can fix the order
-        in the editor) instead of failing the import outright.
-
-        ``disc_cells`` (optional): a {(col,row): (cx, cy, r)} map of discs the localizer
-        already found by GLOBAL circle detection. When present it is the authoritative set
-        of waypoint POSITIONS — it does not miss discs that straddle a cell boundary, which
-        per-cell re-detection does — and the digit reader crops precisely around each disc
-        centre. When absent, falls back to scanning every cell (the original contract the
-        unit tests patch).
+        Args:
+            image_data: The absolute overarching pixel payload.
+            cell_bounds: The active dictionary explicitly mapping logical spaces onto physical crops.
+            theme: The identified illumination mode actively adjusting evaluation thresholds.
+            disc_cells: The pre-supplied bounding anchors actively preventing duplicate per-cell re-detections.
 
         Returns:
-            List[List[int]]: [x, y] coordinates in visit order (index 0 == waypoint 1).
+            A strictly formulated ordered sequence directly assigning layout progression steps.
+
+        Raises:
+            UnreadableImageError: If the source matrix evaluates empty.
+            ValueError: If cell definitions are completely missing from the mapping bounds.
+
+        Implementation Details:
+            Executes targeted best-effort mapping looping exclusively utilizing cached disk anchors 
+            where present, mitigating extreme edge-case failure nodes. Integrates defensive loops 
+            preventing localized OCR skips from flatly halting operations, injecting aggregated 
+            warnings internally to preserve overarching coordinate configurations cleanly sorted 
+            utilizing standardized row-major sorting vectors natively.
         """
         self.last_warnings: List[Dict[str, Any]] = []
 
@@ -173,14 +201,22 @@ class WaypointDetector:
         bbox: Tuple[int, int, int, int],
         theme: ThemeMode,
     ):
-        """Detect an orange waypoint disc in one cell and read its numeral.
+        """
+        Segments localized blocks validating high saturation circular boundaries yielding read targets.
 
-        Patched out in unit tests, so its (image, bbox, theme) signature is the contract.
-        In production it: crops the cell, finds the saturated orange disc (returns None when
-        the cell has none — that is how empty cells are skipped), isolates the white numeral
-        as a low-saturation blob in the disc core, segments it into digit glyphs, and reads
-        each by template matching. Returns the integer, or '?' if a disc is present but its
-        number could not be read.
+        Args:
+            image_data: The absolute mapping array actively containing spatial layouts.
+            bbox: The exact geometric node bounds extracting specific structural cell boundaries.
+            theme: The identified illumination mode actively adjusting evaluation logic.
+
+        Returns:
+            The raw identified character metric or contextual symbols designating unreadable objects.
+
+        Implementation Details:
+            Extracts strict sub-matrices evaluating raw color thresholds targeting vivid orange 
+            markings aggressively skipping barren layouts completely. Utilizes constrained core 
+            selections identifying brilliant central digits strictly preventing heavy rim bleeding 
+            before actively channeling threshold arrays down specialized numeral interpretation lines.
         """
         import cv2
         import numpy as np
@@ -214,10 +250,19 @@ class WaypointDetector:
         return number if number is not None else "?"
 
     def _read_number(self, white_mask):
-        """Segment a white-on-black numeral mask into digits and classify each.
+        """
+        Segments localized glyph clusters mapping structural boundaries back to classification routines.
 
-        Returns the integer, or None if nothing legible. Digit templates are rendered once
-        and cached; matching uses aspect-normalised pixel disagreement (ink-unbiased).
+        Args:
+            white_mask: The heavily constrained threshold array illuminating core digit patterns.
+
+        Returns:
+            The absolutely resolved mathematical integer representing active layout progression steps.
+
+        Implementation Details:
+            Parses connected component labels aggregating raw glyph geometries securely while 
+            eliminating speckle noise naturally scaling bounds horizontally identifying distinct 
+            multi-digit numbers iteratively against cached template definitions preserving layout order.
         """
         import cv2
         import numpy as np
@@ -247,7 +292,20 @@ class WaypointDetector:
             return None
 
     def _classify_digit(self, glyph) -> Optional[int]:
-        """Classify a single-digit glyph (0-9) by nearest normalised template."""
+        """
+        Calculates mathematical nearest-neighbor variances matching isolated chunks into numbers.
+
+        Args:
+            glyph: The targeted geometric subset identifying a singular numerical shape.
+
+        Returns:
+            The raw identified evaluation metric mapping back onto standard integers.
+
+        Implementation Details:
+            Extracts fully normalized layout bounds crossing identical dimensions actively pulling 
+            compiled memory templates computing squared mathematical variances dictating optimal 
+            distance gaps dynamically mapping pure shape relationships strictly independent of ink weights.
+        """
         import numpy as np
 
         templates = self._digit_templates()
@@ -261,7 +319,21 @@ class WaypointDetector:
         return best
 
     def _normalise_glyph(self, glyph, box: int = 40):
-        """Scale a glyph into a fixed box preserving aspect, as a float {0,1} mask."""
+        """
+        Interpolates dimensional structures forcefully centering localized objects symmetrically.
+
+        Args:
+            glyph: The explicit target pattern necessitating uniform scaling models.
+            box: The defined scaling boundary applied uniformly dictating overarching maps.
+
+        Returns:
+            A rigorously scaled array structure formatted explicitly for template checks.
+
+        Implementation Details:
+            Determines structural aspect gaps dynamically resolving bounds evenly across maximum 
+            axes immediately projecting interpolation loops directly mapping onto entirely blank 
+            standardized geometric canvas floors securely locking shapes.
+        """
         import cv2
         import numpy as np
 
@@ -278,7 +350,18 @@ class WaypointDetector:
         return canvas
 
     def _digit_templates(self):
-        """Render and cache 0-9 glyph templates from bundled sans-bold fonts."""
+        """
+        Synthesizes standard visual classification templates actively buffering rendering calls.
+
+        Returns:
+            A cached multidimensional mapping matrix translating integers strictly against pixel shapes.
+
+        Implementation Details:
+            Queries active system environments isolating standardized sans-bold fonts aggressively 
+            rendering theoretical markers. Pushes resulting canvas evaluations directly back 
+            into specialized instance property bindings avoiding catastrophic CPU cycles on 
+            successive identification runs completely.
+        """
         cache = getattr(self, "_digit_template_cache", None)
         if cache is not None:
             return cache
@@ -314,10 +397,19 @@ class WaypointDetector:
         return cache
 
     def _unbox_numeral(self, raw) -> Optional[int]:
-        """Cast an OCR/ML result to a pure Python int, or None if it is not a numeral.
+        """
+        Safely bridges complex return classes cleanly reverting ambiguous metrics natively.
 
-        Handles boxed tensor/scalar types (``.item()``), objects castable via ``int()``,
-        and numeric strings. Anything else (notably '?') returns None so the caller raises.
+        Args:
+            raw: The dynamic interpretation value dictating varying underlying library types.
+
+        Returns:
+            The normalized pure Python integer representation, returning entirely null if invalid.
+
+        Implementation Details:
+            Extracts deeply boxed tensor matrices securely utilizing dynamic runtime assessments 
+            targeting exact resolution states directly. Handles custom type bindings safely bypassing 
+            internal unboxing errors preventing complete evaluation loop failures over erratic strings.
         """
         if raw is None:
             return None

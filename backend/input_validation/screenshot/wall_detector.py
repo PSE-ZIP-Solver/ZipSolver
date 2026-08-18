@@ -15,7 +15,19 @@ WALL_CONTRAST_DELTA = 80
 
 
 class WallDetector:
-    """Distinguishes between passable grid lines and impassable heavy walls."""
+    """
+    Delineates physical boundaries separating distinct cell geometries.
+
+    Responsibility:
+        Scans calculated logical divisions translating heavy graphical pixel lines into 
+        explicit impassable barrier nodes for the internal evaluation graph.
+
+    Implementation Details:
+        Operates without memory allocations mapping purely off pre-calculated cell geometries 
+        and established visual themes. Selectively measures narrow coordinate slices and utilizes 
+        heavy mathematical variance matrices targeting contrast jumps separating standard line 
+        bleed from intentionally rendered obstacles.
+    """
 
     def detect_walls(
         self,
@@ -24,11 +36,25 @@ class WallDetector:
         theme: ThemeMode,
     ) -> List[Dict[str, List[int]]]:
         """
-        Analyzes the boundaries between adjacent cells to identify walls.
-        Formats the return exactly to the JSON schema's wall definition.
+        Calculates distinct blockage matrices crossing neighboring physical elements.
+
+        Args:
+            image_data: The absolute mapping array dictating active pixel structures.
+            cell_bounds: The active dictionary isolating exact slice boundaries matched to logical paths.
+            theme: The definitive categorical lighting configuration ensuring contrast matrices apply cleanly.
 
         Returns:
-            List[Dict[str, List[int]]]: JSON-compliant list of wall dictionaries.
+            An array compilation structuring identified wall connections safely referencing coordinates.
+
+        Raises:
+            UnreadableImageError: If the targeted mathematical source matrix is unavailable.
+            ValueError: If coordinate structures are provided inherently blank.
+
+        Implementation Details:
+            Iterates exclusively upon lower and right-ward neighbor relationships structurally, 
+            actively bypassing retroactive mapping loops entirely. Identifies matching adjacent 
+            pixel slices querying contrast maps generating natively compliant structures mapped 
+            immediately utilizing native pure integer wrappers.
         """
         if image_data is None or image_data.size == 0:
             raise UnreadableImageError("Image data cannot be None or empty.")
@@ -68,12 +94,25 @@ class WallDetector:
         bbox_b: Tuple[int, int, int, int],
         theme: ThemeMode,
     ) -> bool:
-        """Whether the boundary between two adjacent cells carries a wall.
+        """
+        Evaluates a localized pixel intersection establishing structural barrier existence.
 
-        Patched out in unit tests, so its signature is the contract. In production it
-        extracts the boundary sliver, binarises it (Otsu, with the threshold direction
-        chosen by ``theme``), and calls it a wall when a large fraction of the sliver is
-        heavy ink — distinguishing a thick wall from a thin ordinary grid line.
+        Args:
+            image_data: The encompassing multidimensional graphic source matrix.
+            cell_a: The discrete Cartesian marker anchoring the initial test node.
+            cell_b: The adjacent Cartesian marker anchoring the target node.
+            bbox_a: The isolated pixel mapping explicitly bounding the initial zone.
+            bbox_b: The isolated pixel mapping explicitly bounding the target zone.
+            theme: The baseline brightness constraint dictating comparison maps.
+
+        Returns:
+            A mathematical boolean dictating positive boundary separation.
+
+        Implementation Details:
+            Selects narrow slivers bridging coordinate limits strictly calculating ratio variations 
+            against extracted baselines. Employs direct contrast limits against calculated core 
+            cell medians directly bypassing traditional absolute thresholding or Otsu segmentation 
+            which uniformly failed during dense testing sequences due to misdetected thematic loops.
         """
         import cv2
         import numpy as np
@@ -105,7 +144,22 @@ class WallDetector:
             return False
 
     def _cell_reference_level(self, image_data, bbox_a, bbox_b):
-        """Median gray of the two cells' interiors — the 'no wall here' baseline."""
+        """
+        Computes definitive localized brightness scores rejecting background anomalies.
+
+        Args:
+            image_data: The absolute global array map.
+            bbox_a: The coordinate slice targeting standard cell origin paths.
+            bbox_b: The coordinate slice targeting structural evaluation pairs.
+
+        Returns:
+            The normalized raw metric providing statistical baseline luminance.
+
+        Implementation Details:
+            Explicitly constrains evaluations strictly into spatial cores targeting precise 
+            center percentages. Eliminates anti-aliased boundaries and active waypoint circles 
+            gathering pure floor medians enabling accurate comparative contrast tests securely.
+        """
         import cv2
         import numpy as np
 
@@ -128,10 +182,21 @@ class WallDetector:
         bbox_a: Tuple[int, int, int, int],
         bbox_b: Tuple[int, int, int, int],
     ):
-        """Extract a narrow pixel sliver straddling the shared border of two cells.
+        """
+        Isolates constrained boundary chunks bridging distinct topological mappings.
 
-        Patched out in the theme-routing test. Handles both horizontal neighbours (shared
-        vertical border) and vertical neighbours (shared horizontal border).
+        Args:
+            image_data: The spatial mapping array utilized for sub-cutting.
+            bbox_a: The geometric bounds representing the initial evaluation structure.
+            bbox_b: The targeted geometric bounds dictating the adjacent space.
+
+        Returns:
+            An exact, heavily cropped multidimensional array isolating visual intersections.
+
+        Implementation Details:
+            Extracts the precise horizontal or vertical intersection axes programmatically. 
+            Actively calculates division half-steps securely routing slicing maps dynamically 
+            across horizontal axes when rightwards structures spawn, bypassing rigid limits organically.
         """
         ax, ay, aw, ah = bbox_a
         bx, by, bw, bh = bbox_b

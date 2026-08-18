@@ -1,44 +1,65 @@
-"""Typed error hierarchy for screenshot import.
+"""
+Typed error hierarchy strictly delineating external screenshot import failures.
 
-Each failure mode carries its own stable ``code`` and ``http_status`` so the API layer
-maps errors by *type*, not by sniffing a message string. The three axes the frontend
-needs to tell apart:
+Responsibility:
+    Functions as a strongly typed domain vocabulary permitting external routing proxies 
+    to reliably transform nested graphical interpretation failures directly into actionable 
+    HTTP API mappings. Segregates physical unreadability from localized missing topologies 
+    to supply the front-end interface with nuanced, resolvable error dialogs.
 
-  - "this isn't a board at all"     -> NoBoardDetectedError        (422, NO_BOARD_DETECTED)
-  - "a board, but I can't size it"  -> AmbiguousBoardError         (422, AMBIGUOUS_BOARD)
-  - "the file isn't a usable image" -> UnreadableImageError        (400, MALFORMED_REQUEST)
-  - "a board, but waypoints break"  -> WaypointDetectionError      (422, INVALID_WAYPOINTS)
-
-The distinction that matters most for UX: NO_BOARD_DETECTED means "point the camera at a
-Zip puzzle" — a user-actionable retry — whereas MALFORMED_REQUEST means "that file was
-corrupt or not an image". Collapsing them into one 400, as the old flat ValueError did,
-made both indistinguishable to the frontend.
+Implementation Details:
+    Structurally segregates error conditions based on distinct resolution steps. 
+    Defines generic base wrappers preserving standard exception behaviors before explicitly 
+    overriding internal HTTP bindings upon specific semantic faults (e.g., separating 
+    un-parseable structures from missing board elements) rather than passing flattened 
+    strings which APIs cannot inherently categorize.
 """
 
 from __future__ import annotations
 
 
 class ScreenshotError(ValueError):
-    """Base for every recoverable screenshot-import failure.
+    """
+    Base structural exception encapsulating all recoverable graphical processing traps.
 
-    Subclasses ``ValueError`` (these are all bad-input conditions), so existing callers and
-    tests that expect a ``ValueError`` keep working, while the added ``code`` and
-    ``http_status`` let the API map each failure mode to its own response. ``code`` is a
-    stable string the frontend switches on; ``http_status`` is the status the API applies.
+    Responsibility:
+        Serves as the root polymorphic type enforcing safe backward-compatible behaviors 
+        for system architectures reliant exclusively on generic standard exceptions.
+
+    Implementation Details:
+        Subclasses `ValueError` explicitly to maintain catch-block compatibility across 
+        older testing environments while forcefully defining strict class-level metadata 
+        attributes detailing external translation mappings for immediate API integration.
     """
 
     code: str = "SCREENSHOT_ERROR"
     http_status: int = 422
 
     def __init__(self, message: str) -> None:
+        """
+        Initializes the foundational exception with standard contextual logging.
+
+        Args:
+            message: The raw human-readable explanation mapping exactly what failed.
+
+        Implementation Details:
+            Delegates message formatting explicitly into the primary standard Python 
+            Exception chain to preserve exact stacktrace contexts.
+        """
         super().__init__(message)
 
 
 class UnreadableImageError(ScreenshotError):
-    """The upload could not be decoded, was empty, oversized, or not a real image.
+    """
+    Indicates raw input payloads completely bypass structural boundaries or format limits.
 
-    A client problem (bad file), hence 400 — distinct from a valid image that simply does
-    not contain a board.
+    Responsibility:
+        Distinguishes fatal client-level uploading issues (such as sending corrupt bytes 
+        or extreme volumes) from valid image payloads completely devoid of targeted UI.
+
+    Implementation Details:
+        Hardcodes static HTTP responses to 400 bad requests explicitly preventing 
+        subsequent logical blocks from trying to process undefined buffer architectures.
     """
 
     code = "MALFORMED_REQUEST"
@@ -46,10 +67,17 @@ class UnreadableImageError(ScreenshotError):
 
 
 class NoBoardDetectedError(ScreenshotError):
-    """A valid image was decoded, but no puzzle grid could be found in it.
+    """
+    Indicates functional, uncorrupted input graphics thoroughly lacking gameplay structures.
 
-    The headline guardrail: a photo of a cat, a blank screenshot, or a page with no grid
-    lands here and gets a clear "No board detected" rather than a confusing size error.
+    Responsibility:
+        Signals to front-end clients that spatial bounds generation correctly resolved, 
+        yet utterly failed to unearth topological landmarks dictating viable execution geometry.
+
+    Implementation Details:
+        Overrides structural identifiers mapped cleanly back into 422 statuses specifying 
+        clear, actionable UI resolutions (e.g., instructing users to photograph specific 
+        layouts rather than resizing image properties).
     """
 
     code = "NO_BOARD_DETECTED"
@@ -57,10 +85,17 @@ class NoBoardDetectedError(ScreenshotError):
 
 
 class AmbiguousBoardError(ScreenshotError):
-    """A grid-like region was found, but its size could not be resolved to 6, 7, or 8.
+    """
+    Indicates successfully located graphics generating un-mappable scaling measurements.
 
-    Separate from NoBoardDetectedError because the user action differs: here the advice is
-    "use a sharper / less cropped screenshot", not "point at a board".
+    Responsibility:
+        Informs the execution pipeline that while structural bounds were explicitly discovered, 
+        overall dimension constraints wildly contradicted supported puzzle mathematical profiles.
+
+    Implementation Details:
+        Generates distinct 422 markers dictating specific user action separating layout 
+        failures away from general absence logic, pushing users toward clearer crops over 
+        entirely different images.
     """
 
     code = "AMBIGUOUS_BOARD"
