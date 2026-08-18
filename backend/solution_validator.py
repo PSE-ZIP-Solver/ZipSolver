@@ -7,21 +7,44 @@ from backend.validation_result import ValidationResult
 
 class SolutionValidator:
     """
-    Validates whether a given SolutionPath is a correct and complete solution
-    for the provided Board, using the configured PuzzleRules.
+    Validates whether a candidate trajectory constitutes a mathematically correct puzzle completion.
+
+    Responsibility:
+        Serves as the definitive authentication gateway that processes unverified solver outputs. 
+        It strictly verifies structural integrity, domain restrictions, spatial boundaries, and 
+        chronological sequence mechanics before officially accepting a path as a victory condition.
+
+    Implementation Details:
+        Functions through a strict fast-fail cascading architecture. Instantiates an internal, 
+        stateless rule-evaluation module. Defensively screens for baseline structural anomalies 
+        (null arrays, incorrect volumes) to short-circuit processing before handing off intensive 
+        Hamiltonian validation loops to the core rules engine.
     """
     def __init__(self):
+        """
+        Initializes the overarching authentication gateway and binds the necessary computational modules.
+
+        Implementation Details:
+            Generates a fresh, standalone instance of the puzzle's domain evaluation ruleset 
+            and seamlessly assigns it to a strictly protected internal parameter to handle 
+            deep logic queries during execution.
+        """
         self._rules = PuzzleRules()
 
     def _checkPathExists(self, path: SolutionPath) -> bool:
         """
-        Checks if the provided solution path exists and is not empty.
+        Ascertains if the targeted navigational sequence actually possesses actionable coordinate data.
 
         Args:
-            path (SolutionPath): The path to check.
+            path: The localized candidate wrapper object queued for internal inspection.
 
         Returns:
-            bool: True if the path exists and contains positions, False otherwise.
+            The determination flag confirming if the structure is allocated and actively populated.
+
+        Implementation Details:
+            Employs robust, defensive short-circuit traps. Explicitly queries the raw wrapper object 
+            for null states. If valid, extracts the underlying physical tracking array via proper 
+            decorator access and re-checks it natively for null existence and zero-length parity.
         """
         if path is None:
             return False
@@ -34,14 +57,19 @@ class SolutionValidator:
 
     def _checkPathLength(self, board: Board, path: SolutionPath) -> bool:
         """
-        Checks if the length of the path matches the expected requirements of the board.
+        Validates if the absolute linear step count seamlessly matches the total topological volume.
 
         Args:
-            board (Board): The board to check against.
-            path (SolutionPath): The path to check.
+            board: The foundational spatial layout strictly determining dimensional limits.
+            path: The compiled chronology list representing complete executed pathways.
 
         Returns:
-            bool: True if the length is valid, False otherwise.
+            The verification flag proving the sequence volume satisfies baseline spatial requirements.
+
+        Implementation Details:
+            Invokes internal existence validation to securely filter null states. Extracts the raw 
+            dimensional baseline via property hooks, mathematically squares the scalar to derive exact 
+            cellular volume, and strictly compares it against the raw native length of the trajectory list.
         """
         if not self._checkPathExists(path):
             return False
@@ -50,14 +78,22 @@ class SolutionValidator:
 
     def validate(self, board: Board, path: SolutionPath) -> ValidationResult:
         """
-        Validates the candidate solution path against the board's rules.
+        Orchestrates an exhaustive, multi-tiered authenticity diagnostic on a proposed puzzle solution.
 
         Args:
-            board (Board): The semantic board being solved.
-            path (SolutionPath): The candidate solution path to validate.
+            board: The rigid physical layout dictating localized grid dimensions and waypoint mechanics.
+            path: The chronologically indexed tracking map submitted for authoritative evaluation.
 
         Returns:
-            ValidationResult: The structured result containing validity status, message, and any errors.
+            The finalized structured response detailing the absolute operational status and specific infractions.
+
+        Implementation Details:
+            Executes a sequential, defensive validation hierarchy. Phase 1 guarantees fundamental structure, 
+            short-circuiting immediately and generating specific empty-path faults if breached. Phase 2 
+            mandates mathematical volumetric alignment against the board, ejecting invalid-length errors 
+            upon failure. Phase 3 extracts the unboxed coordinate array and subjects it to the stateless 
+            evaluation engine for intense algorithmic scrutiny, returning rule-violation records if rejected. 
+            Phase 4 finalizes the operation by actively yielding a clean, error-free success payload.
         """
         errors = []
 
