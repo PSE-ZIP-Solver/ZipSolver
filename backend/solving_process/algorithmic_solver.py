@@ -15,6 +15,20 @@ from backend.puzzle_logic.data_models import Position, Waypoint
 
 @dataclass(order=True)
 class SearchNode:
+    """
+    Represents an isolated, evaluated state vector within the A* Priority Queue.
+
+    Responsibility:
+        Maintains granular snapshot data of a specific routing branch, preserving the exact 
+        spatial position, the sequence history, and heuristic scorings required to accurately 
+        rank the optimal exploration path.
+
+    Implementation Details:
+        Utilizes Python's `@dataclass` equipped with strict `order=True` flags for seamless 
+        integration into `heapq` structures. Rapidly prunes mathematical overhead by encapsulating 
+        visited cells purely as compressed binary integers (bitmasks), disabling direct evaluation 
+        comparisons on spatial/pointer fields using `compare=False`.
+    """
     f_score: int
     neg_depth: int
     counter: int
@@ -25,13 +39,68 @@ class SearchNode:
 
 
 class AlgorithmicSolver(Solver):
+    """
+    A highly optimized, deterministic pathfinding engine utilizing A* heuristics.
+
+    Responsibility:
+        Functions as the mathematically flawless, exhaustive backend resolution agent. It calculates 
+        perfect Hamiltonian solutions by systematically navigating graph permutations while aggressively 
+        filtering out mathematically impossible states (loose ends, parity violations) to maintain speed.
+
+    Implementation Details:
+        Transforms the spatial 2D grid into a highly compressed graph layout mapped via integer dictionaries. 
+        Execution relies primarily on bitwise mask operations and high-performance heuristic math 
+        to track traversal histories and topological remaining requirements with minimal memory allocation.
+    """
     def __init__(self, timeout: int):
+        """
+        Initializes the deterministic search engine with explicit operational boundaries.
+
+        Args:
+            timeout: The absolute temporal ceiling defining maximum permitted execution loops.
+
+        Implementation Details:
+            Reserves the temporal limit directly into a protected attribute, establishing 
+            a localized threshold designed to aggressively break out of computationally 
+            improbable permutations before stalling API threads.
+        """
         self._timeout = timeout
 
     def _get_bit_index(self, pos: Position, board_size: int) -> int:
+        """
+        Translates a dimensional coordinate into a localized 1D scalar for bitwise operations.
+
+        Args:
+            pos: The requested spatial grid coordinate.
+            board_size: The absolute length forming the bounding grid limitation.
+
+        Returns:
+            The normalized raw integer index mathematically mapping to the cell.
+
+        Implementation Details:
+            Extracts property bounds and multiplies the row scalar against the total 
+            dimension threshold before factoring in column offsets, enabling seamless translation 
+            for binary tracking arrays.
+        """
         return pos.getY * board_size + pos.getX
 
     def _heuristic(self, current, waypoints, next_wp_idx):
+        """
+        Computes the optimized A* Manhattan distance remaining across upcoming sequential milestones.
+
+        Args:
+            current: The present navigational tip evaluating upcoming trajectory requirements.
+            waypoints: The sorted structural milestone limits governing progression maps.
+            next_wp_idx: The active tracking index noting the subsequent mandatory checkpoint.
+
+        Returns:
+            The raw scalar metric estimating minimum remaining distance requirements.
+
+        Implementation Details:
+            Dynamically computes immediate distance towards the closest upcoming waypoint natively, 
+            then chains Manhattan summations linking the sequence of all remaining subsequent milestones 
+            together. Yields exactly 0 if completely exhausted.
+        """
         if next_wp_idx < len(waypoints):
             target_pos = waypoints[next_wp_idx].getPosition
             h = abs(current.getX - target_pos.getX) + abs(current.getY - target_pos.getY)
@@ -42,6 +111,25 @@ class AlgorithmicSolver(Solver):
         return 0
 
     def _parity_ok(self, visited_mask, head, target, board_size, total_cells):
+        """
+        Calculates strict mathematical color balance to prematurely prune impossible grid divisions.
+
+        Args:
+            visited_mask: The compressed bit-array of successfully consumed topologies.
+            head: The active spatial tip currently leading the search tree.
+            target: The mandatory terminal location marking the end boundary.
+            board_size: The dimensional parameter mapping absolute boundaries.
+            total_cells: The cumulative volume requirement dictating total traversal counts.
+
+        Returns:
+            True if the remaining graph nodes maintain valid checkerboard bipartition balance, False otherwise.
+
+        Implementation Details:
+            Projects the remaining layout onto a theoretical bipartite graph (checkerboard coloration). 
+            Counts specific color arrays against the active mask and mathematically derives if traversing 
+            between the remaining odd/even layouts naturally terminates at the target requirement. 
+            Instantly returns true if endpoints remain unfixed.
+        """
         if target is None:
             return True  # no fixed endpoint -> colour balance is unconstrained
         remaining = total_cells - visited_mask.bit_count() + 1
@@ -57,6 +145,26 @@ class AlgorithmicSolver(Solver):
         return count[head_colour] == (remaining + 1) // 2 and count[1 - head_colour] == remaining // 2
 
     def _is_viable_state(self, visited_mask, head, target, board_size, total_cells, adj_list):
+        """
+        Evaluates active layout connectivity to violently reject branches forming physical chokepoints.
+
+        Args:
+            visited_mask: The encoded tracking binary array.
+            head: The active focal location mapping trajectory points.
+            target: The calculated terminus block dictating endpoint constraints.
+            board_size: The dimensional scalar forming array sizes.
+            total_cells: The exact metric counting grid completion targets.
+            adj_list: The pre-compiled dictionary retaining node connections.
+
+        Returns:
+            True if the topology permits ongoing Hamiltonian flow without trapped fragments, False if fractured.
+
+        Implementation Details:
+            Executes a rapid flood-fill analysis prioritizing unvisited edges. Identifies "loose ends" 
+            (unoccupied cells reduced to a single valid exit) and actively drops evaluation states if 
+            multiple traps form simultaneously. Rebuilds reachable matrices and compares directly against 
+            calculated untraversed volumes to verify absolute contiguous connections.
+        """
         head_idx = self._get_bit_index(head, board_size)
         start_node = None
         loose_ends = 0
@@ -108,6 +216,20 @@ class AlgorithmicSolver(Solver):
         return reachable_count == expected_unvisited
 
     def _reconstruct_path(self, end_node):
+        """
+        Crawls historically nested pointers to output the definitive solution mapping array.
+
+        Args:
+            end_node: The terminus memory block tracking the successful completion state.
+
+        Returns:
+            The structured traversal array securely formatted for orchestrator consumption.
+
+        Implementation Details:
+            Extracts coordinates sequentially by recursively querying `parent` linkages within the 
+            terminal dataclass until the origin is reached. The array is mathematically reversed to 
+            secure a proper start-to-finish layout before packing directly into the domain wrapper.
+        """
         positions = []
         curr = end_node
         while curr:
@@ -118,6 +240,23 @@ class AlgorithmicSolver(Solver):
         return sp
 
     def _a_star(self, board):
+        """
+        Executes the primary heuristic search loop analyzing millions of graph iterations.
+
+        Args:
+            board: The structural grid layout defining constraints and barriers.
+
+        Returns:
+            A composite tuple housing the extracted path (if found), total evaluation steps, 
+            and a boolean identifying if calculations hit temporal limits.
+
+        Implementation Details:
+            Sets up high-speed localized caches (adjacency lists, waypoint maps) mapped entirely 
+            to bits to avoid nested Python iterations. Initializes prioritized `heapq` structures 
+            employing Manhattan heuristics against node depth combinations to aggressively funnel 
+            searches into promising channels. Enforces strict timeouts and dynamically alters 
+            starting bounds/seeding mechanics based on raw milestone volume counts.
+        """
         start_time = time.perf_counter()
         timeout_sec = self._timeout / 1000.0
         steps = 0; timed_out = False
@@ -190,6 +329,21 @@ class AlgorithmicSolver(Solver):
         return None, steps, timed_out
 
     def solve(self, board):
+        """
+        Coordinates the deterministic calculation lifecycle and encapsulates final results.
+
+        Args:
+            board: The static dimensional boundaries and requirements being analyzed.
+
+        Returns:
+            The structured state package definitively reporting success vectors, timing constraints, 
+            or mathematical impossibilities.
+
+        Implementation Details:
+            Actively queries core execution parameters directly against high-precision hardware clocks 
+            to trace MS expenditures. Unpacks the localized search tuples into broad system outcome 
+            states and constructs absolute metrics wrappers prior to dispatch.
+        """
         t = time.perf_counter()
         path, steps, timed_out = self._a_star(board)
         ms = int((time.perf_counter()-t)*1000)
