@@ -276,3 +276,4 @@ class BoardGenerator:
             board.addWall(wall[0], wall[1])
 
         return board
+    
