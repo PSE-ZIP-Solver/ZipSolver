@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
-from backend.input_validation.screenshot.errors import (
+from backend.input_validation.screenshot.screenshot_errors import (
     AmbiguousBoardError,
     NoBoardDetectedError,
     UnreadableImageError,

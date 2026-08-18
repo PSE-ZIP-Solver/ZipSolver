@@ -1,5 +1,5 @@
 import json
-from backend.input_validation.screenshot.errors import (
+from backend.input_validation.screenshot.screenshot_errors import (
     NoBoardDetectedError,
     UnreadableImageError,
 )

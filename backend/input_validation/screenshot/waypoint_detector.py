@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from backend.input_validation.screenshot.errors import ScreenshotError
-from backend.input_validation.screenshot.errors import UnreadableImageError
+from backend.input_validation.screenshot.screenshot_errors import ScreenshotError
+from backend.input_validation.screenshot.screenshot_errors import UnreadableImageError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 if TYPE_CHECKING:

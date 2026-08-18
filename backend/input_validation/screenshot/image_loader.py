@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from backend.input_validation.screenshot.errors import UnreadableImageError
+from backend.input_validation.screenshot.screenshot_errors import UnreadableImageError
 
 if TYPE_CHECKING:
     import numpy as np

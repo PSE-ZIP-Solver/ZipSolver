@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch, call
 
 # Absolute imports reflecting the test package location
 from backend.input_validation.screenshot.screenshot_extractor import ScreenshotExtractor
-from backend.input_validation.screenshot.errors import NoBoardDetectedError
+from backend.input_validation.screenshot.screenshot_errors import NoBoardDetectedError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 # Assuming WaypointDetectionError is available to import
