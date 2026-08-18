@@ -137,12 +137,12 @@ class AgentTrainer:
         explorationInitialEps: float = 1.0,
         explorationFinalEps: float = 0.10,
         explorationFraction: float = 0.8,
-        learningRate: float = 5e-5,
-        learningStarts: int = 5_000,
-        bufferSize: int = 200_000,
+        learningRate: float = 1e-4,
+        learningStarts: int = 500,
+        bufferSize: int = 50_000,
         batchSize: int = 64,
-        targetUpdateInterval: int = 5_000,
-        gamma: float = 0.99,
+        targetUpdateInterval: int = 500,
+        gamma: float = 0.98,
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
@@ -704,12 +704,12 @@ if __name__ == "__main__":
         explorationInitialEps=1.0,
         explorationFinalEps=0.10,
         explorationFraction=0.8,
-        learningRate=5e-5,
-        learningStarts=5_000,
-        bufferSize=200_000,
+        learningRate=1e-4,
+        learningStarts=500,
+        bufferSize=50_000,
         batchSize=64,
-        targetUpdateInterval=5_000,
-        gamma=0.99,
+        targetUpdateInterval=500,
+        gamma=0.98,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
