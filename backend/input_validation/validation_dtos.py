@@ -1,60 +1,60 @@
 """
-Typed error hierarchy for board parsing (§5.5.5).
+Canonical home of the validation contract (§5.5.4).
 
 Responsibility:
-    Provides a structured taxonomy of exception classes utilized during payload 
-    interpretation. Allows the API layer to map parse failures by their categorical 
-    type rather than dynamically inspecting fragile message strings, mirroring the 
-    system's screenshot error hierarchy.
+    Maintains the standardized data transfer objects utilized to communicate semantic 
+    failures between the core puzzle domain and the external API boundaries.
 
 Implementation Details:
-    The `JsonInterpreter.buildBoard` method previously relied upon a generic `ValueError` 
-    for every fault, culminating in broad 400 API responses. The internal rule dictating 
-    unique walls (§5.5.1) requires interception before `Board` instantiation due to its 
-    internal Set collapse behavior. Carrying the precise taxonomy code on specialized 
-    exceptions empowers the API to cleanly return distinct HTTP 422 statuses while the 
-    interpreter remains strictly unaware of HTTP context.
+    These models reside natively within the `input_validation` package to preserve 
+    strict unidirectional architectural dependencies, preventing the domain components 
+    (like `InputValidator`) from importing structures mapped directly into the API layer. 
+    Re-exported upstream to seamlessly preserve backward compatibility for legacy imports 
+    and OpenAPI schema generation.
 """
 
-from __future__ import annotations
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class BoardParseError(ValueError):
+class ValidationError(BaseModel):
     """
-    Base for every failure raised while turning a payload into a structural board model.
+    Represents a single semantic violation discovered within a board configuration or proposed path.
 
     Responsibility:
-        Acts as the foundational exception for malformed parsing logic, securing backward 
-        compatibility for pre-existing system callers expecting generalized dictionary 
-        failure traps.
+        Acts as a standardized data wrapper for an isolated domain violation, mapping 
+        internal structural faults into an actionable, frontend-friendly taxonomy.
 
     Implementation Details:
-        Inherits directly from `ValueError`. Embeds static class-level attributes matching 
-        the overarching API taxonomy, facilitating seamless routing of HTTP statuses and 
-        localized error codes up the execution chain.
+        Inherits from Pydantic's `BaseModel` to guarantee automated serialization. 
+        Utilizes explicit field aliases (`errorCode`, `affectedField`) coupled with 
+        `populate_by_name=True` to allow internal Python logic to comfortably use 
+        standard snake_case attributes while seamlessly emitting strict camelCase JSON payloads.
     """
 
-    code: str = "MALFORMED_REQUEST"
-    http_status: int = 400
-    affected_field: str | None = None
+    model_config = ConfigDict(populate_by_name=True)
+
+    error_code: str = Field(..., alias="errorCode")
+    affected_field: str | None = Field(default=None, alias="affectedField")
+    message: str
 
 
-class DuplicateWallError(BoardParseError):
+class ValidationResult(BaseModel):
     """
-    Indicates the parsed payload explicitly defines the exact same physical barrier twice.
+    Encapsulates the overarching outcome of a comprehensive semantic validation pass.
 
     Responsibility:
-        Catches semantic payload rule-breaks (where identical coordinates define redundant 
-        walls) strictly at the translation layer, ensuring proper downstream error reporting 
-        instead of a generalized structural failure.
+        Serves as the definitive data transfer object conveying the aggregate success state 
+        and any compiled arrays of domain errors, bridging internal architectural checks 
+        directly into standard HTTP responses.
 
     Implementation Details:
-        Overrides parent static fields to specifically dictate a 422 HTTP mapping. Captured 
-        and raised by the interpreter prior to object instantiation because the underlying 
-        graph algorithm heavily utilizes Sets which naturally drop unordered duplicates, 
-        permanently destroying the ability to spot this structural violation later.
+        Inherits directly from `BaseModel`. Defaults the internal error array dynamically 
+        utilizing a field factory to prevent mutable state sharing across requests. Supports 
+        by-name population to cleanly translate internal Python state into standardized API contracts.
     """
 
-    code = "INVALID_WALLS"
-    http_status = 422
-    affected_field = "walls"
+    model_config = ConfigDict(populate_by_name=True)
+
+    valid: bool
+    message: str = ""
+    errors: list[ValidationError] = Field(default_factory=list)
