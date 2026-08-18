@@ -7,11 +7,36 @@ from backend.puzzle_logic.board import Board
 
 
 class RLEnvironment(gym.Env):
-    """Custom Gym environment for the Zip puzzle game."""
+    """
+    Custom Gym environment for the Zip puzzle game.
+
+    Responsibility:
+        Translates the internal mathematical puzzle domain into a standardized virtual 
+        learning arena. Enables external neural agents to systematically interact with, 
+        observe, and evaluate grid states through normalized action-reward feedback loops.
+
+    Implementation Details:
+        Inherits natively from `gymnasium.Env`. Encapsulates a standalone `Game` controller 
+        and defines explicit continuous spatial observation arrays paired against discrete 
+        action spaces. Translates physical obstructions and milestones into distinct 
+        tensor layers to feed directly into the convolutional predictive layers.
+    """
 
     metadata = {"render_modes": ["human", "ansi"]}
 
     def __init__(self, board: Board):
+        """
+        Instantiates the simulated environment binding the structural blueprint to tracking spaces.
+
+        Args:
+            board: The static layout configuration dictating spatial structures and constraints.
+
+        Implementation Details:
+            Generates standardized multidimensional Box matrices utilizing explicit float bounds 
+            to represent an 8-channel depth map. Initializes a discrete mathematical space 
+            restricting inputs strictly to cardinal directions, and safely encapsulates a 
+            fresh internal puzzle state controller.
+        """
         super().__init__()
 
         self.config = EnvironmentConfig(board.getSize)
@@ -30,7 +55,21 @@ class RLEnvironment(gym.Env):
         self.current_step_count = 0
 
     def reset(self, seed: int | None = None, options=None):
-        """Reset the environment to the initial game state."""
+        """
+        Reset the environment to the initial game state.
+
+        Args:
+            seed: The optional baseline generator seed establishing reproducible randomness.
+            options: Unused optional parameter mapping for standard Gym compliance.
+
+        Returns:
+            A tuple pairing the active multi-channel observation matrix and a diagnostic info dictionary.
+
+        Implementation Details:
+            Delegates standard random seeding to the parent class before aggressively flushing 
+            the internal `Game` state to clear visitation histories and coordinate trackers. 
+            Regenerates the baseline tensor layers mapped to the freshly cleared layout.
+        """
         super().reset(seed=seed)
 
         self.game.reset()
@@ -42,10 +81,23 @@ class RLEnvironment(gym.Env):
         return observation, info
 
     def step(self, action: int):
-        """Apply the given action to the environment.
+        """
+        Apply the given action to the environment.
+
+        Args:
+            action: The discrete cardinal maneuver dictated by the neural agent.
 
         Returns:
-            observation, reward, terminated, truncated, info
+            A composite sequence conveying the ensuing tensor observation, the calculated 
+            floating-point reward, boolean flags denoting natural termination or forced truncation, 
+            and a supplementary diagnostic dictionary.
+
+        Implementation Details:
+            Unboxes the incoming action cleanly and calculates the absolute spatial translation. 
+            Actively intercepts invalid geometric moves (like colliding with walls or boundaries) 
+            prior to evaluating state traversal, punishing the agent and instantly terminating the episode. 
+            Otherwise, executes the step against the internal controller, aggregates dynamic milestone 
+            rewards, and truncates evaluation loops if step limits organically expire.
         """
         action = int(action)
         self.current_step_count += 1
@@ -91,17 +143,17 @@ class RLEnvironment(gym.Env):
         return self._get_observation(), reward, terminated, truncated, info
 
     def _get_observation(self) -> np.ndarray:
-        """Return the current observation as an 8-channel tensor.
+        """
+        Return the current observation as an 8-channel tensor.
 
-        Channels:
-            0: Current position
-            1: Visited cells
-            2: All waypoints, normalized by waypoint order
-            3: Wall or boundary above
-            4: Wall or boundary to the right
-            5: Wall or boundary below
-            6: Wall or boundary to the left
-            7: Next expected waypoint
+        Returns:
+            The normalized multidimensional array representing distinct physical and chronological states.
+
+        Implementation Details:
+            Constructs a zeroed multidimensional buffer. Actively queries the encapsulated `Board` 
+            and `GameState` layers iterating completely across the layout. Projects distinct data points 
+            (visited matrices, fractional waypoint sequence bounds, specific cardinal barrier nodes) 
+            into isolated boolean or normalized float channels to prevent convolution entanglement.
         """
         size = self.config.size
         obs = np.zeros((8, size, size), dtype=np.float32)
@@ -153,7 +205,24 @@ class RLEnvironment(gym.Env):
         return obs
 
     def _get_target_position(self, current_position: Position, action: int) -> Position:
-        """Return the target position for the given action."""
+        """
+        Return the target position for the given action.
+
+        Args:
+            current_position: The exact architectural node anchoring the shift.
+            action: The discrete integer mapping representing cardinal motion limits.
+
+        Returns:
+            The freshly derived destination coordinate block.
+
+        Raises:
+            ValueError: If the input directive violates standard discrete limits.
+
+        Implementation Details:
+            Extracts native limits directly generating spatial offsets structurally mapping 
+            Standard Gym 0-3 actions against negative/positive geometric jumps strictly matching 
+            the top-left origin design.
+        """
         x = current_position.getX
         y = current_position.getY
 
@@ -172,7 +241,23 @@ class RLEnvironment(gym.Env):
         raise ValueError(f"Invalid action: {action}")
 
     def _calculate_reward(self, waypoint, expected_order: int, was_visited: bool) -> float:
-        """Calculate the reward for the latest valid move."""
+        """
+        Calculate the reward for the latest valid move.
+
+        Args:
+            waypoint: The localized milestone node identified on the specific cell.
+            expected_order: The strict chronological number the sequence necessitates natively.
+            was_visited: The boolean marker defining whether the node repeats past tracks.
+
+        Returns:
+            The raw scalar valuation assigning positive values to successful progressions.
+
+        Implementation Details:
+            Evaluates terminal conditions first, injecting massive completion payouts. 
+            Prioritizes valid chronological milestone intersects dynamically over raw spatial 
+            explorations to guide gradient climbs toward structured sequencing instead of 
+            aimless spatial mapping.
+        """
         if self.game.isFinished():
             return self.config.completion_reward
 
@@ -185,15 +270,24 @@ class RLEnvironment(gym.Env):
         return 0.0
 
     def render(self, mode: str = "human"):
-        """Render the current board state to the terminal using ASCII symbols.
+        """
+        Render the current board state to the terminal using ASCII symbols.
 
-        Symbols:
-            @   current position
-            1-9 waypoint order
-            x   visited cell
-            .   unvisited cell
-            |   vertical wall
-            --- horizontal wall
+        Args:
+            mode: The distinct structural flag driving visual or textual outputs.
+
+        Returns:
+            The formatted string output strictly when operating under ANSI configurations, 
+            otherwise natively routes into standard output streams.
+
+        Raises:
+            ValueError: If supplied with a formatting mode unmapped within core limits.
+
+        Implementation Details:
+            Aggregates topological constraints traversing grid intersections explicitly. 
+            Calculates line demarcations injecting vertical bars and horizontal hyphens natively 
+            to physically symbolize barriers against distinct spatial nodes. Translates internal 
+            milestones back to string indices allowing humans to visually debug internal arrays.
         """
         size = self.config.size
         board = self.game.getBoard
