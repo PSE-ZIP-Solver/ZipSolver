@@ -11,7 +11,7 @@ __pycache__/
 # RL training artifacts / old checkpoints
 offline_training/trained_models/6x6(all)/
 offline_training/trained_models/6x6(test)/
-offline_training/trained_models/trained-model_replay_buffer.pkl
+offline_training/trained_models/**/*_replay_buffer.pkl
 #offline_training/trained_models/trained-model.zip
 
 # Training logs

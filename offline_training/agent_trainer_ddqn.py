@@ -647,10 +647,10 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 34
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 1
+    NR_TRAINING_BOARDS = 3
     NR_EVALUATION_BOARDS = 100
 
-    # Reuse exactly the first board from the failed 800k run.
+    # Reuse the solved first board and append two new 34/34 boards.
     USE_SAVED_TRAINING_BOARDS = True
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
@@ -670,9 +670,9 @@ if __name__ == "__main__":
 
     USE_DOUBLE_DQN = True
 
-    # Clean restart of the model, but on the same saved training board.
-    LOAD_EXISTING_MODEL = False
-    RESET_MODEL = True
+    # Continue from the successful 1-board model on the expanded 3-board pool.
+    LOAD_EXISTING_MODEL = True
+    RESET_MODEL = False
     LOAD_REPLAY_BUFFER = False
 
     TRAIN_MODEL = True
@@ -691,7 +691,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=1_500_000,
+        timestepsPerBoard=1_200_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -701,7 +701,7 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=1.0,
+        explorationInitialEps=0.6,
         explorationFinalEps=0.10,
         explorationFraction=0.8,
         learningRate=1e-4,
