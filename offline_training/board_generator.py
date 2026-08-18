@@ -7,29 +7,40 @@ import random
 RESULTS = 1000
 
 class BoardGenerator:
+    """
+    A combinatorial synthesis engine for generating fully validated, mathematically solvable puzzle layouts.
+
+    Responsibility:
+        Orchestrates the procedural generation of grid constraints. Sequentially applies graph traversal 
+        algorithms, strict mathematical parity limits, and geometric bound mappings to reliably output 
+        playable domain states without creating structural chokepoints.
+
+    Implementation Details:
+        Functions as a completely stateless factory component containing exclusively static mechanisms. 
+        It sequentially pairs heuristic pathfinding operations (utilizing Depth-First Search combined 
+        with Warnsdorff's heuristic) with strict spatial tracking arrays to synthesize mathematically 
+        guaranteed continuous Hamiltonian loops prior to destructively injecting barriers or milestones.
+    """
     @staticmethod
     def generate(boardSize: int, intermediateWaypoints: int, walls: int, numberBoards: int = 1) -> List[Board]:
         """
-        Generates a batch of solvable puzzle, as follows:
-        1. Selects two distinct random positions (start and end) that satisfy 
-           mathematical parity requirements for a Hamiltonian path.
-        2. Finds a Hamiltonian path that visits every cell on the grid exactly once 
-           using DFS with Warnsdorff's heuristic for efficiency.
-        3. Places waypoints along the discovered path in ascending order, ensuring 
-           the puzzle follows a specific sequence.
-        4. Randomly places walls on the grid that do not obstruct the path, 
-           increasing difficulty without making the board unsolvable.
+        Constructs a defined batch of procedurally generated, definitively solvable puzzle topologies.
 
         Args:
-            boardSize (int): The side length of the square board (e.g., 6, 7, or 8).
-            intermediateWaypoints (int): The number of waypoint markers to place 
-                between the start and end positions.
-            walls (int): The number of distinct walls to place on the board.
-            numberBoards (int, optional): The number of boards to generate. Defaults to 1000.
+            boardSize: The absolute dimensional constraint dictating the generated square layout bounds.
+            intermediateWaypoints: The exact target volume of milestone nodes to sequence between the origin and terminus.
+            walls: The target quantity of physical barriers to distribute securely across the structural layout.
+            numberBoards: The total volumetric batch size of distinct layouts requested.
 
         Returns:
-            List[Board]: A list containing the generated Board objects. The number 
-                of boards is determined by the global RESULTS constant.
+            A sequence of synthesized, fully constructed topological domain proxies.
+
+        Implementation Details:
+            Triggers a continuous procedural loop allocating fresh domain instances natively. Successively synthesizes 
+            origin and terminal pairs mapped to strict mathematical parity bounds, constructs a flawless Hamiltonian 
+            sequence connecting them securely, and finally decorates the sequence natively with calculated volumes of 
+            waypoints and structural walls. Safely continues allocation loops until the exact requested batch volume 
+            is populated without failure.
         """
         results: List[Board] = [] 
         
@@ -48,6 +59,21 @@ class BoardGenerator:
     
     @staticmethod
     def _generateTwoDistinctRandomPositions(boardSize: int) -> tuple[Position, Position]:
+        """
+        Computes an origin and terminal pair mathematically guaranteed to permit complete contiguous traversal natively.
+
+        Args:
+            boardSize: The overriding physical dimension defining the active coordinate bounds.
+
+        Returns:
+            A coupled pairing securely mapping the localized mathematical starting point and the absolute terminus.
+
+        Implementation Details:
+            Randomly seeds discrete scalar indices and mathematically projects them directly into Cartesian coordinates 
+            natively. Enforces strict checkerboard parity equations to unconditionally guarantee Hamiltonian logic: 
+            explicitly requires mismatched parity for even-dimensional layouts, and strictly forces identical majority-color 
+            parity alignments on odd constraints to definitively preclude mathematically fractured terminal subsets.
+        """
         while True:
             # select two distinct 1D-indices for the square grid (0 to boardSize-1)
             idxStart, idxEnd = random.sample(range(boardSize * boardSize), 2)
@@ -70,6 +96,25 @@ class BoardGenerator:
     
     @staticmethod
     def _findHamiltonianPath(board: Board, start: Position, end: Position) -> List[Position]:
+        """
+        Executes an exhaustive heuristic search to map a perfectly contiguous, non-overlapping route across the complete grid.
+
+        Args:
+            board: The spatial topology actively targeted for combinatorial exhaustion.
+            start: The definitively chosen mathematical origin point securely initializing the trace.
+            end: The designated physical destination constrained as the ultimate loop closure.
+
+        Returns:
+            A chronologically ordered positional array fully encompassing the spatial volume natively, 
+            or a null equivalent if exact mathematical exhaustion fails.
+
+        Implementation Details:
+            Leverages a deeply nested recursive Depth-First Search coupled directly with a strict Warnsdorff's 
+            heuristic evaluation. Dynamically maps all available unvisited adjacencies natively and rigorously 
+            sorts them by immediate local degree constraints (prioritizing traversal into sparse topological nodes). 
+            Defensively aggressively prunes premature terminal closures directly to strictly guarantee total 
+            volumetric saturation before safely unwinding and assembling the final positional track natively.
+        """
         total_cells = board.getCellCount()
         visited = {start}
         path: List[Position] = [start]
@@ -123,6 +168,24 @@ class BoardGenerator:
     
     @staticmethod
     def _placeRandomWaypoints(board: Board, path: List[Position], intermediateWaypoints: int) -> Board:
+        """
+        Decorates a mathematically verified traversal sequence with rigorously ordered structural checkpoints.
+
+        Args:
+            board: The localized layout environment securely receiving the sequenced milestone constraints.
+            path: The unbroken spatial track safely mapping the complete topological truth.
+            intermediateWaypoints: The precise requested count of internal markers to distribute sequentially.
+
+        Returns:
+            The mutated base domain actively possessing the ordered sequence milestones securely bound to it.
+
+        Implementation Details:
+            Extrapolates a purely scalar index pool representing all available spatial zones natively. Defensively 
+            isolates the absolute origin and terminus bounds natively to prevent injection overlaps securely. 
+            Selects randomized internal scalar targets, reconverts them directly to formal Cartesian vectors, 
+            and forcefully sorts their injection by strictly mapping them against the chronological progression 
+            of the underlying trajectory track to definitively ensure absolute sequential solvability safely.
+        """
         # Generate positions of intermediate waypoints randomly
         
         # add all possible positions as 1D indices to allowed intermediate positions
@@ -156,6 +219,24 @@ class BoardGenerator:
     
     @staticmethod
     def _placeRandomWalls(board: Board, path: List[Position], walls: int) -> Board:
+        """
+        Introduces randomized physical barriers exclusively into unutilized adjacent boundaries definitively preserving navigational logic.
+
+        Args:
+            board: The primary domain framework accepting the generated physical barrier injections natively.
+            path: The strictly verified mathematical tracking sequence securely guaranteeing unbroken traversability.
+            walls: The specific target volume of discrete spatial blockades to inject into the layout natively.
+
+        Returns:
+            The securely altered layout proxy definitively housing the new internal structural barriers natively.
+
+        Implementation Details:
+            Exhaustively mathematically evaluates all possible grid adjacencies natively to build a set of all theoretical 
+            dimensional blockades securely formatted as sorted positional structures. Simultaneously evaluates the 
+            locked contiguous trajectory mapping strictly utilized transit edges natively. Performs absolute mathematical 
+            set-subtractions natively to explicitly strip trajectory-obstructing barrier variants from the pool securely, 
+            before randomly sampling and cleanly injecting the resulting safe blockades securely.
+        """
         # Find all possible wall positions
         # Store them in sorted tuples, for (A, B) to equal (B, A)
         possibleWalls = set()
@@ -195,3 +276,4 @@ class BoardGenerator:
             board.addWall(wall[0], wall[1])
 
         return board
+    

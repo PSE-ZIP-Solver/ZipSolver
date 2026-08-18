@@ -23,11 +23,15 @@ OBSERVATION_SHAPE = (
 @pytest.fixture
 def real_board():
     """
-    Provide a real 6x6 board.
+    Provisions a mathematically valid baseline spatial topology containing distal milestones.
 
-    Waypoint 1 is the starting waypoint.
-    Waypoint 2 is the final waypoint and is placed far away so that
-    ordinary adjacent moves from the start remain valid.
+    Returns:
+        The structured baseline configuration dictating spatial bounds.
+
+    Implementation Details:
+        Instantiates a standard dimensional grid mapping an origin requirement natively at the 
+        top-left and an endpoint constraint positioned at the far opposing corner. This geometry 
+        ensures immediate, adjacent topological exploration from the start remains mathematically valid.
     """
     board = Board(BOARD_SIZE)
     board.addWaypoint(Position(0, 0), 1)
@@ -38,16 +42,39 @@ def real_board():
 
 @pytest.fixture
 def env(real_board):
-    """Create an RLEnvironment using real puzzle-logic objects."""
+    """
+    Initializes a controlled reinforcement learning simulation sandbox.
+
+    Args:
+        real_board: The static structural blueprint dictating the environmental bounds.
+
+    Returns:
+        The fully wrapped simulator mapping native spatial logic to learning matrices.
+
+    Implementation Details:
+        Directly injects the mathematical structural parameters into the customized evaluation environment natively 
+        orchestrating the translation between deep learning state outputs and domain rule evaluations.
+    """
     return RLEnvironment(real_board)
 
 
 def find_valid_action(environment: RLEnvironment):
     """
-    Find a move that is valid according to the complete puzzle logic.
+    Programmatically isolates a structurally compliant navigation maneuver from the active spatial node.
+
+    Args:
+        environment: The active learning simulator retaining the present sequence trajectory.
 
     Returns:
-        tuple[int, Position]: Action and corresponding target position.
+        A paired sequence containing the resolved directional command and its subsequent coordinate destination.
+
+    Raises:
+        AssertionError: If the spatial node is physically marooned without any mathematically viable exits.
+
+    Implementation Details:
+        Iterates explicitly over the bounded action limits natively tracking valid branches. Extracts target 
+        locations dynamically and utilizes the underlying rule engine explicitly to verify step compliance 
+        without actively advancing or altering the encapsulated environmental state.
     """
     current = environment.game.getState.getCurrentPosition
 
@@ -65,7 +92,17 @@ def find_valid_action(environment: RLEnvironment):
 # ==========================================
 
 def test_initialization(env):
-    """Test that the action and observation spaces match the Gym API."""
+    """
+    Validates strict architectural adherence to external simulation space contracts.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Verifies the evaluation branches natively restrict commands to discrete cardinal directions. 
+        Asserts the multi-channel observation matrix mathematically matches precision limitations 
+        and inherently maps bounding extremes perfectly between standard analytical thresholds.
+    """
     assert isinstance(env.action_space, gym.spaces.Discrete)
     assert env.action_space.n == 4
 
@@ -79,7 +116,17 @@ def test_initialization(env):
 
 
 def test_reset(env):
-    """Test that reset returns a valid observation and info dictionary."""
+    """
+    Assesses dynamic tensor regeneration during fundamental environmental cycle restarts.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Triggers a seeded sequence initialization loop natively. Asserts numerical trackers collapse safely, 
+        spatial markers return explicitly to origin bounds, and checks the generated observation securely 
+        illuminates the subsequent sequential milestone within its designated architectural channel.
+    """
     observation, info = env.reset(seed=42)
 
     assert observation.shape == OBSERVATION_SHAPE
@@ -110,7 +157,20 @@ def test_reset(env):
     ],
 )
 def test_get_target_position(env, action, offset_x, offset_y):
-    """Test mapping from an action to its target position."""
+    """
+    Maps categorical directional inputs securely into accurate spatial coordinate offsets.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+        action: The simulated decision array representing the chosen directional branch.
+        offset_x: The expected horizontal architectural shift.
+        offset_y: The expected vertical architectural shift.
+
+    Implementation Details:
+        Utilizes parameterized test arrays tracking exact structural bounds natively against a fixed 
+        origin point. Directly evaluates the protected coordinate retrieval logic to assert 
+        mathematical translation safely computes dimensional distances.
+    """
     current = Position(2, 2)
 
     target = env._get_target_position(current, action)
@@ -120,7 +180,17 @@ def test_get_target_position(env, action, offset_x, offset_y):
 
 
 def test_invalid_action_mapping_edge_case(env):
-    """Test that unsupported action numbers raise an exception."""
+    """
+    Guarantees architectural rejection of severely out-of-bound categorical commands.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Funnels a maliciously high numerical bound directly into the translation matrix natively. 
+        Actively captures and safely asserts the localized exception handler successfully intercepts 
+        undefined operations before causing unmapped memory segment reads.
+    """
     current = Position(2, 2)
 
     with pytest.raises(ValueError, match="Invalid action: 99"):
@@ -132,7 +202,17 @@ def test_invalid_action_mapping_edge_case(env):
 # ==========================================
 
 def test_step_invalid_move(env):
-    """Test the penalty and termination caused by an invalid move."""
+    """
+    Verifies punitive reward applications and episode termination algorithms upon mathematical violations.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Forces a navigational sequence moving beyond spatial boundaries explicitly. Asserts the domain natively 
+        generates extreme negative reward matrices, securely flags the iteration as mathematically terminated, 
+        and fundamentally guarantees the foundational trajectory arrays remain pristine and untampered.
+    """
     env.reset()
 
     # The game starts at (0, 0), so moving UP leaves the board.
@@ -152,7 +232,17 @@ def test_step_invalid_move(env):
 
 
 def test_step_valid_move_new_cell(env):
-    """Test the normal reward for entering a new empty cell."""
+    """
+    Evaluates baseline algorithmic incentive distributions across unobstructed topographical explorations.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Derives an explicitly verified clear cell via helper computations natively. Manages a standard 
+        navigational execution and asserts the resulting reward precisely stacks minor time decay penalties 
+        against standard discovery bonuses while keeping the operational window securely open.
+    """
     env.reset()
 
     valid_action, target = find_valid_action(env)
@@ -182,10 +272,12 @@ def test_step_valid_move_new_cell(env):
 
 def test_step_valid_move_waypoint():
     """
-    Test the reward for reaching the next expected non-final waypoint.
+    Confirms escalating milestone payouts natively map immediate chronological achievements.
 
-    Waypoint 3 is included so that waypoint 2 is not interpreted as
-    the final waypoint by the endpoint rule.
+    Implementation Details:
+        Constructs a distinct spatial layout hosting nested milestones inherently near the starting point. 
+        Actively forces intersection with the subsequent logical constraint safely and directly maps the resulting 
+        array to ensure target objectives naturally cycle while compounding specific achievement metric bonuses.
     """
     board = Board(BOARD_SIZE)
     board.addWaypoint(Position(0, 0), 1)
@@ -222,10 +314,12 @@ def test_step_valid_move_waypoint():
 
 def test_step_final_waypoint_too_early_is_invalid():
     """
-    Test the endpoint rule.
+    Validates extreme topological logic rejecting endpoint resolutions prior to full Hamiltonian traversal.
 
-    The final waypoint cannot be entered before all board cells
-    have been covered.
+    Implementation Details:
+        Positions the final milestone immediately adjacent to origin boundaries natively. Initiates direct 
+        penetration into the terminal node safely and explicitly asserts the rule engine punishes the sequence 
+        as aggressively as an uncrossable wall collision, collapsing evaluation immediately.
     """
     board = Board(BOARD_SIZE)
     board.addWaypoint(Position(0, 0), 1)
@@ -251,10 +345,17 @@ def test_step_final_waypoint_too_early_is_invalid():
 
 def test_step_valid_move_finished(env, monkeypatch):
     """
-    Test the completion reward and termination flag.
+    Evaluates absolute terminal payout mechanics securely concluding a perfectly validated navigation grid.
 
-    Only the completion check is replaced because manually following
-    a complete 36-cell path is outside the purpose of this unit test.
+    Args:
+        env: The fully configured reinforcement simulator.
+        monkeypatch: The framework tool for dynamic runtime dependency alterations.
+
+    Implementation Details:
+        Aggressively stubs the heavily nested architectural rule validator mathematically concluding 
+        volume limits (since actively walking a full 36-step trajectory is outside boundary tests). 
+        Processes a generic step natively triggering the mocked completion flag and asserting the delivery 
+        of massive resolution multipliers ending the active sequence cleanly.
     """
     env.reset()
 
@@ -282,7 +383,17 @@ def test_step_valid_move_finished(env, monkeypatch):
 
 
 def test_step_truncation_edge_case(env):
-    """Test that reaching the configured step limit sets truncated."""
+    """
+    Assesses systemic safety breaks definitively terminating runaway sequential navigation loops.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Re-calibrates the operational maximum loop count to an extreme fractional ceiling natively. 
+        Processes a fully legitimate execution map avoiding mathematical rule violations and verifies the 
+        engine still distinctly drops the iteration utilizing the `truncated` output field rather than `terminated`.
+    """
     env.reset()
 
     valid_action, target = find_valid_action(env)
@@ -308,7 +419,17 @@ def test_step_truncation_edge_case(env):
 # ==========================================
 
 def test_get_observation_zero_waypoints_edge_case(env):
-    """Test that a board without waypoints does not cause division by zero."""
+    """
+    Secures mathematical normalization boundaries against unsupported unconstrained topological states.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Employs direct internal memory manipulation natively wiping out sequence objective dependencies. 
+        Requests a direct tensor state representation ensuring all complex fractional division calculations 
+        fail-safe cleanly to explicit zeros instead of propagating catastrophic divisor errors.
+    """
     env.reset()
 
     env.game.getBoard._waypoints.clear()
@@ -326,7 +447,18 @@ def test_get_observation_zero_waypoints_edge_case(env):
 
 
 def test_get_observation_channels(env):
-    """Test that all eight observation channels represent the board state."""
+    """
+    Exhaustively verifies localized tensor arrays distinctly illuminate spatial constraints across corresponding channels.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Manipulates architectural constraints aggressively boxing the current location within surrounding barriers safely 
+        respecting dimensional grids. Rebuilds the numerical state outputs natively and evaluates every independent array 
+        layer asserting distinct bits accurately flip verifying active positions, trajectory routes, adjacent walls, 
+        and progressive tracking goals map flawlessly onto neural dimensions.
+    """
     env.reset()
 
     board = env.game.getBoard
@@ -385,7 +517,16 @@ def test_get_observation_channels(env):
 
 
 def test_observation_is_contained_in_observation_space(env):
-    """Test that the generated observation satisfies the declared Gym space."""
+    """
+    Secures underlying tensor boundaries computationally validating structural simulation constraints.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Extracts a populated state interpretation natively and explicitly utilizes standard verification bindings 
+        provided by the analytical platform to guarantee matrix sizes and depth arrays accurately mimic definition specs.
+    """
     observation, _ = env.reset()
 
     assert env.observation_space.contains(observation)
@@ -396,7 +537,16 @@ def test_observation_is_contained_in_observation_space(env):
 # ==========================================
 
 def test_render_ansi_mode(env):
-    """Test rendering the environment as a string."""
+    """
+    Confirms text-based execution interpretations cleanly form structured representations natively.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Instructs the simulation engine to distinctly route visual diagnostics natively into localized memory. 
+        Validates the output generates standard character placements successfully mapping structural objects without streaming errors.
+    """
     env.reset()
 
     output = env.render(mode="ansi")
@@ -406,7 +556,18 @@ def test_render_ansi_mode(env):
 
 
 def test_render_human_mode(env, capsys):
-    """Test rendering the environment to standard output."""
+    """
+    Validates structural diagnostics sequentially streaming representations strictly to standardized hardware consoles.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+        capsys: The testing utility tracking natively piped standard output channels.
+
+    Implementation Details:
+        Commands the active simulator mapping engine dynamically towards active pipeline streams natively. 
+        Safely captures and reads textual buffers confirming internal visual layers accurately route expected 
+        character matrices without crashing runtime rendering logic.
+    """
     env.reset()
 
     result = env.render(mode="human")
@@ -418,7 +579,17 @@ def test_render_human_mode(env, capsys):
 
 
 def test_render_invalid_mode(env):
-    """Test that unsupported render modes raise an exception."""
+    """
+    Guarantees structural protection rejecting natively unsupported telemetry representations safely.
+
+    Args:
+        env: The fully configured reinforcement simulator.
+
+    Implementation Details:
+        Violates expected processing commands injecting unknown parameters directly into standard output functions safely. 
+        Ensures the execution correctly rejects the sequence explicitly yielding formatted exception hierarchies over 
+        generating corrupted array layouts.
+    """
     env.reset()
 
     with pytest.raises(ValueError, match="Unsupported render mode"):

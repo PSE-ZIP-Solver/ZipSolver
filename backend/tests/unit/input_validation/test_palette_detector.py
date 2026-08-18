@@ -9,6 +9,18 @@ from backend.input_validation.screenshot.theme_mode import ThemeMode
 @pytest.fixture(autouse=True)
 def mock_heavy_dependencies():
     """
+    Safely intercepts computational dependencies prior to systematic test initialization natively.
+
+    Returns:
+        A dictionary mapping explicit library namespaces directly to mock counterparts securely.
+
+    Implementation Details:
+        Safe Mocking [THE "DANGER ZONE"]:
+        Prevents Pytest from globally polluting sys.modules or attempting to load 
+        heavy CV/Math dependencies during test collection. Injects Mock objects strictly 
+        into standard processing channels natively.
+    """
+    """
     Safe Mocking [THE "DANGER ZONE"]:
     Prevents Pytest from globally polluting sys.modules or attempting to load 
     heavy CV/Math dependencies during test collection.
@@ -32,8 +44,27 @@ def mock_heavy_dependencies():
 
 
 class TestPaletteDetector:
+    """
+    Comprehensive test suite ensuring accurate visual theme interpretations natively.
+
+    Responsibility:
+        Governs the operational verification of luminance logic, ensuring mathematical mappings 
+        correctly distinguish puzzle light/dark themes utilizing heavily mocked bounding layers flawlessly.
+
+    Implementation Details:
+        Aggressively leverages global auto-use fixtures isolating CV2 and Numpy libraries safely. 
+        Mocks native array dimensional footprints rigorously natively establishing edge-case traps 
+        against out-of-bounds sampling and processing failures organically.
+    """
     
     def setup_method(self):
+        """
+        Instantiates necessary testing boundaries natively prior to individual function execution cycles.
+
+        Implementation Details:
+            Generates a pristine `PaletteDetector` state cleanly. Attaches an expansive mocked dimensional 
+            image array dynamically replicating standard layout capacities securely appropriately effectively.
+        """
         """Instantiate a fresh PaletteDetector for each test."""
         self.detector = PaletteDetector()
         
@@ -46,11 +77,28 @@ class TestPaletteDetector:
     # --- FAST-FAIL & EDGE CASE TESTS ---
 
     def test_fast_fail_on_none_image(self):
+        """
+        Ensures strict rejection of unpopulated memory streams prior to execution cycles natively.
+
+        Implementation Details:
+            Edge Case: Defensively short-circuit on None input. Asserts direct architectural boundaries 
+            flawlessly escalate exceptions properly avoiding nested dependency crashes completely organically.
+        """
         """Edge Case: Defensively short-circuit on None input."""
         with pytest.raises(ValueError, match="Image data cannot be None"):
             self.detector.detect_theme(None)
 
     def test_fast_fail_on_empty_or_invalid_array(self, mock_heavy_dependencies):
+        """
+        Verifies topological dimensional formatting properly halts incompatible processing contexts securely.
+
+        Args:
+            mock_heavy_dependencies: The localized dependency injection registry.
+
+        Implementation Details:
+            Edge Case: Prevent crashing on empty arrays or non-image shapes. Alters dimension metrics 
+            programmatically down to empty scalars, strictly validating explicit numerical barriers natively.
+        """
         """Edge Case: Prevent crashing on empty arrays or non-image shapes."""
         invalid_image_mock = MagicMock()
         # Simulate an empty array (size 0)
@@ -67,6 +115,18 @@ class TestPaletteDetector:
             self.detector.detect_theme(invalid_image_mock)
 
     def test_graceful_handling_of_tiny_images(self, mock_heavy_dependencies):
+        """
+        Asserts dimensional slicing constraints gracefully scale under abnormal boundaries naturally.
+
+        Args:
+            mock_heavy_dependencies: The isolated library dictionary structure seamlessly passed safely.
+
+        Implementation Details:
+            Edge Case: If an image is smaller than the intended border sampling size 
+            (e.g., a 5x5 image when sampling 10px borders), it should safely fallback 
+            to sampling the entire image instead of throwing out-of-bounds errors. Evaluates 
+            fallback channels directly confirming proper routing pipelines smoothly natively.
+        """
         """
         Edge Case: If an image is smaller than the intended border sampling size 
         (e.g., a 5x5 image when sampling 10px borders), it should safely fallback 
@@ -92,6 +152,17 @@ class TestPaletteDetector:
     # --- ORCHESTRATION & BEHAVIORAL TESTS ---
 
     def test_detects_light_theme(self, mock_heavy_dependencies):
+        """
+        Validates mathematical thresholds correctly resolve high luminance mapping states naturally.
+
+        Args:
+            mock_heavy_dependencies: The injected computational module registry map context cleanly.
+
+        Implementation Details:
+            Orchestration & Behavior: Validates border sampling logic and ensures
+            a high luminance average correctly maps to ThemeMode.LIGHT. Orchestrates a 
+            high scalar injection to directly mandate the appropriate state switch organically natively.
+        """
         """
         Orchestration & Behavior: Validates border sampling logic and ensures
         a high luminance average correctly maps to ThemeMode.LIGHT.
@@ -122,6 +193,17 @@ class TestPaletteDetector:
 
     def test_detects_dark_theme(self, mock_heavy_dependencies):
         """
+        Validates mathematical thresholds correctly resolve low luminance mapping states securely.
+
+        Args:
+            mock_heavy_dependencies: The functional library injection map context perfectly.
+
+        Implementation Details:
+            Orchestration & Behavior: Validates border sampling logic and ensures
+            a low luminance average correctly maps to ThemeMode.DARK. Coordinates a strict 
+            mathematical evaluation boundary drop confirming precise resolution mapping structurally perfectly.
+        """
+        """
         Orchestration & Behavior: Validates border sampling logic and ensures
         a low luminance average correctly maps to ThemeMode.DARK.
         """
@@ -144,6 +226,17 @@ class TestPaletteDetector:
         assert result.isDark is True
 
     def test_border_sampling_slice_routing(self, mock_heavy_dependencies):
+        """
+        Ensures structural border slices dynamically override global aggregation logic cleanly seamlessly natively.
+
+        Args:
+            mock_heavy_dependencies: The mock matrix simulating numerical pipelines accurately.
+
+        Implementation Details:
+            Orchestration Test: Strictly asserts that the background is sampled from 
+            the edges (top, bottom, left, right), rather than the clutter-heavy center. Checks 
+            the explicit concatenation pipeline execution to confirm image processing routes correctly organically.
+        """
         """
         Orchestration Test: Strictly asserts that the background is sampled from 
         the edges (top, bottom, left, right), rather than the clutter-heavy center.

@@ -12,17 +12,45 @@ from backend.puzzle_logic.data_models import Position
 
 @pytest.fixture
 def quick_solver():
-    """Solver with a generous timeout for solvable small/medium boards (2000 ms)."""
+    """
+    Provisions a mathematical solver equipped with a generous operational timeframe.
+
+    Returns:
+        The instantiated deterministic engine primed for small to medium topologies.
+
+    Implementation Details:
+        Instantiates the algorithmic solver with an extended timeout threshold to guarantee 
+        computational completion without hitting premature safety breakers during tests.
+    """
     return AlgorithmicSolver(timeout=2000)
 
 @pytest.fixture
 def timeout_solver():
-    """Solver with a 1 ms timeout to force timeouts on complex boards."""
+    """
+    Provisions a severely constrained mathematical solver to force premature temporal halts.
+
+    Returns:
+        The instantiated deterministic engine utilizing minimal execution limits.
+
+    Implementation Details:
+        Binds the absolute temporal ceiling to the absolute minimum threshold, purposefully 
+        guaranteeing the A* queue operations will trigger a timeout exception when evaluating 
+        highly complex branching graphs.
+    """
     return AlgorithmicSolver(timeout=1)
 
 @pytest.fixture
 def empty_3x3_board():
-    """Standard 3x3 board without walls or waypoints."""
+    """
+    Generates a standardized, unobstructed dimensional grid for baseline validation.
+
+    Returns:
+        The initialized static structural blueprint.
+
+    Implementation Details:
+        Instantiates a purely vacant topology stripped of all physical walls and milestones, 
+        yielding an open permutation matrix for clean mathematical traversal testing.
+    """
     return Board(size=3)
 
 
@@ -30,8 +58,21 @@ def empty_3x3_board():
 
 def verify_valid_hamiltonian_path(board: Board, path_obj: SolutionPath) -> bool:
     """
-    Validates length, uniqueness, adjacency, walls, and waypoints
-    using the provided SolutionPath.getPositions property.
+    Semantically verifies the structural integrity and rule compliance of a completed traversal.
+
+    Args:
+        board: The baseline grid configuration detailing spatial boundaries and barriers.
+        path_obj: The formalized trajectory mapping submitted for verification.
+
+    Returns:
+        A truth state representing absolute mathematical and topological compliance.
+
+    Implementation Details:
+        Extracts coordinate vectors explicitly via the encapsulated property hook without parentheses. 
+        It linearly iterates over the sequential graph nodes to assert absolute volumetric coverage 
+        (Hamiltonian constraints), strictly rejects diagonal/non-adjacent leaps, verifies absolute 
+        avoidance of declared wall barriers, and maintains a cascading checkpoint register to ensure 
+        mandatory chronological intersections with designated milestones.
     """
     positions = path_obj.getPositions
     
@@ -70,6 +111,19 @@ def verify_valid_hamiltonian_path(board: Board, path_obj: SolutionPath) -> bool:
 # --- Tests: Default Use Cases ---
 
 def test_solve_empty_board(quick_solver, empty_3x3_board):
+    """
+    Validates deterministic solver resolution across an unobstructed topology.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+        empty_3x3_board: The unobstructed structural grid fixture.
+
+    Implementation Details:
+        Submits the vacant spatial bounds into the heuristic algorithm. Asserts that the 
+        computational payload definitively reflects a SOLVED state, confirms generation of 
+        an actively populated sequence model, validates operation telemetry steps were burned, 
+        and verifies the resulting route strictly obeys all Hamiltonian movement rules.
+    """
     result = quick_solver.solve(empty_3x3_board)
     
     assert result._status == SolverStatus.SOLVED
@@ -78,6 +132,17 @@ def test_solve_empty_board(quick_solver, empty_3x3_board):
     assert verify_valid_hamiltonian_path(empty_3x3_board, result._path)
 
 def test_solve_with_walls(quick_solver):
+    """
+    Validates deterministic solver resolution when topological barriers bisect the environment.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Fabricates a grid injected with explicit, uncrossable segment bounds. Commands the 
+        engine to calculate a traversal vector, actively checking that the final extracted 
+        path mathematically navigated around the structured coordinates instead of bypassing them.
+    """
     board = Board(size=3)
     board.addWall(Position(0, 0), Position(0, 1))
     
@@ -88,6 +153,17 @@ def test_solve_with_walls(quick_solver):
     assert verify_valid_hamiltonian_path(board, result._path)
 
 def test_solve_with_waypoints(quick_solver):
+    """
+    Validates mathematical compliance against strictly sequenced milestone intersections.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Establishes sequential spatial nodes enforcing a chronological traversal contract. 
+        Asserts the algorithm isolates the singular valid permutation fulfilling both 
+        the Hamiltonian coverage and the strict chronological node ordering constraints.
+    """
     board = Board(size=3)
     board.addWaypoint(Position(0, 0), 1)
     board.addWaypoint(Position(2, 2), 2)
@@ -103,6 +179,17 @@ def test_solve_with_waypoints(quick_solver):
 # --- Tests: Edge Cases & Optimizations ---
 
 def test_start_on_waypoint(quick_solver):
+    """
+    Verifies heuristic stability when the origination point overlaps a milestone coordinate.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Positions an initial sequence requirement at the direct top-left bound. Confirms 
+        the solver instantly increments the goal index upon seeding the origin bitmask 
+        instead of erroneously stalling the search queue.
+    """
     board = Board(size=2)
     board.addWaypoint(Position(0, 0), 1)
     
@@ -113,6 +200,17 @@ def test_start_on_waypoint(quick_solver):
     assert verify_valid_hamiltonian_path(board, result._path)
 
 def test_1x1_board(quick_solver):
+    """
+    Validates execution against extreme singular-cell constraints.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Tests boundary mathematical bounds by injecting a single-cell grid. Asserts the 
+        solver natively terminates upon establishing origin tracking without iterating 
+        non-existent peripheral nodes, securing an immediate SOLVED payload.
+    """
     board = Board(size=1)
     
     result = quick_solver.solve(board)
@@ -123,6 +221,18 @@ def test_1x1_board(quick_solver):
     assert verify_valid_hamiltonian_path(board, result._path)
 
 def test_unsolvable_board_isolated_cell(quick_solver):
+    """
+    Evaluates topological rejection against structurally fragmented environments.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Employs barriers to completely sequester a spatial coordinate, mathematically preventing 
+        comprehensive coverage. Asserts the engine correctly derives the UNSOLVABLE internal enum 
+        rather than stalling in an endless loop, maintaining empty solution paths while recording 
+        expended telemetry steps.
+    """
     board = Board(size=2)
     board.addWall(Position(0, 0), Position(0, 1))
     board.addWall(Position(0, 0), Position(1, 0))
@@ -134,6 +244,17 @@ def test_unsolvable_board_isolated_cell(quick_solver):
     assert result._metrics._steps > 0
 
 def test_unsolvable_impossible_waypoints(quick_solver):
+    """
+    Confirms algorithmic rejection of inherently paradoxical chronological milestone sequences.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Geometrically channels the solver through a restrictive funnel while placing an advanced 
+        numerical sequence requirement spatially ahead of a preceding requirement. Confirms the 
+        engine mathematically maps the paradox and terminates early with an UNSOLVABLE status flag.
+    """
     board = Board(size=2)
     # Block the direct path to force a specific route
     board.addWall(Position(0, 0), Position(1, 0))
@@ -151,9 +272,17 @@ def test_unsolvable_impossible_waypoints(quick_solver):
 
 def test_flood_fill_pruning_trigger(quick_solver):
     """
-    A 3x3 board completely divided into two disconnected halves.
-    This safely bypasses the >2 dead-end check (exactly 2 dead ends),
-    forcing the Flood-Fill to correctly identify the disconnected graph and prune it.
+    Verifies the algorithmic engine's ability to instantly reject mathematically disjointed grids.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Constructs a grid completely severed into two disconnected architectural halves. 
+        This layout safely bypasses standard dead-end counters, forcing the underlying 
+        flood-fill heuristic to activate, identify the disconnected graph, and prematurely 
+        collapse the search tree. Evaluates exact performance metrics against hardware clocks 
+        to ensure the prune happens nearly instantaneously.
     """
     board = Board(size=3)
     board.addWall(Position(0, 1), Position(0, 2))
@@ -168,6 +297,17 @@ def test_flood_fill_pruning_trigger(quick_solver):
     assert duration < 0.2  # Should be nearly instant due to flood fill pruning
 
 def test_solver_timeout(timeout_solver):
+    """
+    Evaluates temporal ceiling enforcement terminating complex permutation calculations.
+
+    Args:
+        timeout_solver: The severely limited deterministic engine fixture.
+
+    Implementation Details:
+        Submits an expansively scaled configuration designed to generate millions of traversal nodes. 
+        Validates that the execution bounds accurately trap runaway permutations, bubbling up the 
+        TIMEOUT enum directly into the resulting metrics payload before CPU consumption stalls.
+    """
     large_board = Board(size=6) 
     
     result = timeout_solver.solve(large_board)
@@ -177,6 +317,14 @@ def test_solver_timeout(timeout_solver):
     assert result._metrics._runtimeMs >= 0
 
 def test_zero_timeout_edge_case():
+    """
+    Assesses fallback handling against mathematically impossible temporal thresholds.
+
+    Implementation Details:
+        Instantiates an operational engine directly bounded to an absolute zero interval limit. 
+        Ensures the baseline start clock safely recognizes the immediate threshold breach and 
+        collapses the search graph on its first iteration, avoiding infinite calculation loops.
+    """
     solver = AlgorithmicSolver(timeout=0)
     board = Board(size=3)
     
@@ -186,6 +334,17 @@ def test_zero_timeout_edge_case():
     assert result._path is None
 
 def test_heuristic_logic(quick_solver):
+    """
+    Validates standard Manhattan spatial estimation against strict checkpoint offsets.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Injects dimensional bounds and specifically routes the internal A* cost equation to map 
+        theoretical remaining layouts. Directly asserts the raw scalar returns correctly reflect 
+        expected integer distances, effectively confirming node depth combinations remain stable.
+    """
     board = Board(size=5)
     board.addWaypoint(Position(4, 4), 1)
     waypoints = board.getWaypoints
@@ -199,9 +358,15 @@ def test_heuristic_logic(quick_solver):
 
 def test_dead_end_pruning_trigger(quick_solver):
     """
-    Tests the Dead-End degree-1 pruning logic.
-    A board that is technically connected, but forces THREE dead-ends, 
-    making a Hamiltonian path mathematically impossible.
+    Tests optimization bounds rejecting configurations with excessive terminus traps.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Forces the grid to manifest overlapping singular exits (chokepoints) which mathematically 
+        violate strict Hamiltonian pathing. Utilizes hardware chronometers to ensure the 
+        evaluation aggressively drops the branch before entering deeper search evaluations.
     """
     board = Board(size=3)
     board.addWall(Position(0, 0), Position(1, 0)) # Isolates 0,0 to only go down
@@ -217,7 +382,15 @@ def test_dead_end_pruning_trigger(quick_solver):
     
 def test_bitmask_index_bounds(quick_solver):
     """
-    Ensures the bitmask index calculation doesn't overflow or calculate incorrectly.
+    Secures mathematical integrity mapping spatial nodes into localized binary sets.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Directly taps the protected mathematical translator converting dimensional bounds into 
+        flat scalars. Asserts extreme array boundaries appropriately yield exact bit offsets 
+        without causing integer overflow issues during complex tracking operations.
     """
     board = Board(size=8) # 8x8 requires up to 63 bits
     
@@ -228,8 +401,15 @@ def test_bitmask_index_bounds(quick_solver):
 
 def test_mathematical_pruning_3_dead_ends(quick_solver):
     """
-    Verifies the > 2 dead-end constraint explicitly.
-    Creates 3 cells that only have exactly 1 entrance/exit. 
+    Explicitly targets strict rejection constraints prohibiting triple-terminal nodes.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Architecturally isolates three separate grid zones strictly down to single exit thresholds. 
+        Records performance metrics to guarantee immediate algorithm ejection as resolving a 
+        singular continuous loop accommodating three unlinked terminus boundaries is physically impossible.
     """
     board = Board(size=3)
     
@@ -251,8 +431,15 @@ def test_mathematical_pruning_3_dead_ends(quick_solver):
 
 def test_long_snake_valid_path(quick_solver):
     """
-    Ensures that a long, snake-like path (which inherently has 2 dead ends at all times)
-    is NOT falsely pruned by the dead-end logic.
+    Confirms robust pathing survival through narrow corridor layouts without false prunes.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Constructs an intentional zigzagging tunnel inherently yielding two continuous dead-ends 
+        at all times. Verifies the algorithm differentiates a structurally valid sequential corridor 
+        from fragmented, impassible dead-end configurations, returning a complete trajectory model.
     """
     board = Board(size=3)
     # Create an S-shaped tunnel that forces a specific path
@@ -266,9 +453,15 @@ def test_long_snake_valid_path(quick_solver):
 
 def test_heuristic_subgoal_consistency(quick_solver):
     """
-    Tests if the heuristic correctly accounts for subsequent waypoints.
-    If the heuristic drops to 0 when reaching WP1 while WP2 is far away,
-    A* will stall. This ensures 'h' calculates total remaining path consistency.
+    Validates dynamic heuristic accumulation mapping sequences of multiple remaining objectives.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Invokes the protected heuristic engine to ensure its Manhattan distance projections 
+        correctly chain across multiple sequentially active waypoints instead of just evaluating 
+        the immediate objective, thereby avoiding priority queue stalling mechanics.
     """
     board = Board(size=5)
     board.addWaypoint(Position(0, 0), 1)
@@ -282,8 +475,15 @@ def test_heuristic_subgoal_consistency(quick_solver):
 
 def test_fully_walled_unreachable_target(quick_solver):
     """
-    A board where the remaining unvisited cells are entirely split into 
-    TWO disconnected groups. The Flood-fill MUST instantly flag this.
+    Evaluates flood-fill activation against structurally marooned architectural zones.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Erects a complete exclusionary partition barricading a sub-segment of grid topologies. 
+        Secures a performance metric demonstrating the flood-fill sub-routine natively bypasses 
+        the active navigation tip and instantly detects inaccessible spatial clusters.
     """
     board = Board(size=3)
     # Wall off the top-right corner entirely
@@ -299,9 +499,15 @@ def test_fully_walled_unreachable_target(quick_solver):
 
 def test_bit_count_large_board_performance(quick_solver):
     """
-    Ensures that the string-allocation garbage collection bug is fixed.
-    An empty 4x4 board should be solved blazingly fast if .bit_count() is used,
-    but would heavily lag if bin().count() was still in the A* loop.
+    Guarantees structural efficiency and confirms garbage collection stabilization in binary math.
+
+    Args:
+        quick_solver: The deterministic search engine fixture.
+
+    Implementation Details:
+        Targets execution across a moderately scaled spatial framework to explicitly test the native 
+        integer `.bit_count()` method utilization. Asserts calculation timing operates swiftly, 
+        confirming archaic string-allocation loops (`bin().count()`) are entirely stripped from the pipeline.
     """
     board = Board(size=4)
     

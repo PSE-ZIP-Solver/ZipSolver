@@ -12,6 +12,15 @@ def mock_heavy_dependencies():
     Safe Mocking [THE "DANGER ZONE"]:
     Prevents Pytest from globally polluting sys.modules or attempting to load 
     heavy ML/CV dependencies during test collection.
+
+    Responsibility:
+        Maintains pipeline test stability by preemptively decoupling the loader's lazily 
+        imported visualization tools from the runtime evaluation sandbox.
+
+    Implementation Details:
+        Intersects Pytest's standard behavior by dictating a targeted patch onto the Python 
+        module registry, replacing critical bindings with mocked class hierarchies safely 
+        before any specific test executes.
     """
     mock_numpy = MagicMock()
     mock_cv2 = MagicMock()
@@ -41,32 +50,86 @@ def mock_heavy_dependencies():
 
 
 class TestImageLoader:
+    """
+    Validation matrix for the entry-point image buffer parser.
+
+    Responsibility:
+        Asserts the image loader correctly applies dimensional clamping, safely routes 
+        metadata rotation, and accurately protects against buffer exploitation payloads.
+
+    Implementation Details:
+        Queries distinct mocked internal parameters to confirm precise scaling bounds limits, 
+        evaluates binary size constraints by exceeding fixed byte variables, and verifies standard 
+        exception bubbling patterns via explicit assertions.
+    """
     
     def setup_method(self):
-        """Instantiate a fresh ImageLoader for each test."""
+        """
+        Instantiate a fresh ImageLoader for each test.
+
+        Implementation Details:
+            Resets instance data and caches standard numerical byte thresholds matching 
+            the production environment variable to ensure synchronized logic testing.
+        """
         self.loader = ImageLoader()
         self.MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # Assuming 10MB limit
 
     # --- FAST-FAIL & EDGE CASE TESTS ---
 
     def test_fast_fail_on_none_bytes(self):
-        """Edge Case: Defensively short-circuit on None input."""
+        """
+        Edge Case: Defensively short-circuit on None input.
+
+        Responsibility:
+            Ensures null payloads never engage system parsing.
+
+        Implementation Details:
+            Validates explicit failure when fed an unresolved variable, expecting an immediate error.
+        """
         with pytest.raises(ValueError, match="Image bytes cannot be None or empty"):
             self.loader.load_and_preprocess(None)
 
     def test_fast_fail_on_empty_bytes(self):
-        """Edge Case: Defensively short-circuit on empty byte string."""
+        """
+        Edge Case: Defensively short-circuit on empty byte string.
+
+        Responsibility:
+            Prevents evaluation execution upon hollow payload streams.
+
+        Implementation Details:
+            Forwards a strictly empty binary string to simulate zeroed request bodies.
+        """
         with pytest.raises(ValueError, match="Image bytes cannot be None or empty"):
             self.loader.load_and_preprocess(b"")
 
     def test_fast_fail_on_exceeds_size_limit(self):
-        """Edge Case: Prevent memory exhaustion from massive file payloads."""
+        """
+        Edge Case: Prevent memory exhaustion from massive file payloads.
+
+        Responsibility:
+            Asserts hard caps evaluating input dimensions execute before memory is heavily allocated.
+
+        Implementation Details:
+            Constructs a binary payload actively exceeding the pre-established byte cap limitation, 
+            asserting an aggressive system rejection immediately flags the violation.
+        """
         oversized_payload = b"0" * (self.MAX_FILE_SIZE_BYTES + 1)
         with pytest.raises(ValueError, match="Image file size exceeds the maximum allowed"):
             self.loader.load_and_preprocess(oversized_payload)
 
     def test_fast_fail_on_corrupt_image_data(self, mock_heavy_dependencies):
-        """Edge Case: Gracefully handle Exception when PIL fails to read the bytes."""
+        """
+        Edge Case: Gracefully handle Exception when PIL fails to read the bytes.
+
+        Responsibility:
+            Confirms the component aggressively traps inner processing errors without leaking 
+            complex stack traces out to the application layer.
+
+        Implementation Details:
+            Intentionally forces the mocked internal image node to throw an unidentified 
+            image exception against garbage byte inputs, confirming it gets mapped down to the 
+            expected standardized exception framework.
+        """
         mock_pil_image = mock_heavy_dependencies["PIL.Image"]
         # Simulate PIL raising an UnidentifiedImageError for garbage bytes
         mock_pil_image.open.side_effect = Exception("Unidentified image")
@@ -81,6 +144,14 @@ class TestImageLoader:
         """
         Orchestration Test: Validates that PIL.Image.open, ImageOps.exif_transpose, 
         and numpy/cv2 conversions are routed correctly.
+
+        Responsibility:
+            Verifies the sequential integrity of the structural image translation pipeline.
+
+        Implementation Details:
+            Utilizes explicitly isolated dependency references. Asserts memory wrapping correctly 
+            mounts binary sequences before explicitly verifying transposition mappings and strict 
+            color space migrations.
         """
         # 1. Arrange Mocks
         mock_pil_image = mock_heavy_dependencies["PIL.Image"]
@@ -131,6 +202,14 @@ class TestImageLoader:
         """
         Behavioral Test: Validates that high-resolution images are scaled down 
         to prevent downstream ML bottlenecks.
+
+        Responsibility:
+            Asserts memory conservation algorithms accurately detect and resize heavy matrix loads.
+
+        Implementation Details:
+            Mocks a structural image registering with extreme geometric metrics. Explicitly verifies 
+            the built-in thumbnail compression hook is fired utilizing high-fidelity resampling 
+            to pull dimensional axes securely below configured system bounds.
         """
         mock_pil_image = mock_heavy_dependencies["PIL.Image"]
         mock_pil_imageops = mock_heavy_dependencies["PIL.ImageOps"]

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from backend.input_validation.screenshot.errors import UnreadableImageError
+from backend.input_validation.screenshot.screenshot_errors import UnreadableImageError
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 if TYPE_CHECKING:
@@ -13,23 +13,38 @@ LUMINANCE_THRESHOLD = 127.5
 
 
 class PaletteDetector:
-    """Determines the color scheme of the puzzle to adjust downstream thresholds."""
+    """
+    Evaluates global pixel contrast maps to dictate subsequent mathematical vision bounds.
+
+    Responsibility:
+        Establishes the foundational lighting model to inform adaptive vision algorithms, 
+        ensuring downstream thresholding operations accurately isolate markers irrespective 
+        of internal application color swaps.
+
+    Implementation Details:
+        Acts statelessly. Identifies structural themes implicitly relying purely upon luminance 
+        sums sampled strategically from external boundary margins, completely stripping color 
+        spaces before executing to minimize array processing.
+    """
 
     def detect_theme(self, image_data: "np.ndarray") -> ThemeMode:
         """
-        Detects if the screenshot is in Light Mode or Dark Mode.
-
-        HOW IT WORKS:
-        1. Lazily imports `cv2` and `numpy`.
-        2. Samples the background color (typically the border edges of the image).
-        3. Calculates the average luminance of the sampled pixels.
-        4. Compares luminance against a predefined threshold to map to ThemeMode.
+        Determines the dominant brightness baseline to establish structural color themes.
 
         Args:
-            image_data (np.ndarray): The normalized screenshot array.
+            image_data: The absolute targeted matrix representing normalized pixel values.
 
         Returns:
-            ThemeMode: Enum indicating the detected theme.
+            The structured enumeration flagging the definitively matched color environment.
+
+        Raises:
+            UnreadableImageError: If the evaluated payload strictly lacks multidimensional boundaries.
+
+        Implementation Details:
+            Flattens incoming data directly to single-channel grayscale scales immediately to 
+            slash evaluation dimensions. Truncates internal slices from boundary edges directly 
+            calculating overarching luminance via statistical means. Compares absolute luminance 
+            sums against localized thresholds yielding distinct execution states.
         """
         # Fast-fail before importing anything heavy.
         if image_data is None:
