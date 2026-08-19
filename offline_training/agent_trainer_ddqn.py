@@ -647,7 +647,7 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 34
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 3
+    NR_TRAINING_BOARDS = 10
     NR_EVALUATION_BOARDS = 100
 
     # Reuse the solved first board and append two new 34/34 boards.
@@ -673,7 +673,7 @@ if __name__ == "__main__":
     # Continue from the successful 1-board model on the expanded 3-board pool.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
-    LOAD_REPLAY_BUFFER = True
+    LOAD_REPLAY_BUFFER = False
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
@@ -691,7 +691,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard= 800_000,
+        timestepsPerBoard=1_500_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -701,8 +701,8 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.3,
-        explorationFinalEps=0.05,
+        explorationInitialEps=0.6,
+        explorationFinalEps=0.1,
         explorationFraction=0.8,
         learningRate=1e-4,
         learningStarts=500,
