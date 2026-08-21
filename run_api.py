@@ -9,6 +9,8 @@ Run from the repo root (not from backend/):
     uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8090
 """
 
+from fastapi.middleware.cors import CORSMiddleware
+
 from backend.api.BackendAPI import BackendAPI
 from backend.api.architecture_provider.ArchitectureProvider import (
     ArchitectureProvider,
@@ -40,3 +42,11 @@ app = BackendAPI(
     # health must not claim otherwise.
     model_loaded_provider=rl_inference_ready,
 ).app
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
