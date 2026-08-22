@@ -9,7 +9,6 @@ class BoardGenerator:
         results: List[Board] = []
 
         while len(results) < numberBoards:
-            print(f"Generating board {len(results) + 1}/{numberBoards}")
             board = Board(boardSize)
 
             # 1. Pick only the start position

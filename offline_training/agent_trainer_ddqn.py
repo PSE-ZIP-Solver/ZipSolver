@@ -308,6 +308,7 @@ class AgentTrainer:
         boards: list[Board] = []
 
         for _ in range(numberBoards):
+            print(f"Generating board {len(boards) + 1}/{numberBoards}...")
             nrOfWaypoints = (
                 random.randint(
                     minIntermediateWaypoints,
@@ -667,9 +668,9 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = False
-    MIN_NR_OF_WALLS = 20
+    MIN_NR_OF_WALLS = 19
     NR_OF_WALLS = 20
-    MIN_NR_OF_WAYPOINTS = 20
+    MIN_NR_OF_WAYPOINTS = 19
     NR_OF_WAYPOINTS = 20
 
     USE_SAVED_TRAINING_BOARDS = False
