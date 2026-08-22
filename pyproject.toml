@@ -20,6 +20,7 @@ dependencies = [
     "tensorboard>=2.21.0",
     "torch>=2.12.1",
     "uvicorn[standard]>=0.51.0",
+    "openai==3.3.1",
 ]
 
 [build-system]
