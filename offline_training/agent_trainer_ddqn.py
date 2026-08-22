@@ -416,7 +416,7 @@ class AgentTrainer:
 
         model.learning_starts = 10_000
         model.target_update_interval = 5_000
-        model.gamma = 0.99
+        model.gamma = 0.995
         model.batch_size = 512
         model.gradient_steps = 1
         model.max_grad_norm = 10
@@ -469,8 +469,8 @@ class AgentTrainer:
 
             agent.set_exploration_schedule(
                 initial_eps=0.5,
-                final_eps=0.05,
-                fraction=0.8,
+                final_eps=0.1,
+                fraction=0.6,
             )
         else:
             print("Creating new agent")
@@ -667,25 +667,25 @@ class AgentTrainer:
 
 
 if __name__ == "__main__":
-    RANDOMIZE_BOARD_COMPLEXITY = False
-    MIN_NR_OF_WALLS = 19
-    NR_OF_WALLS = 20
-    MIN_NR_OF_WAYPOINTS = 19
-    NR_OF_WAYPOINTS = 20
+    RANDOMIZE_BOARD_COMPLEXITY = True
+    MIN_NR_OF_WALLS = 15
+    NR_OF_WALLS = 35
+    MIN_NR_OF_WAYPOINTS = 15
+    NR_OF_WAYPOINTS = 35
 
     USE_SAVED_TRAINING_BOARDS = False
-    LOAD_REPLAY_BUFFER = False
+    LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN1.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN2.pkl"
 
-    USE_SAVED_EVALUATION_BOARDS = False
+    USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
 
     USE_DOUBLE_DQN = True
 
     TRAIN_MODEL = True
-    PRINT_TRAINING_BOARDS = True
-    SHOW_FIRST_TRAINING_RUN = True
+    PRINT_TRAINING_BOARDS = False
+    SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
@@ -697,11 +697,11 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/trained-model-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-        nrTrainingBoards=24,
+        nrTrainingBoards=100,
         nrEvaluationBoards=1000,
-        timestepsPerBoard=1_000_000,
-        loadExistingModel=False,
-        resetModel=True,
+        timestepsPerBoard=3_000_000,
+        loadExistingModel=True,
+        resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
