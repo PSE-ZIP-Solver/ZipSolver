@@ -1,22 +1,25 @@
 import random
-from typing import List
+from functools import lru_cache
+from typing import Dict, List, Tuple
+
 from backend.puzzle_logic import Position, Board
+
+Coord = Tuple[int, int]
 
 
 class BoardGenerator:
+    # Precomputed once, shared across all calls.
+    DIRECTIONS: Tuple[Coord, ...] = ((0, 1), (1, 0), (0, -1), (-1, 0))
+
     @staticmethod
     def generate(boardSize: int, intermediateWaypoints: int, walls: int, numberBoards: int = 1) -> List[Board]:
         results: List[Board] = []
 
         while len(results) < numberBoards:
             board = Board(boardSize)
+            start, end = BoardGenerator._generateTwoDistinctRandomPositions(boardSize)
 
-            # 1. Pick only the start position
-            idxStart = random.randint(0, boardSize * boardSize - 1)
-            start = Position(idxStart % boardSize, idxStart // boardSize)
-
-            # 2. Find ANY valid Hamiltonian path (Warnsdorff handles this instantly)
-            path = BoardGenerator._findHamiltonianPath(board, start)
+            path = BoardGenerator._findHamiltonianPath(board, start, end)
 
             if path:
                 board = BoardGenerator._placeRandomWaypoints(board, path, intermediateWaypoints)
@@ -26,108 +29,168 @@ class BoardGenerator:
         return results
 
     @staticmethod
-    def _findHamiltonianPath(board: Board, start: Position) -> List[Position]:
-        boardSize = board.getSize
-        total_cells = boardSize * boardSize
-        start_idx = start.getY * boardSize + start.getX
+    def _generateTwoDistinctRandomPositions(boardSize: int) -> tuple[Position, Position]:
+        while True:
+            idxStart, idxEnd = random.sample(range(boardSize * boardSize), 2)
+            start = Position(idxStart % boardSize, idxStart // boardSize)
+            end = Position(idxEnd % boardSize, idxEnd // boardSize)
 
-        # Precompute 1D adjacency list for O(1) lookups
-        adj = [[] for _ in range(total_cells)]
+            p_start = (start.getX + start.getY) % 2
+            p_end = (end.getX + end.getY) % 2
+
+            if boardSize % 2 == 0:
+                if p_start != p_end:
+                    return start, end
+            else:
+                if p_start == 0 and p_end == 0:
+                    return start, end
+
+    @staticmethod
+    @lru_cache(maxsize=16)
+    def _get_adjacency(boardSize: int) -> Dict[Coord, Tuple[Coord, ...]]:
+        adjacency: Dict[Coord, Tuple[Coord, ...]] = {}
         for y in range(boardSize):
             for x in range(boardSize):
-                idx = y * boardSize + x
-                if x > 0: adj[idx].append(idx - 1)
-                if x < boardSize - 1: adj[idx].append(idx + 1)
-                if y > 0: adj[idx].append(idx - boardSize)
-                if y < boardSize - 1: adj[idx].append(idx + boardSize)
+                neighbors = tuple(
+                    (x + dx, y + dy)
+                    for dx, dy in BoardGenerator.DIRECTIONS
+                    if 0 <= x + dx < boardSize and 0 <= y + dy < boardSize
+                )
+                adjacency[(x, y)] = neighbors
+        return adjacency
 
-        visited = [False] * total_cells
-        visited[start_idx] = True
-        path = [start_idx]
+    @staticmethod
+    def _degree(pos: Coord, visited: set, adjacency: Dict[Coord, Tuple[Coord, ...]]) -> int:
+        """Warnsdorff's heuristic: count unvisited neighbors."""
+        return sum(1 for nb in adjacency[pos] if nb not in visited)
 
-        def _dfs(curr_idx: int) -> bool:
-            # Break Condition: 64 cells visited
+    @staticmethod
+    def _findHamiltonianPath(board: Board, start: Position, end: Position) -> List[Position]:
+        boardSize = board.getSize
+        adjacency = BoardGenerator._get_adjacency(boardSize)
+        total_cells = boardSize * boardSize
+
+        start_t: Coord = (start.getX, start.getY)
+        end_t: Coord = (end.getX, end.getY)
+
+        visited = {start_t}
+        path: List[Coord] = [start_t]
+
+        def candidates_for(pos: Coord) -> List[Coord]:
+            unvisited_count = total_cells - len(path)
+
+            # 1. FAST CONNECTIVITY PRUNING
+            # If the remaining unvisited nodes don't form a single connected component
+            # that includes the end node, a path is strictly impossible.
+            seen = {end_t}
+            q = [end_t]
+            head = 0
+            while head < len(q):
+                curr = q[head]
+                head += 1
+                for nb in adjacency[curr]:
+                    if nb not in visited and nb not in seen:
+                        seen.add(nb)
+                        q.append(nb)
+
+            if len(seen) < unvisited_count:
+                return []  # Dead-end detected instantly; trigger backtrack.
+
+            candidates = []
+            for nb in adjacency[pos]:
+                if nb in visited:
+                    continue
+                # Only allow visiting `end` as the very last move.
+                if nb == end_t and len(path) < total_cells - 1:
+                    continue
+                candidates.append(nb)
+
+            random.shuffle(candidates)
+            candidates.sort(key=lambda p: BoardGenerator._degree(p, visited, adjacency))
+            return candidates
+
+        frames: List[List[Coord]] = [candidates_for(start_t)]
+
+        # 2. MAX BACKTRACK LIMIT
+        backtracks = 0
+        MAX_BACKTRACKS = 5000
+
+        while frames:
+            candidates = frames[-1]
+
+            if not candidates:
+                backtracks += 1
+                # Abort safely if stuck in a pathologically hard configuration
+                if backtracks > MAX_BACKTRACKS:
+                    return None
+
+                frames.pop()
+                visited.discard(path.pop())
+                continue
+
+            nxt = candidates.pop()
+            visited.add(nxt)
+            path.append(nxt)
+
             if len(path) == total_cells:
-                return True
+                return [Position(x, y) for x, y in path]
 
-            valid_neighbors = [n for n in adj[curr_idx] if not visited[n]]
-
-            # Warnsdorff's heuristic: Sort by fewest unvisited neighbors
-            def get_degree(n):
-                count = sum(1 for nn in adj[n] if not visited[nn])
-                # Random tie-breaking is critical to prevent geometric loops
-                return count + random.random()
-
-            valid_neighbors.sort(key=get_degree)
-
-            for n in valid_neighbors:
-                visited[n] = True
-                path.append(n)
-
-                if _dfs(n):
-                    return True
-
-                path.pop()
-                visited[n] = False
-
-            return False
-
-        if _dfs(start_idx):
-            # Convert 1D path back to Position objects
-            return [Position(idx % boardSize, idx // boardSize) for idx in path]
+            frames.append(candidates_for(nxt))
 
         return None
 
-    # ... keep your _placeRandomWaypoints and _placeRandomWalls methods exactly as they are ...
-
     @staticmethod
     def _placeRandomWaypoints(board: Board, path: List[Position], intermediateWaypoints: int) -> Board:
-        boardSize = board.getSize
-        allowedIndices = set(range(boardSize * boardSize))
-
-        idxStart = path[0].getX + path[0].getY * boardSize
-        idxEnd = path[-1].getX + path[-1].getY * boardSize
+        size = board.getSize
+        allowedIndices = set(range(size * size))
+        idxStart = path[0].getX + path[0].getY * size
+        idxEnd = path[-1].getX + path[-1].getY * size
         allowedIndices.discard(idxStart)
         allowedIndices.discard(idxEnd)
 
         samples = min(intermediateWaypoints, len(allowedIndices))
-        intermediateIndices = set(random.sample(list(allowedIndices), samples))
+        intermediateIndices = random.sample(list(allowedIndices), samples)
 
-        intermediatePositions = [pos for pos in path if (pos.getX + pos.getY * boardSize) in intermediateIndices]
+        # 3. RELIABLE AND FAST LOOKUPS
+        # Rely on tuple (x,y) lookups rather than Object comparisons
+        intermediate_coords = {(idx % size, idx // size) for idx in intermediateIndices}
+        ordered_waypoints = [pos for pos in path if (pos.getX, pos.getY) in intermediate_coords]
 
         board.addWaypoint(path[0], 1)
-        for i, pos in enumerate(intermediatePositions, start=2):
-            board.addWaypoint(pos, i)
-        board.addWaypoint(path[-1], len(intermediatePositions) + 2)
+        nextOrder = 2
+        for pos in ordered_waypoints:
+            board.addWaypoint(pos, nextOrder)
+            nextOrder += 1
+        board.addWaypoint(path[-1], nextOrder)
 
         return board
 
     @staticmethod
     def _placeRandomWalls(board: Board, path: List[Position], walls: int) -> Board:
-        boardSize = board.getSize
-        possibleWalls = []
+        size = board.getSize
 
-        # Calculate possible walls using 1D math instead of lambda sorting
-        for y in range(boardSize):
-            for x in range(boardSize):
-                idx = y * boardSize + x
-                if x + 1 < boardSize:
-                    possibleWalls.append((idx, idx + 1))
-                if y + 1 < boardSize:
-                    possibleWalls.append((idx, idx + boardSize))
+        possibleWalls: Dict[Tuple[Coord, Coord], Tuple[Position, Position]] = {}
+        for y in range(size):
+            for x in range(size):
+                if x + 1 < size:
+                    key = ((x, y), (x + 1, y))
+                    possibleWalls[key] = (Position(x, y), Position(x + 1, y))
+                if y + 1 < size:
+                    key = ((x, y), (x, y + 1))
+                    possibleWalls[key] = (Position(x, y), Position(x, y + 1))
 
         pathObstructingWalls = set()
         for i in range(len(path) - 1):
-            idx1 = path[i].getX + path[i].getY * boardSize
-            idx2 = path[i + 1].getX + path[i + 1].getY * boardSize
-            pathObstructingWalls.add((min(idx1, idx2), max(idx1, idx2)))
+            a, b = path[i], path[i + 1]
+            key = tuple(sorted([(a.getX, a.getY), (b.getX, b.getY)]))
+            pathObstructingWalls.add(key)
 
-        allowedWalls = list(set(possibleWalls) - pathObstructingWalls)
-        samples = min(walls, len(allowedWalls))
+        allowedKeys = [k for k in possibleWalls if k not in pathObstructingWalls]
+        samples = min(walls, len(allowedKeys))
+        selectedKeys = random.sample(allowedKeys, samples)
 
-        for w in random.sample(allowedWalls, samples):
-            pos1 = Position(w[0] % boardSize, w[0] // boardSize)
-            pos2 = Position(w[1] % boardSize, w[1] // boardSize)
-            board.addWall(pos1, pos2)
+        for key in selectedKeys:
+            posA, posB = possibleWalls[key]
+            board.addWall(posA, posB)
 
         return board
