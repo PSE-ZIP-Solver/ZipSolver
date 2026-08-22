@@ -468,9 +468,9 @@ class AgentTrainer:
             self._configure_loaded_model(agent)
 
             agent.set_exploration_schedule(
-                initial_eps=0.5,
-                final_eps=0.1,
-                fraction=0.6,
+                initial_eps=0.4,
+                final_eps=0.05,
+                fraction=0.5,
             )
         else:
             print("Creating new agent")
@@ -669,14 +669,14 @@ class AgentTrainer:
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
     MIN_NR_OF_WALLS = 15
-    NR_OF_WALLS = 35
+    NR_OF_WALLS = 45
     MIN_NR_OF_WAYPOINTS = 15
-    NR_OF_WAYPOINTS = 35
+    NR_OF_WAYPOINTS = 45
 
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN2.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN3.pkl"
 
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
@@ -685,7 +685,7 @@ if __name__ == "__main__":
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
-    SHOW_FIRST_TRAINING_RUN = False
+    SHOW_FIRST_TRAINING_RUN = True
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
@@ -697,7 +697,7 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/trained-model-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-        nrTrainingBoards=100,
+        nrTrainingBoards=300,
         nrEvaluationBoards=1000,
         timestepsPerBoard=3_000_000,
         loadExistingModel=True,
