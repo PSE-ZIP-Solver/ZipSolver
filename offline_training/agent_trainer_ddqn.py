@@ -468,7 +468,7 @@ class AgentTrainer:
             self._configure_loaded_model(agent)
 
             agent.set_exploration_schedule(
-                initial_eps=0.4,
+                initial_eps=0.3,
                 final_eps=0.05,
                 fraction=0.5,
             )
@@ -676,7 +676,7 @@ if __name__ == "__main__":
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN3.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN4.pkl"
 
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
@@ -697,9 +697,9 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/trained-model-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-        nrTrainingBoards=300,
+        nrTrainingBoards=1000,
         nrEvaluationBoards=1000,
-        timestepsPerBoard=3_000_000,
+        timestepsPerBoard=10_000_000,
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
