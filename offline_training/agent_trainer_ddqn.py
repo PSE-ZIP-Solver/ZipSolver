@@ -641,14 +641,14 @@ class AgentTrainer:
 if __name__ == "__main__":
     BOARD_SIZE = 7
 
-    RANDOMIZE_BOARD_COMPLEXITY = False
-    MIN_NR_OF_WALLS = 34
+    RANDOMIZE_BOARD_COMPLEXITY = True
+    MIN_NR_OF_WALLS = 0
     NR_OF_WALLS = 34
-    MIN_NR_OF_WAYPOINTS = 34
+    MIN_NR_OF_WAYPOINTS = 0
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 20
-    NR_EVALUATION_BOARDS = 100
+    NR_TRAINING_BOARDS = 40
+    NR_EVALUATION_BOARDS = 100  
 
     # Reuse the solved first board and append two new 34/34 boards.
     USE_SAVED_TRAINING_BOARDS = True
