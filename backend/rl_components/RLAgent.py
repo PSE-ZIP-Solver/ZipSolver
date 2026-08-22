@@ -5,15 +5,16 @@ import torch.nn as nn
 
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.utils import get_linear_fn
+from stable_baselines3.common.vec_env import SubprocVecEnv
 
 
 class ZipCNN(BaseFeaturesExtractor):
-    """Small CNN feature extractor for multi-channel grid observations."""
+    """CNN feature extractor for multi-channel 8x8 grid observations, optimized for HPC."""
 
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 128):
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super().__init__(observation_space, features_dim)
 
-        n_input_channels = observation_space.shape[0]  # 8 channels currently
+        n_input_channels = observation_space.shape[0]  # 8 channels
 
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1),
@@ -25,13 +26,16 @@ class ZipCNN(BaseFeaturesExtractor):
             nn.Flatten(),
         )
 
-        # Compute flattened size dynamically so this works across board sizes.
         with torch.no_grad():
             sample = torch.zeros(1, *observation_space.shape)
-            n_flatten = self.cnn(sample).shape[1]
+            n_flatten = self.cnn(sample).shape[1]  # Will be 4096 for 8x8 grids
 
+        # Stepping down the dimensionality smoothly gives the network more capacity
+        # to learn complex spatial representations without choking the Q-network.
         self.linear = nn.Sequential(
-            nn.Linear(n_flatten, features_dim),
+            nn.Linear(n_flatten, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, features_dim),
             nn.ReLU(),
         )
 
@@ -42,12 +46,15 @@ class ZipCNN(BaseFeaturesExtractor):
 class RLAgent:
     """Wraps a Stable-Baselines3 DQN model for training and inference."""
 
-    def __init__(self, env: gym.Env, model_path: str | None = None, **dqn_kwargs):
+    def __init__(self, env: SubprocVecEnv, model_path: str | None = None, **dqn_kwargs):
         self._env = env
 
         self.policy_kwargs = dict(
             features_extractor_class=ZipCNN,
-            features_extractor_kwargs=dict(features_dim=128),
+            # 1. Match the new dimension from the optimized ZipCNN
+            features_extractor_kwargs=dict(features_dim=512),
+            # 2. Add dense layers for the Q-network to process the CNN features
+            net_arch=[512, 256],
             normalize_images=False,
         )
 

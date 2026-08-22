@@ -15,6 +15,17 @@ from backend.rl_components import RLAgent, RLEnvironment
 from offline_training.board_generator import BoardGenerator
 from offline_training.training_result import TrainingResult
 
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv
+
+
+def make_sampling_env(boards: list[Board]):
+    """Factory function to create isolated env instances for multiprocessing."""
+    def _init():
+        # Wrap each process instance in Monitor for proper SB3 logging
+        return Monitor(BoardSamplingEnv(boards))
+    return _init
+
 
 class DoubleDQN(DQN):
     """DQN variant that uses Double-DQN targets during network updates."""
@@ -40,18 +51,13 @@ class DoubleDQN(DQN):
                 env=self._vec_normalize_env,
             )
 
-            # Newer SB3 versions may provide per-sample n-step discounts.
-            # Older versions use the model's normal gamma value.
             replayDiscounts = getattr(replay_data, "discounts", None)
             discounts = replayDiscounts if replayDiscounts is not None else self.gamma
 
             with th.no_grad():
-                # Double DQN:
-                # 1. The online network selects the best action for the next state.
                 nextOnlineQValues = self.q_net(replay_data.next_observations)
                 nextActions = nextOnlineQValues.argmax(dim=1, keepdim=True)
 
-                # 2. The target network evaluates exactly that selected action.
                 nextTargetQValues = self.q_net_target(
                     replay_data.next_observations
                 )
@@ -66,7 +72,6 @@ class DoubleDQN(DQN):
                     + (1 - replay_data.dones) * discounts * nextQValues
                 )
 
-            # Q-values predicted by the online network for the sampled actions.
             currentQValues = self.q_net(replay_data.observations)
             currentQValues = th.gather(
                 currentQValues,
@@ -74,14 +79,12 @@ class DoubleDQN(DQN):
                 index=replay_data.actions.long(),
             )
 
-            # Huber loss is less sensitive to individual large TD errors.
             loss = F.smooth_l1_loss(currentQValues, targetQValues)
             losses.append(loss.item())
 
             self.policy.optimizer.zero_grad()
             loss.backward()
 
-            # Prevent individual gradient updates from becoming excessively large.
             th.nn.utils.clip_grad_norm_(
                 self.policy.parameters(),
                 self.max_grad_norm,
@@ -105,8 +108,6 @@ class BoardSamplingEnv(gym.Env):
         if not boards:
             raise ValueError("BoardSamplingEnv needs at least one board.")
 
-        # Create one environment per board once.
-        # This is faster than creating a new RLEnvironment on every reset.
         self.envs = [RLEnvironment(board) for board in boards]
         self.env = self.envs[0]
         self.observation_space = self.env.observation_space
@@ -140,6 +141,7 @@ class AgentTrainer:
         nrOfWalls: int,
         nrOfWaypoints: int,
         modelPath: str,
+        nEnvs: int = 24,
         nrTrainingBoards: int = 100,
         nrEvaluationBoards: int = 100,
         trainingBoards: list[Board] | None = None,
@@ -157,36 +159,7 @@ class AgentTrainer:
         evaluationBoardsPath: str = "offline_training/evaluation_boards/evaluation-boards.pkl",
         useDoubleDQN: bool = True,
     ):
-        """
-        Creates a trainer configured with training and evaluation board sets.
-
-        Args:
-            boardSize: Side length of each square board.
-            nrOfWalls: Maximum number of walls per generated board.
-            nrOfWaypoints: Maximum number of intermediate waypoints per generated board.
-            modelPath: Path used for loading/saving the model.
-            nrTrainingBoards: Number of generated training boards.
-            nrEvaluationBoards: Number of generated evaluation boards.
-            trainingBoards: Optional externally prepared training boards.
-            evaluationBoards: Optional externally prepared evaluation boards.
-            timestepsPerBoard: Kept for compatibility.
-                It is now interpreted as total training timesteps.
-            loadExistingModel: If True, loads modelPath if it exists.
-            resetModel: If True, deletes modelPath before training and starts fresh.
-            randomizeBoardComplexity: If True, randomly selects waypoint and wall
-                counts between the configured minimum and maximum values. If False,
-                uses the configured maximum values as exact counts.
-            minNrOfWalls: Minimum number of walls for randomized board generation.
-            minNrOfWaypoints: Minimum number of intermediate waypoints for randomized
-                board generation.
-            useSavedTrainingBoards: If True, loads the previously saved training boards.
-            loadReplayBuffer: If True, loads the previously saved replay buffer.
-            trainingBoardsPath: Path used for saving/loading the training board pool.
-            useSavedEvaluationBoards: If True, reuses a fixed saved evaluation set.
-                If the file does not exist yet, it is generated and saved automatically.
-            evaluationBoardsPath: Path used for saving/loading the evaluation board set.
-            useDoubleDQN: If True, uses Double-DQN target calculation during training.
-        """
+        self.nEnvs = nEnvs
         self.modelPath = modelPath
         self._totalTimesteps = timestepsPerBoard
         self.loadExistingModel = loadExistingModel
@@ -266,7 +239,6 @@ class AgentTrainer:
                 self._save_evaluation_boards()
                 print(f"Added {missingBoards} new evaluation boards.")
             elif missingBoards < 0:
-                # Use a deterministic prefix without deleting the larger saved pool.
                 self.evaluationBoards = self.evaluationBoards[:nrEvaluationBoards]
                 print(
                     f"Using the first {nrEvaluationBoards} boards from the saved "
@@ -287,14 +259,12 @@ class AgentTrainer:
                 self._save_evaluation_boards()
 
     def _save_training_boards(self):
-        """Save the generated training board pool for later training runs."""
         self.trainingBoardsPath.parent.mkdir(parents=True, exist_ok=True)
         with self.trainingBoardsPath.open("wb") as file:
             pickle.dump(self.trainingBoards, file)
         print(f"Saved training boards to {self.trainingBoardsPath}")
 
     def _load_training_boards(self) -> list[Board]:
-        """Load the training board pool created during an earlier run."""
         if not self.trainingBoardsPath.exists():
             raise FileNotFoundError(
                 f"Training board file not found: {self.trainingBoardsPath}"
@@ -310,14 +280,12 @@ class AgentTrainer:
         return boards
 
     def _save_evaluation_boards(self):
-        """Save one fixed evaluation board set for comparable future runs."""
         self.evaluationBoardsPath.parent.mkdir(parents=True, exist_ok=True)
         with self.evaluationBoardsPath.open("wb") as file:
             pickle.dump(self.evaluationBoards, file)
         print(f"Saved evaluation boards to {self.evaluationBoardsPath}")
 
     def _load_evaluation_boards(self) -> list[Board]:
-        """Load the fixed evaluation board set created during an earlier run."""
         with self.evaluationBoardsPath.open("rb") as file:
             boards = pickle.load(file)
 
@@ -337,7 +305,6 @@ class AgentTrainer:
         numberBoards: int,
         randomizeBoardComplexity: bool,
     ) -> list[Board]:
-        """Generate random boards with fixed or random waypoint and wall counts."""
         boards: list[Board] = []
 
         for _ in range(numberBoards):
@@ -368,7 +335,6 @@ class AgentTrainer:
 
     @staticmethod
     def _get_sb3_model(agent: RLAgent):
-        """Return the Stable-Baselines model stored inside RLAgent."""
         model = getattr(agent, "_model", None)
         if model is None:
             raise AttributeError(
@@ -378,7 +344,6 @@ class AgentTrainer:
 
     @staticmethod
     def _enable_double_dqn(agent: RLAgent):
-        """Switch the wrapped SB3 DQN model to Double-DQN training."""
         model = AgentTrainer._get_sb3_model(agent)
 
         if not isinstance(model, DQN):
@@ -387,8 +352,6 @@ class AgentTrainer:
             )
 
         if not isinstance(model, DoubleDQN):
-            # The network architecture and stored weights are identical.
-            # Only the train() target calculation changes.
             model.__class__ = DoubleDQN
 
         print("Double DQN target calculation enabled.")
@@ -396,7 +359,6 @@ class AgentTrainer:
 
     @staticmethod
     def _replace_replay_buffer(agent: RLAgent, bufferSize: int):
-        """Replace the loaded model's replay buffer with a new empty buffer."""
         model = AgentTrainer._get_sb3_model(agent)
         oldReplayBuffer = getattr(model, "replay_buffer", None)
 
@@ -418,17 +380,14 @@ class AgentTrainer:
             "handle_timeout_termination": True,
         }
 
-        # Preserve any custom replay-buffer options stored by SB3.
         constructorArguments.update(
             getattr(model, "replay_buffer_kwargs", None) or {}
         )
 
-        # Newer SB3 versions support n-step replay buffers.
         if getattr(model, "n_steps", 1) > 1:
             constructorArguments.setdefault("n_steps", model.n_steps)
             constructorArguments.setdefault("gamma", model.gamma)
 
-        # Only pass arguments supported by the installed SB3 version.
         signature = inspect.signature(replayBufferClass.__init__)
         acceptsKeywordArguments = any(
             parameter.kind == inspect.Parameter.VAR_KEYWORD
@@ -449,23 +408,15 @@ class AgentTrainer:
 
     @staticmethod
     def _configure_loaded_model(agent: RLAgent):
-        """Apply the fine-tuning settings that are not changed by RLAgent.load()."""
         model = AgentTrainer._get_sb3_model(agent)
-
-        # A smaller learning rate is useful when continuing an already trained model.
         fineTuningLearningRate = 5e-5
         model.learning_rate = fineTuningLearningRate
         model.lr_schedule = lambda _: fineTuningLearningRate
 
-        # Wait for a more varied initial buffer before the first update of this run.
-        model.learning_starts = 5_000
-
-        # A slower target-network update generally creates a more stable target.
+        model.learning_starts = 10_000
         model.target_update_interval = 5_000
-
-        # A 6x6 solution requires 35 valid moves, so future rewards should matter strongly.
         model.gamma = 0.99
-        model.batch_size = 64
+        model.batch_size = 512
         model.gradient_steps = 1
         model.max_grad_norm = 10
 
@@ -475,12 +426,10 @@ class AgentTrainer:
 
     @staticmethod
     def _replay_buffer_path(modelPath: str) -> Path:
-        """Create a replay-buffer path next to the corresponding model file."""
         modelFile = Path(modelPath)
         return modelFile.with_name(f"{modelFile.stem}_replay_buffer.pkl")
 
     def train(self) -> RLAgent:
-        """Train one RLAgent across randomly sampled training boards."""
         if not self.trainingBoards:
             raise ValueError("Cannot train without at least one training board.")
 
@@ -493,13 +442,17 @@ class AgentTrainer:
                     print(f"Resetting training data: deleting {file}")
                     file.unlink()
 
-        trainEnv = Monitor(BoardSamplingEnv(self.trainingBoards))
+        # Build parallelized environment across N CPU cores
+        print(f"Spawning {self.nEnvs} parallel environment processes...")
+        env_factories = [make_sampling_env(self.trainingBoards) for _ in range(self.nEnvs)]
+        trainEnv = SubprocVecEnv(env_factories)
+
         if self.loadExistingModel and modelFile.exists():
             print(f"Loading existing model from {self.modelPath}")
             agent = RLAgent(
                 trainEnv,
                 model_path=self.modelPath,
-                tensorboard_log="./logs/zip_dqn/6x6/",
+                tensorboard_log="./logs/zip_dqn/8x8/",
             )
 
             if self.loadReplayBuffer and replayBufferFile.exists():
@@ -509,11 +462,10 @@ class AgentTrainer:
                 print(f"No replay buffer found at {replayBufferFile}")
             else:
                 print("Starting with an empty replay buffer.")
-                self._replace_replay_buffer(agent, bufferSize=200_000)
+                self._replace_replay_buffer(agent, bufferSize=2_000_000)
 
             self._configure_loaded_model(agent)
 
-            # Higher exploration is useful because this run uses many new boards.
             agent.set_exploration_schedule(
                 initial_eps=0.5,
                 final_eps=0.05,
@@ -523,20 +475,20 @@ class AgentTrainer:
             print("Creating new agent")
             agent = RLAgent(
                 trainEnv,
-                learning_rate=5e-5,              # Controls how strongly the network weights are changed during each gradient/network update.
-                exploration_initial_eps=1.0,     # Initial probability of choosing a random action.
-                exploration_final_eps=0.10,      # Final minimum probability of choosing a random action.
-                exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
-                learning_starts=5_000,           # Number of steps before the model starts learning.
-                buffer_size=200_000,             # Maximum number of transitions stored in the replay buffer.
-                batch_size=64,                   # Number of samples used for one training update.
-                train_freq=(1, "step"),          # Trigger one training update after every environment step.
-                gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
-                target_update_interval=5_000,    # Copy the learned network weights to the target network every 5000 steps.
-                gamma=0.99,                      # Discount factor: controls how much future rewards matter.
-                max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
-                seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
-                tensorboard_log="./logs/zip_dqn/6x6/",
+                learning_rate=1e-4,
+                exploration_initial_eps=1.0,
+                exploration_final_eps=0.05,
+                exploration_fraction=0.5,
+                learning_starts=10_000,
+                buffer_size=2_000_000,
+                batch_size=512,
+                train_freq=(1, "step"),
+                gradient_steps=1,
+                target_update_interval=5_000,
+                gamma=0.995,
+                max_grad_norm=10,
+                seed=42,
+                tensorboard_log="./logs/zip_dqn/8x8/",
             )
 
         if self.useDoubleDQN:
@@ -547,18 +499,15 @@ class AgentTrainer:
         totalTimesteps = (
             self._totalTimesteps
             if self._totalTimesteps is not None
-            else 100_000
+            else 2_500_000
         )
         print(f"Training on {len(self.trainingBoards)} boards.")
         print(f"Total timesteps: {totalTimesteps}")
 
-        # True resets only the SB3 step counter / exploration schedule.
-        # It does not delete the loaded model weights.
         agent.learn(total_timesteps=totalTimesteps, reset_num_timesteps=True)
         return agent
 
     def load_saved_agent(self) -> RLAgent:
-        """Load a saved model without further training."""
         if not Path(self.modelPath).exists():
             raise FileNotFoundError(f"Model file not found: {self.modelPath}")
 
@@ -566,8 +515,6 @@ class AgentTrainer:
         if not boards:
             raise ValueError("At least one board is required to load the model.")
 
-        # The loaded model needs one compatible environment.
-        # During evaluation, evaluate() switches the environment for every board.
         return RLAgent(RLEnvironment(boards[0]), model_path=self.modelPath)
 
     def evaluate(
@@ -577,7 +524,6 @@ class AgentTrainer:
         showExamples: bool = False,
         boardType: str = "evaluation",
     ) -> TrainingResult:
-        """Evaluate a trained RLAgent on the provided boards."""
         boards = self.evaluationBoards if boards is None else boards
         if not boards:
             return TrainingResult(0, 0, 0.0, 0.0)
@@ -620,17 +566,14 @@ class AgentTrainer:
         )
 
     def evaluate_saved_model(self, showExamples: bool = False) -> TrainingResult:
-        """Load a saved model and evaluate it without further training."""
         return self.evaluate(self.load_saved_agent(), showExamples=showExamples)
 
     def evaluate_with_examples(self, agent: RLAgent) -> TrainingResult:
-        """Evaluate the agent and afterwards show one solved and one failed example."""
         return self.evaluate(agent, showExamples=True)
 
     def _run_board(self, agent: RLAgent, board: Board) -> tuple[bool, float]:
-        """Run one deterministic evaluation episode."""
+        """Run one deterministic evaluation episode without setting env on the agent."""
         env = RLEnvironment(board)
-        agent.set_env(env)
         observation, _ = env.reset()
         terminated = truncated = False
         rewardSum = 0.0
@@ -651,28 +594,34 @@ class AgentTrainer:
         title: str,
         missingMessage: str,
     ):
-        """Show an example board if one is available."""
         if board is None:
             print(f"\n{missingMessage}")
             return
         self._show_agent_run(agent, board, title)
 
     def _show_agent_run(self, agent: RLAgent, board: Board, title: str):
-        """Render one deterministic agent run on a given board."""
+        """Render one deterministic agent run on a given board manually."""
         print(f"\n{title}:")
         env = RLEnvironment(board)
-        agent.set_env(env)
-        result = agent.solve(
-            deterministic=True,
-            max_steps=env.config.max_steps,
-            render=True,
-        )
+        observation, _ = env.reset()
+        terminated = truncated = False
+
+        for _ in range(env.config.max_steps):
+            env.render()
+            action = agent.predict(observation, deterministic=True)
+            observation, _, terminated, truncated, _ = env.step(int(action))
+
+            if terminated or truncated:
+                break
+
+        env.render()
+        solved = terminated and env.game.isFinished()
+
         print("\nRun result:")
-        print(result)
+        print(f"{{'solved': {solved}, 'truncated': {truncated}}}")
         env.close()
 
     def show_first_training_board_run(self, agent: RLAgent):
-        """Render a deterministic run on the first board used during training."""
         if not self.trainingBoards:
             print("\nNo training board available.")
             return
@@ -684,7 +633,6 @@ class AgentTrainer:
         )
 
     def print_boards(self, boards: list[Board], title: str):
-        """Print the initial state of the provided boards."""
         print(f"\n{title}:")
         for index, board in enumerate(boards, start=1):
             print(f"\nBoard {index}:")
@@ -697,7 +645,6 @@ class AgentTrainer:
 
     @staticmethod
     def print_result(title: str, result: TrainingResult):
-        """Print one evaluation result."""
         print(f"\n{title}:")
         print("Solved:", result.getSolveCount)
         print("Total Boards:", result.getTotalBoards)
@@ -705,7 +652,6 @@ class AgentTrainer:
         print("Success rate:", result.getSuccessRate)
 
     def save(self, agent: RLAgent, modelPath: str | None = None):
-        """Save the trained agent and its replay buffer."""
         path = modelPath if modelPath else self.modelPath
         if not path:
             raise ValueError("A valid model path is required.")
@@ -720,47 +666,41 @@ class AgentTrainer:
 
 
 if __name__ == "__main__":
-    RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 10
-    NR_OF_WALLS = 25
-    MIN_NR_OF_WAYPOINTS = 10
-    NR_OF_WAYPOINTS = 25
+    RANDOMIZE_BOARD_COMPLEXITY = False
+    MIN_NR_OF_WALLS = 20
+    NR_OF_WALLS = 20
+    MIN_NR_OF_WAYPOINTS = 20
+    NR_OF_WAYPOINTS = 20
 
     USE_SAVED_TRAINING_BOARDS = False
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/6x6-generalization-500boards.pkl"
+    LOAD_REPLAY_BUFFER = False
 
-    USE_SAVED_EVALUATION_BOARDS = True
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-100boards.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN1.pkl"
+
+    USE_SAVED_EVALUATION_BOARDS = False
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
 
     USE_DOUBLE_DQN = True
 
     TRAIN_MODEL = True
-    PRINT_TRAINING_BOARDS = False
-    SHOW_FIRST_TRAINING_RUN = False
+    PRINT_TRAINING_BOARDS = True
+    SHOW_FIRST_TRAINING_RUN = True
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = True
 
     trainer = AgentTrainer(
-        boardSize=6,
+        boardSize=8,
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
-        modelPath="offline_training/trained_models/trained-model.zip",
+        modelPath="offline_training/trained_models/trained-model-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-
-        # number of training boards in the training pool
-        nrTrainingBoards=500,
-
-        # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=100, 
-
-        # Total time steps
+        nrTrainingBoards=24,
+        nrEvaluationBoards=1000,
         timestepsPerBoard=1_000_000,
-
-        loadExistingModel=True,
-        resetModel=False,
+        loadExistingModel=False,
+        resetModel=True,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
