@@ -410,7 +410,7 @@ class AgentTrainer:
     @staticmethod
     def _configure_loaded_model(agent: RLAgent):
         model = AgentTrainer._get_sb3_model(agent)
-        fineTuningLearningRate = 2e-5
+        fineTuningLearningRate = 5e-5
         model.learning_rate = fineTuningLearningRate
         model.lr_schedule = lambda _: fineTuningLearningRate
 
@@ -469,8 +469,8 @@ class AgentTrainer:
 
             agent.set_exploration_schedule(
                 initial_eps=0.15,
-                final_eps=0.01,
-                fraction=0.5,
+                final_eps=0.02,
+                fraction=0.2,
             )
         else:
             print("Creating new agent")
@@ -668,15 +668,15 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 15
+    MIN_NR_OF_WALLS = 10
     NR_OF_WALLS = 45
-    MIN_NR_OF_WAYPOINTS = 15
+    MIN_NR_OF_WAYPOINTS = 5
     NR_OF_WAYPOINTS = 45
 
-    USE_SAVED_TRAINING_BOARDS = True
+    USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN4.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN5.pkl"
 
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
@@ -697,9 +697,9 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/trained-model-8x8.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-        nrTrainingBoards=1000,
+        nrTrainingBoards=10000,
         nrEvaluationBoards=1000,
-        timestepsPerBoard=4_000_000,
+        timestepsPerBoard=20_000_000,
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
