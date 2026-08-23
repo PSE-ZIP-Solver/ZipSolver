@@ -648,7 +648,7 @@ if __name__ == "__main__":
     NR_OF_WAYPOINTS = 34
 
     NR_TRAINING_BOARDS = 40
-    NR_EVALUATION_BOARDS = 100  
+    NR_EVALUATION_BOARDS = 1000  
 
     # Reuse the solved first board and append two new 34/34 boards.
     USE_SAVED_TRAINING_BOARDS = True
@@ -660,7 +660,7 @@ if __name__ == "__main__":
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = (
         "offline_training/evaluation_boards/7x7/"
-        "7x7-evaluation-34walls-34wp-100boards.pkl"
+        "7x7-evaluation-random-0-34-1000boards.pkl"
     )
 
     MODEL_PATH = (
@@ -675,11 +675,11 @@ if __name__ == "__main__":
     RESET_MODEL = False
     LOAD_REPLAY_BUFFER = False
 
-    TRAIN_MODEL = True
+    TRAIN_MODEL = False
     PRINT_TRAINING_BOARDS = False
-    SHOW_FIRST_TRAINING_RUN = True
+    SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
-    EVALUATE_EVALUATION_BOARDS = False
+    EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = False
 
     trainer = AgentTrainer(
