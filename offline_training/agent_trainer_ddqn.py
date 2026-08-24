@@ -1,12 +1,15 @@
 import inspect
 import pickle
 import random
+import time
+from collections import deque
 from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
 import torch as th
 from stable_baselines3 import DQN
+from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from torch.nn import functional as F
@@ -24,6 +27,79 @@ def make_sampling_env(boards: list[Board]):
         return Monitor(BoardSamplingEnv(boards))
 
     return _init
+
+
+class TensorboardTrainingCallback(BaseCallback):
+    """Write stable TensorBoard metrics at fixed timestep intervals."""
+
+    def __init__(self, logEveryTimesteps: int = 5_000, statsWindowSize: int = 100):
+        super().__init__()
+        self.logEveryTimesteps = logEveryTimesteps
+        self.statsWindowSize = statsWindowSize
+        self._recentRewards = deque(maxlen=statsWindowSize)
+        self._recentLengths = deque(maxlen=statsWindowSize)
+        self._episodeRewards = None
+        self._episodeLengths = None
+        self._episodes = 0
+        self._nextLogStep = logEveryTimesteps
+        self._startTime = 0.0
+
+    def _on_training_start(self) -> None:
+        nEnvs = self.training_env.num_envs
+        self._episodeRewards = np.zeros(nEnvs, dtype=np.float64)
+        self._episodeLengths = np.zeros(nEnvs, dtype=np.int64)
+        self._episodes = 0
+        self._nextLogStep = self.logEveryTimesteps
+        self._startTime = time.time()
+
+    def _record_step_metrics(self) -> None:
+        rewards = self.locals.get("rewards")
+        dones = self.locals.get("dones")
+        if rewards is None or dones is None:
+            return
+
+        rewards = np.asarray(rewards, dtype=np.float64).reshape(-1)
+        dones = np.asarray(dones, dtype=bool).reshape(-1)
+
+        self._episodeRewards += rewards
+        self._episodeLengths += 1
+
+        for envIndex, done in enumerate(dones):
+            if done:
+                self._recentRewards.append(float(self._episodeRewards[envIndex]))
+                self._recentLengths.append(int(self._episodeLengths[envIndex]))
+                self._episodeRewards[envIndex] = 0.0
+                self._episodeLengths[envIndex] = 0
+                self._episodes += 1
+
+    def _dump(self) -> None:
+        elapsed = max(time.time() - self._startTime, 1e-9)
+        fps = int(self.num_timesteps / elapsed)
+
+        if self._recentRewards:
+            self.logger.record("rollout/ep_rew_mean", float(np.mean(self._recentRewards)))
+            self.logger.record("rollout/ep_len_mean", float(np.mean(self._recentLengths)))
+
+        explorationRate = getattr(self.model, "exploration_rate", None)
+        if explorationRate is not None:
+            self.logger.record("rollout/exploration_rate", float(explorationRate))
+
+        self.logger.record("time/episodes", self._episodes)
+        self.logger.record("time/fps", fps)
+        self.logger.record("time/time_elapsed", int(elapsed))
+        self.logger.record("time/total_timesteps", self.num_timesteps)
+        self.logger.dump(step=self.num_timesteps)
+
+    def _on_step(self) -> bool:
+        self._record_step_metrics()
+        if self.num_timesteps >= self._nextLogStep:
+            self._dump()
+            while self._nextLogStep <= self.num_timesteps:
+                self._nextLogStep += self.logEveryTimesteps
+        return True
+
+    def _on_training_end(self) -> None:
+        self._dump()
 
 
 class DoubleDQN(DQN):
@@ -507,9 +583,17 @@ class AgentTrainer:
             f"{self.explorationInitialEps} -> {self.explorationFinalEps}"
         )
 
-        agent.learn(
+        tensorboardCallback = TensorboardTrainingCallback(
+            logEveryTimesteps=5_000,
+            statsWindowSize=100,
+        )
+
+        self._get_sb3_model(agent).learn(
             total_timesteps=totalTimesteps,
             reset_num_timesteps=True,
+            callback=tensorboardCallback,
+            log_interval=None,
+            tb_log_name="DDQN_7x7",
         )
         return agent
 
@@ -694,8 +778,8 @@ if __name__ == "__main__":
     NR_TRAINING_BOARDS = 100
     NR_EVALUATION_BOARDS = 1000  
 
-    # New medium-to-hard generalization pool, following the 6x6 curriculum.
-    USE_SAVED_TRAINING_BOARDS = False
+    # Continue on the same 100-board medium-to-hard generalization pool.
+    USE_SAVED_TRAINING_BOARDS = True
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
         "7x7-generalization-100boards-14to34.pkl"
@@ -714,17 +798,17 @@ if __name__ == "__main__":
 
     USE_DOUBLE_DQN = True
 
-    # IMPORTANT: restore the last good 9.0M-step model before starting this retry.
+    # Continue from the completed 100-board parallel-training checkpoint.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
-    LOAD_REPLAY_BUFFER = False
+    LOAD_REPLAY_BUFFER = True
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
-    SHOW_FIRST_TRAINING_RUN = True
+    SHOW_FIRST_TRAINING_RUN = False
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
-    SHOW_EVALUATION_EXAMPLES = True
+    SHOW_EVALUATION_EXAMPLES = False
 
     trainer = AgentTrainer(
         boardSize=BOARD_SIZE,
@@ -736,7 +820,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard=1_000_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -746,7 +830,7 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.5,
+        explorationInitialEps=0.3,
         explorationFinalEps=0.05,
         explorationFraction=0.8,
         learningRate=1e-4,
