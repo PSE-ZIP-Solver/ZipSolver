@@ -676,7 +676,7 @@ if __name__ == "__main__":
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN5.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN7.pkl"
 
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
