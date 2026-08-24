@@ -56,8 +56,8 @@ class RLEnvironment(gym.Env):
 
         if not self.game.isValidNextStep(target_position):
             reward = self.config.invalid_move_penalty
-            terminated = True
-            truncated = False
+            terminated = False
+            truncated = False #leave model on cell if taken invalid step
             info = {
                 "invalid_move": True,
                 "step_count": self.current_step_count,

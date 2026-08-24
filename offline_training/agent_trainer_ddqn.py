@@ -580,13 +580,36 @@ class AgentTrainer:
         rewardSum = 0.0
 
         while not terminated and not truncated:
-            action = agent.predict(observation, deterministic=True)
-            observation, reward, terminated, truncated, _ = env.step(int(action))
+            # --- ALTE ZEILE ---
+            # action = agent.predict(observation, deterministic=True)
+            # --- NEUE ZEILE --- mit masked action
+            action = self._get_masked_action(agent, observation, env)
+
+            observation, reward, terminated, truncated, _ = env.step(action)
             rewardSum += float(reward)
 
         solved = terminated and env.game.isFinished()
         env.close()
         return solved, rewardSum
+
+    #masking for inference, not training
+    def _get_masked_action(self, agent: RLAgent, observation: np.ndarray, env: RLEnvironment) -> int:
+        """Holt die Q-Werte, maskiert ungültige Züge und gibt die beste gültige Aktion zurück."""
+        model = AgentTrainer._get_sb3_model(agent)
+
+        # Observation in einen Tensor umwandeln und aufs richtige Device schieben
+        obs_tensor = th.as_tensor(observation).unsqueeze(0).to(model.device)
+
+        with th.no_grad():
+            q_values = model.q_net(obs_tensor).cpu().numpy()[0]
+
+        mask = env.action_masks()  # Holt die Maske [True, False, True, False] aus dem Environment
+
+        # Ungültige Aktionen extrem stark negativ bewerten
+        q_values[~mask] = -np.inf
+
+        # Gibt den Index (0-3) des höchsten GÜLTIGEN Q-Werts zurück
+        return int(np.argmax(q_values))
 
     def _show_example(
         self,
