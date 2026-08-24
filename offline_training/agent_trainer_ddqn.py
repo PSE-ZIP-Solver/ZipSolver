@@ -8,12 +8,22 @@ import numpy as np
 import torch as th
 from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from torch.nn import functional as F
 
 from backend.puzzle_logic import Board
 from backend.rl_components import RLAgent, RLEnvironment
 from offline_training.board_generator import BoardGenerator
 from offline_training.training_result import TrainingResult
+
+
+def make_sampling_env(boards: list[Board]):
+    """Create an isolated monitored sampling environment for one worker."""
+
+    def _init():
+        return Monitor(BoardSamplingEnv(boards))
+
+    return _init
 
 
 class DoubleDQN(DQN):
@@ -118,6 +128,7 @@ class AgentTrainer:
         nrOfWalls: int,
         nrOfWaypoints: int,
         modelPath: str,
+        nEnvs: int = 24,
         nrTrainingBoards: int = 100,
         nrEvaluationBoards: int = 100,
         trainingBoards: list[Board] | None = None,
@@ -146,6 +157,7 @@ class AgentTrainer:
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
+        self.nEnvs = nEnvs
         self._totalTimesteps = timestepsPerBoard
         self.loadExistingModel = loadExistingModel
         self.resetModel = resetModel
@@ -428,7 +440,14 @@ class AgentTrainer:
                     print(f"Resetting training data: deleting {file}")
                     file.unlink()
 
-        trainEnv = Monitor(BoardSamplingEnv(self.trainingBoards))
+        activeEnvs = min(self.nEnvs, len(self.trainingBoards))
+        print(f"Spawning {activeEnvs} parallel environment processes...")
+
+        envFactories = [
+            make_sampling_env(self.trainingBoards)
+            for _ in range(activeEnvs)
+        ]
+        trainEnv = SubprocVecEnv(envFactories)
 
         if self.loadExistingModel and modelFile.exists():
             print(f"Loading existing model from {self.modelPath}")
@@ -554,8 +573,8 @@ class AgentTrainer:
         )
 
     def _run_board(self, agent: RLAgent, board: Board) -> tuple[bool, float]:
+        """Run one deterministic evaluation episode without replacing the training VecEnv."""
         env = RLEnvironment(board)
-        agent.set_env(env)
         observation, _ = env.reset()
         terminated = truncated = False
         rewardSum = 0.0
@@ -582,16 +601,38 @@ class AgentTrainer:
         self._show_agent_run(agent, board, title)
 
     def _show_agent_run(self, agent: RLAgent, board: Board, title: str):
+        """Render one deterministic run without replacing the parallel training VecEnv."""
         print(f"\n{title}:")
         env = RLEnvironment(board)
-        agent.set_env(env)
-        result = agent.solve(
-            deterministic=True,
-            max_steps=env.config.max_steps,
-            render=True,
-        )
+        observation, _ = env.reset()
+        terminated = truncated = False
+        rewardSum = 0.0
+        actions: list[int] = []
+        info = {}
+
+        for _ in range(env.config.max_steps):
+            env.render()
+            action = int(agent.predict(observation, deterministic=True))
+            actions.append(action)
+            observation, reward, terminated, truncated, info = env.step(action)
+            rewardSum += float(reward)
+
+            if terminated or truncated:
+                break
+
+        env.render()
+        solved = terminated and env.game.isFinished()
+
         print("\nRun result:")
-        print(result)
+        print(
+            {
+                "solved": solved,
+                "truncated": truncated,
+                "total_reward": rewardSum,
+                "actions": actions,
+                "final_info": info,
+            }
+        )
         env.close()
 
     def show_first_training_board_run(self, agent: RLAgent):
@@ -640,6 +681,7 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     BOARD_SIZE = 7
+    N_ENVS = 24
 
     RANDOMIZE_BOARD_COMPLEXITY = True
     MIN_NR_OF_WALLS = 0
@@ -687,6 +729,7 @@ if __name__ == "__main__":
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
         modelPath=MODEL_PATH,
+        nEnvs=N_ENVS,
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
