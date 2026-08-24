@@ -154,6 +154,7 @@ class AgentTrainer:
         batchSize: int = 64,
         targetUpdateInterval: int = 500,
         gamma: float = 0.98,
+        gradientSteps: int = 4,
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
@@ -178,6 +179,7 @@ class AgentTrainer:
         self.batchSize = batchSize
         self.targetUpdateInterval = targetUpdateInterval
         self.gamma = gamma
+        self.gradientSteps = gradientSteps
         self.tensorboardLog = f"./logs/zip_ddqn/{boardSize}x{boardSize}/"
 
         if not 0 <= self.minNrOfWalls <= nrOfWalls:
@@ -419,7 +421,7 @@ class AgentTrainer:
         model.target_update_interval = self.targetUpdateInterval
         model.gamma = self.gamma
         model.batch_size = self.batchSize
-        model.gradient_steps = 1
+        model.gradient_steps = self.gradientSteps
         model.max_grad_norm = 10
 
     @staticmethod
@@ -483,7 +485,7 @@ class AgentTrainer:
                 buffer_size=self.bufferSize,
                 batch_size=self.batchSize,
                 train_freq=(1, "step"),
-                gradient_steps=1,
+                gradient_steps=self.gradientSteps,
                 target_update_interval=self.targetUpdateInterval,
                 gamma=self.gamma,
                 max_grad_norm=10,
@@ -689,14 +691,14 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 0
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 40
+    NR_TRAINING_BOARDS = 100
     NR_EVALUATION_BOARDS = 1000  
 
-    # Reuse the solved first board and append two new 34/34 boards.
-    USE_SAVED_TRAINING_BOARDS = True
+    # New full-range generalization pool.
+    USE_SAVED_TRAINING_BOARDS = False
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
-        "7x7-curriculum-34walls-34wp.pkl"
+        "7x7-generalization-100boards-0to34.pkl"
     )
 
     USE_SAVED_EVALUATION_BOARDS = True
@@ -712,14 +714,14 @@ if __name__ == "__main__":
 
     USE_DOUBLE_DQN = True
 
-    # Continue from the successful 1-board model on the expanded 3-board pool.
+    # Continue from the current 7x7 model on a new generalization pool.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
     LOAD_REPLAY_BUFFER = False
 
-    TRAIN_MODEL = False
+    TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
-    SHOW_FIRST_TRAINING_RUN = False
+    SHOW_FIRST_TRAINING_RUN = True
     EVALUATE_TRAINING_BOARDS = True
     EVALUATE_EVALUATION_BOARDS = True
     SHOW_EVALUATION_EXAMPLES = False
@@ -734,7 +736,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=1_500_000,
+        timestepsPerBoard=2_000_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -753,6 +755,7 @@ if __name__ == "__main__":
         batchSize=64,
         targetUpdateInterval=500,
         gamma=0.98,
+        gradientSteps=4,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
