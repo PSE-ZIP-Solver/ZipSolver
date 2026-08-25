@@ -56,14 +56,15 @@ class RLEnvironment(gym.Env):
 
         if not self.game.isValidNextStep(target_position):
             reward = self.config.invalid_move_penalty
-            terminated = False
-            truncated = False #leave model on cell if taken invalid step
+            terminated = False  # <--- HIER AUF FALSE SETZEN!
+            truncated = False
             info = {
                 "invalid_move": True,
                 "step_count": self.current_step_count,
             }
 
             return self._get_observation(), reward, terminated, truncated, info
+
 
         was_visited = self.game.getState.isVisited(target_position)
         waypoint = self.game.getBoard.getWaypointAt(target_position)
