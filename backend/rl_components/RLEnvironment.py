@@ -63,7 +63,6 @@ class RLEnvironment(gym.Env):
                 "step_count": self.current_step_count,
             }
 
-
             return self._get_observation(), reward, terminated, truncated, info
 
         was_visited = self.game.getState.isVisited(target_position)
