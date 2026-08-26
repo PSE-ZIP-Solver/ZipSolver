@@ -56,7 +56,7 @@ class RLEnvironment(gym.Env):
 
         if not self.game.isValidNextStep(target_position):
             reward = self.config.invalid_move_penalty
-            terminated = False  # <--- HIER AUF FALSE SETZEN!
+            terminated = True
             truncated = False
             info = {
                 "invalid_move": True,
