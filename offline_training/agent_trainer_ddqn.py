@@ -410,7 +410,7 @@ class AgentTrainer:
     @staticmethod
     def _configure_loaded_model(agent: RLAgent):
         model = AgentTrainer._get_sb3_model(agent)
-        fineTuningLearningRate = 1e-5
+        fineTuningLearningRate = 5e-6
         model.learning_rate = fineTuningLearningRate
         model.lr_schedule = lambda _: fineTuningLearningRate
 
@@ -468,7 +468,7 @@ class AgentTrainer:
             self._configure_loaded_model(agent)
 
             agent.set_exploration_schedule(
-                initial_eps=0.05,
+                initial_eps=0.03,
                 final_eps=0.01,
                 fraction=0.2,
             )
@@ -676,7 +676,7 @@ if __name__ == "__main__":
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN7.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN8.pkl"
 
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
@@ -699,7 +699,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=10000,
         nrEvaluationBoards=1000,
-        timestepsPerBoard=30_000_000,
+        timestepsPerBoard=15_000_000,
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
