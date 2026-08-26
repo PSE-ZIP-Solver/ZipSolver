@@ -230,7 +230,7 @@ class AgentTrainer:
         batchSize: int = 64,
         targetUpdateInterval: int = 500,
         gamma: float = 0.98,
-        gradientSteps: int = 12,
+        gradientSteps: int = 48,
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
@@ -256,7 +256,7 @@ class AgentTrainer:
         self.targetUpdateInterval = targetUpdateInterval
         self.gamma = gamma
         self.gradientSteps = gradientSteps
-        self.tensorboardLog = f"./logs/zip_ddqn_abtest_parallel_g12/{boardSize}x{boardSize}/"
+        self.tensorboardLog = f"./logs/zip_ddqn_abtest_parallel_g48/{boardSize}x{boardSize}/"
 
         if not 0 <= self.minNrOfWalls <= nrOfWalls:
             raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
@@ -593,7 +593,7 @@ class AgentTrainer:
             reset_num_timesteps=True,
             callback=tensorboardCallback,
             log_interval=None,
-            tb_log_name="DDQN_7x7_g12",
+            tb_log_name="DDQN_7x7_g48",
         )
         return agent
 
@@ -798,7 +798,7 @@ if __name__ == "__main__":
 
     AB_TEST_RESULT_PATH = (
         "offline_training/trained_models/7x7/"
-        "7x7-agent-11M-parallel-g12-abtest.zip"
+        "7x7-agent-11M-parallel-g48-abtest.zip"
     )
 
     USE_DOUBLE_DQN = True
@@ -844,7 +844,7 @@ if __name__ == "__main__":
         batchSize=64,
         targetUpdateInterval=500,
         gamma=0.98,
-        gradientSteps=12,
+        gradientSteps=48,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
