@@ -1,19 +1,105 @@
 import inspect
 import pickle
 import random
+import time
+from collections import deque
 from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
 import torch as th
 from stable_baselines3 import DQN
+from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from torch.nn import functional as F
 
 from backend.puzzle_logic import Board
 from backend.rl_components import RLAgent, RLEnvironment
 from offline_training.board_generator import BoardGenerator
 from offline_training.training_result import TrainingResult
+
+
+def make_sampling_env(boards: list[Board]):
+    """Create an isolated monitored sampling environment for one worker."""
+
+    def _init():
+        return Monitor(BoardSamplingEnv(boards))
+
+    return _init
+
+
+class TensorboardTrainingCallback(BaseCallback):
+    """Write stable TensorBoard metrics at fixed timestep intervals."""
+
+    def __init__(self, logEveryTimesteps: int = 5_000, statsWindowSize: int = 100):
+        super().__init__()
+        self.logEveryTimesteps = logEveryTimesteps
+        self.statsWindowSize = statsWindowSize
+        self._recentRewards = deque(maxlen=statsWindowSize)
+        self._recentLengths = deque(maxlen=statsWindowSize)
+        self._episodeRewards = None
+        self._episodeLengths = None
+        self._episodes = 0
+        self._nextLogStep = logEveryTimesteps
+        self._startTime = 0.0
+
+    def _on_training_start(self) -> None:
+        nEnvs = self.training_env.num_envs
+        self._episodeRewards = np.zeros(nEnvs, dtype=np.float64)
+        self._episodeLengths = np.zeros(nEnvs, dtype=np.int64)
+        self._episodes = 0
+        self._nextLogStep = self.logEveryTimesteps
+        self._startTime = time.time()
+
+    def _record_step_metrics(self) -> None:
+        rewards = self.locals.get("rewards")
+        dones = self.locals.get("dones")
+        if rewards is None or dones is None:
+            return
+
+        rewards = np.asarray(rewards, dtype=np.float64).reshape(-1)
+        dones = np.asarray(dones, dtype=bool).reshape(-1)
+
+        self._episodeRewards += rewards
+        self._episodeLengths += 1
+
+        for envIndex, done in enumerate(dones):
+            if done:
+                self._recentRewards.append(float(self._episodeRewards[envIndex]))
+                self._recentLengths.append(int(self._episodeLengths[envIndex]))
+                self._episodeRewards[envIndex] = 0.0
+                self._episodeLengths[envIndex] = 0
+                self._episodes += 1
+
+    def _dump(self) -> None:
+        elapsed = max(time.time() - self._startTime, 1e-9)
+        fps = int(self.num_timesteps / elapsed)
+
+        if self._recentRewards:
+            self.logger.record("rollout/ep_rew_mean", float(np.mean(self._recentRewards)))
+            self.logger.record("rollout/ep_len_mean", float(np.mean(self._recentLengths)))
+
+        explorationRate = getattr(self.model, "exploration_rate", None)
+        if explorationRate is not None:
+            self.logger.record("rollout/exploration_rate", float(explorationRate))
+
+        self.logger.record("time/episodes", self._episodes)
+        self.logger.record("time/fps", fps)
+        self.logger.record("time/time_elapsed", int(elapsed))
+        self.logger.record("time/total_timesteps", self.num_timesteps)
+        self.logger.dump(step=self.num_timesteps)
+
+    def _on_step(self) -> bool:
+        self._record_step_metrics()
+        if self.num_timesteps >= self._nextLogStep:
+            self._dump()
+            while self._nextLogStep <= self.num_timesteps:
+                self._nextLogStep += self.logEveryTimesteps
+        return True
+
+    def _on_training_end(self) -> None:
+        self._dump()
 
 
 class DoubleDQN(DQN):
@@ -118,6 +204,7 @@ class AgentTrainer:
         nrOfWalls: int,
         nrOfWaypoints: int,
         modelPath: str,
+        nEnvs: int = 24,
         nrTrainingBoards: int = 100,
         nrEvaluationBoards: int = 100,
         trainingBoards: list[Board] | None = None,
@@ -143,9 +230,11 @@ class AgentTrainer:
         batchSize: int = 64,
         targetUpdateInterval: int = 500,
         gamma: float = 0.98,
+        gradientSteps: int = 12,
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
+        self.nEnvs = nEnvs
         self._totalTimesteps = timestepsPerBoard
         self.loadExistingModel = loadExistingModel
         self.resetModel = resetModel
@@ -166,7 +255,8 @@ class AgentTrainer:
         self.batchSize = batchSize
         self.targetUpdateInterval = targetUpdateInterval
         self.gamma = gamma
-        self.tensorboardLog = f"./logs/zip_ddqn_abtest_single/{boardSize}x{boardSize}/"
+        self.gradientSteps = gradientSteps
+        self.tensorboardLog = f"./logs/zip_ddqn_abtest_parallel_g12/{boardSize}x{boardSize}/"
 
         if not 0 <= self.minNrOfWalls <= nrOfWalls:
             raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
@@ -407,7 +497,7 @@ class AgentTrainer:
         model.target_update_interval = self.targetUpdateInterval
         model.gamma = self.gamma
         model.batch_size = self.batchSize
-        model.gradient_steps = 1
+        model.gradient_steps = self.gradientSteps
         model.max_grad_norm = 10
 
     @staticmethod
@@ -428,7 +518,14 @@ class AgentTrainer:
                     print(f"Resetting training data: deleting {file}")
                     file.unlink()
 
-        trainEnv = Monitor(BoardSamplingEnv(self.trainingBoards))
+        activeEnvs = min(self.nEnvs, len(self.trainingBoards))
+        print(f"Spawning {activeEnvs} parallel environment processes...")
+
+        envFactories = [
+            make_sampling_env(self.trainingBoards)
+            for _ in range(activeEnvs)
+        ]
+        trainEnv = SubprocVecEnv(envFactories)
 
         if self.loadExistingModel and modelFile.exists():
             print(f"Loading existing model from {self.modelPath}")
@@ -464,7 +561,7 @@ class AgentTrainer:
                 buffer_size=self.bufferSize,
                 batch_size=self.batchSize,
                 train_freq=(1, "step"),
-                gradient_steps=1,
+                gradient_steps=self.gradientSteps,
                 target_update_interval=self.targetUpdateInterval,
                 gamma=self.gamma,
                 max_grad_norm=10,
@@ -486,9 +583,17 @@ class AgentTrainer:
             f"{self.explorationInitialEps} -> {self.explorationFinalEps}"
         )
 
-        agent.learn(
+        tensorboardCallback = TensorboardTrainingCallback(
+            logEveryTimesteps=5_000,
+            statsWindowSize=100,
+        )
+
+        self._get_sb3_model(agent).learn(
             total_timesteps=totalTimesteps,
             reset_num_timesteps=True,
+            callback=tensorboardCallback,
+            log_interval=None,
+            tb_log_name="DDQN_7x7_g12",
         )
         return agent
 
@@ -554,8 +659,8 @@ class AgentTrainer:
         )
 
     def _run_board(self, agent: RLAgent, board: Board) -> tuple[bool, float]:
+        """Run one deterministic evaluation episode without replacing the training VecEnv."""
         env = RLEnvironment(board)
-        agent.set_env(env)
         observation, _ = env.reset()
         terminated = truncated = False
         rewardSum = 0.0
@@ -582,16 +687,38 @@ class AgentTrainer:
         self._show_agent_run(agent, board, title)
 
     def _show_agent_run(self, agent: RLAgent, board: Board, title: str):
+        """Render one deterministic run without replacing the parallel training VecEnv."""
         print(f"\n{title}:")
         env = RLEnvironment(board)
-        agent.set_env(env)
-        result = agent.solve(
-            deterministic=True,
-            max_steps=env.config.max_steps,
-            render=True,
-        )
+        observation, _ = env.reset()
+        terminated = truncated = False
+        rewardSum = 0.0
+        actions: list[int] = []
+        info = {}
+
+        for _ in range(env.config.max_steps):
+            env.render()
+            action = int(agent.predict(observation, deterministic=True))
+            actions.append(action)
+            observation, reward, terminated, truncated, info = env.step(action)
+            rewardSum += float(reward)
+
+            if terminated or truncated:
+                break
+
+        env.render()
+        solved = terminated and env.game.isFinished()
+
         print("\nRun result:")
-        print(result)
+        print(
+            {
+                "solved": solved,
+                "truncated": truncated,
+                "total_reward": rewardSum,
+                "actions": actions,
+                "final_info": info,
+            }
+        )
         env.close()
 
     def show_first_training_board_run(self, agent: RLAgent):
@@ -640,6 +767,7 @@ class AgentTrainer:
 
 if __name__ == "__main__":
     BOARD_SIZE = 7
+    N_ENVS = 24
 
     RANDOMIZE_BOARD_COMPLEXITY = True
     MIN_NR_OF_WALLS = 14
@@ -650,7 +778,7 @@ if __name__ == "__main__":
     NR_TRAINING_BOARDS = 100
     NR_EVALUATION_BOARDS = 1000  
 
-    # A/B test: reuse exactly the same 100 training boards as parallel Run 8.
+    # Continue on the same 100-board medium-to-hard generalization pool.
     USE_SAVED_TRAINING_BOARDS = True
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
@@ -670,12 +798,12 @@ if __name__ == "__main__":
 
     AB_TEST_RESULT_PATH = (
         "offline_training/trained_models/7x7/"
-        "7x7-agent-11M-single-abtest.zip"
+        "7x7-agent-11M-parallel-g12-abtest.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # The main model path must contain the saved 9.0M checkpoint before this run.
+    # A/B test: the main model path must contain the saved 9.0M checkpoint.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
     LOAD_REPLAY_BUFFER = False
@@ -692,6 +820,7 @@ if __name__ == "__main__":
         nrOfWalls=NR_OF_WALLS,
         nrOfWaypoints=NR_OF_WAYPOINTS,
         modelPath=MODEL_PATH,
+        nEnvs=N_ENVS,
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
@@ -715,6 +844,7 @@ if __name__ == "__main__":
         batchSize=64,
         targetUpdateInterval=500,
         gamma=0.98,
+        gradientSteps=12,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
