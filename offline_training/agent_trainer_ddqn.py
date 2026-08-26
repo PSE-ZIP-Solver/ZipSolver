@@ -168,22 +168,28 @@ class DoubleDQN(DQN):
 
 
 class BoardSamplingEnv(gym.Env):
-    """Randomly selects one environment from the current training pool on reset."""
+    """Randomly selects one board from the training pool on every reset."""
 
     def __init__(self, boards: list[Board]):
         super().__init__()
         if not boards:
             raise ValueError("BoardSamplingEnv needs at least one board.")
 
-        self.envs = [RLEnvironment(board) for board in boards]
-        self.env = self.envs[0]
+        self.boards = boards
+        self.env = RLEnvironment(self.boards[0])
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
     def reset(self, seed: int | None = None, options=None):
         super().reset(seed=seed)
-        envIndex = int(self.np_random.integers(len(self.envs)))
-        self.env = self.envs[envIndex]
+        boardIndex = int(self.np_random.integers(len(self.boards)))
+
+        if self.env is not None:
+            self.env.close()
+
+        # Only the currently sampled board gets an active environment.
+        # This avoids creating nrBoards * nrWorkers environments in memory.
+        self.env = RLEnvironment(self.boards[boardIndex])
         return self.env.reset(seed=seed, options=options)
 
     def step(self, action: int):
@@ -191,6 +197,10 @@ class BoardSamplingEnv(gym.Env):
 
     def render(self, mode: str = "human"):
         return self.env.render(mode)
+
+    def close(self):
+        if self.env is not None:
+            self.env.close()
 
     @property
     def game(self):
@@ -230,7 +240,7 @@ class AgentTrainer:
         batchSize: int = 64,
         targetUpdateInterval: int = 500,
         gamma: float = 0.98,
-        gradientSteps: int = 48,
+        gradientSteps: int = 24,
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
@@ -256,7 +266,7 @@ class AgentTrainer:
         self.targetUpdateInterval = targetUpdateInterval
         self.gamma = gamma
         self.gradientSteps = gradientSteps
-        self.tensorboardLog = f"./logs/zip_ddqn_abtest_parallel_g48/{boardSize}x{boardSize}/"
+        self.tensorboardLog = f"./logs/zip_ddqn/{boardSize}x{boardSize}/"
 
         if not 0 <= self.minNrOfWalls <= nrOfWalls:
             raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
@@ -306,30 +316,24 @@ class AgentTrainer:
 
         if evaluationBoards is not None:
             self.evaluationBoards = evaluationBoards
-        elif useSavedEvaluationBoards and self.evaluationBoardsPath.exists():
-            self.evaluationBoards = self._load_evaluation_boards()
-            missingBoards = nrEvaluationBoards - len(self.evaluationBoards)
+        elif useSavedEvaluationBoards:
+            if not self.evaluationBoardsPath.exists():
+                raise FileNotFoundError(
+                    "Fixed evaluation pool not found: "
+                    f"{self.evaluationBoardsPath}"
+                )
 
-            if missingBoards > 0:
-                self.evaluationBoards.extend(
-                    self._generate_random_boards(
-                        boardSize,
-                        self.minNrOfWaypoints,
-                        nrOfWaypoints,
-                        self.minNrOfWalls,
-                        nrOfWalls,
-                        missingBoards,
-                        self.randomizeBoardComplexity,
-                    )
+            self.evaluationBoards = self._load_evaluation_boards()
+
+            if len(self.evaluationBoards) < nrEvaluationBoards:
+                raise ValueError(
+                    f"Fixed evaluation pool contains only "
+                    f"{len(self.evaluationBoards)} boards, but "
+                    f"{nrEvaluationBoards} are required."
                 )
-                self._save_evaluation_boards()
-                print(f"Added {missingBoards} new evaluation boards.")
-            elif missingBoards < 0:
+
+            if len(self.evaluationBoards) > nrEvaluationBoards:
                 self.evaluationBoards = self.evaluationBoards[:nrEvaluationBoards]
-                print(
-                    f"Using the first {nrEvaluationBoards} boards from the saved "
-                    "evaluation pool."
-                )
         else:
             self.evaluationBoards = self._generate_random_boards(
                 boardSize,
@@ -340,9 +344,6 @@ class AgentTrainer:
                 nrEvaluationBoards,
                 self.randomizeBoardComplexity,
             )
-
-            if useSavedEvaluationBoards:
-                self._save_evaluation_boards()
 
     def _save_training_boards(self):
         self.trainingBoardsPath.parent.mkdir(parents=True, exist_ok=True)
@@ -593,7 +594,7 @@ class AgentTrainer:
             reset_num_timesteps=True,
             callback=tensorboardCallback,
             log_interval=None,
-            tb_log_name="DDQN_7x7_g48",
+            tb_log_name="DDQN_7x7_run10_500boards",
         )
         return agent
 
@@ -775,14 +776,14 @@ if __name__ == "__main__":
     MIN_NR_OF_WAYPOINTS = 14
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 100
+    NR_TRAINING_BOARDS = 500
     NR_EVALUATION_BOARDS = 1000  
 
-    # Continue on the same 100-board medium-to-hard generalization pool.
-    USE_SAVED_TRAINING_BOARDS = True
+    # New larger generalization pool for the next curriculum stage.
+    USE_SAVED_TRAINING_BOARDS = False
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
-        "7x7-generalization-100boards-14to34.pkl"
+        "7x7-generalization-500boards-14to34.pkl"
     )
 
     USE_SAVED_EVALUATION_BOARDS = True
@@ -796,16 +797,19 @@ if __name__ == "__main__":
         "7x7-agent.zip"
     )
 
-    AB_TEST_RESULT_PATH = (
+    CHECKPOINT_PATH = (
         "offline_training/trained_models/7x7/"
-        "7x7-agent-11M-parallel-g48-abtest.zip"
+        "7x7-agent-13.5M.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # A/B test: the main model path must contain the saved 9.0M checkpoint.
+    # Continue from the selected 12.0M parallel checkpoint.
+    # The server commands below restore that checkpoint to MODEL_PATH first.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
+
+    # New 500-board distribution -> start with a fresh replay buffer.
     LOAD_REPLAY_BUFFER = False
 
     TRAIN_MODEL = True
@@ -825,7 +829,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard=1_500_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -844,14 +848,14 @@ if __name__ == "__main__":
         batchSize=64,
         targetUpdateInterval=500,
         gamma=0.98,
-        gradientSteps=48,
+        gradientSteps=24,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
 
     if TRAIN_MODEL:
         trainer.save(agent)
-        trainer.save(agent, AB_TEST_RESULT_PATH)
+        trainer.save(agent, CHECKPOINT_PATH)
 
         if SHOW_FIRST_TRAINING_RUN:
             trainer.show_first_training_board_run(agent)
