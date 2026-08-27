@@ -808,12 +808,12 @@ if __name__ == "__main__":
 
     ARCHIVE_MODEL_PATH = (
         "offline_training/trained_models/7x7(all)/"
-        "7x7-agent-14.5M.zip"
+        "7x7-agent-15.5M.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # Continue from the current 13.5M model on the same 500-board pool.
+    # Continue from the current 14.5M model on the same 500-board pool.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
     LOAD_REPLAY_BUFFER = True
@@ -845,7 +845,7 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.3,
+        explorationInitialEps=0.2,
         explorationFinalEps=0.05,
         explorationFraction=0.8,
         learningRate=1e-4,
