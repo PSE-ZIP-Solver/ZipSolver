@@ -808,12 +808,12 @@ if __name__ == "__main__":
 
     ARCHIVE_MODEL_PATH = (
         "offline_training/trained_models/7x7(all)/"
-        "7x7-agent-19.0M.zip"
+        "7x7-agent-20.0M.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # Continue from the current 17.5M model on the same 1000-board pool.
+    # Continue from the current 19.0M model on the same 1000-board pool.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
     LOAD_REPLAY_BUFFER = True
@@ -835,7 +835,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=1_500_000,
+        timestepsPerBoard=1_000_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -845,7 +845,7 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.2,
+        explorationInitialEps=0.15,
         explorationFinalEps=0.05,
         explorationFraction=0.8,
         learningRate=1e-4,
