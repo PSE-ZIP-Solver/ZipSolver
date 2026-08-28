@@ -788,8 +788,8 @@ if __name__ == "__main__":
     NR_TRAINING_BOARDS = 1000
     NR_EVALUATION_BOARDS = 1000  
 
-    # Start a new, larger 1000-board generalization pool.
-    USE_SAVED_TRAINING_BOARDS = False
+    # Fine-tune on the same 1000-board generalization pool.
+    USE_SAVED_TRAINING_BOARDS = True
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
         "7x7-generalization-1000boards-14to34.pkl"
@@ -808,15 +808,15 @@ if __name__ == "__main__":
 
     ARCHIVE_MODEL_PATH = (
         "offline_training/trained_models/7x7(all)/"
-        "7x7-agent-17.5M.zip"
+        "7x7-agent-19.0M.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # Continue from the current 15.5M model on a new 1000-board pool.
+    # Continue from the current 17.5M model on the same 1000-board pool.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
-    LOAD_REPLAY_BUFFER = False
+    LOAD_REPLAY_BUFFER = True
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
@@ -835,7 +835,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=2_000_000,
+        timestepsPerBoard=1_500_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -845,7 +845,7 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.5,
+        explorationInitialEps=0.2,
         explorationFinalEps=0.05,
         explorationFraction=0.8,
         learningRate=1e-4,
