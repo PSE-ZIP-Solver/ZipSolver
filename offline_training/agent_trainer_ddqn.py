@@ -780,19 +780,19 @@ if __name__ == "__main__":
     N_ENVS = 24
 
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 14
+    MIN_NR_OF_WALLS = 8
     NR_OF_WALLS = 34
-    MIN_NR_OF_WAYPOINTS = 14
+    MIN_NR_OF_WAYPOINTS = 8
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 1000
+    NR_TRAINING_BOARDS = 1500
     NR_EVALUATION_BOARDS = 1000  
 
-    # Fine-tune on the same 1000-board generalization pool.
-    USE_SAVED_TRAINING_BOARDS = True
+    # Start a new broader 1500-board generalization pool.
+    USE_SAVED_TRAINING_BOARDS = False
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
-        "7x7-generalization-1000boards-14to34.pkl"
+        "7x7-generalization-1500boards-8to34.pkl"
     )
 
     USE_SAVED_EVALUATION_BOARDS = True
@@ -808,15 +808,15 @@ if __name__ == "__main__":
 
     ARCHIVE_MODEL_PATH = (
         "offline_training/trained_models/7x7(all)/"
-        "7x7-agent-20.0M.zip"
+        "7x7-agent-23.0M.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # Continue from the current 19.0M model on the same 1000-board pool.
+    # Continue from the retained 19.0M model on a new broader 1500-board pool.
     LOAD_EXISTING_MODEL = True
     RESET_MODEL = False
-    LOAD_REPLAY_BUFFER = True
+    LOAD_REPLAY_BUFFER = False
 
     TRAIN_MODEL = True
     PRINT_TRAINING_BOARDS = False
@@ -835,7 +835,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=1_000_000,
+        timestepsPerBoard=4_000_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -845,7 +845,7 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.15,
+        explorationInitialEps=0.5,
         explorationFinalEps=0.05,
         explorationFraction=0.8,
         learningRate=1e-4,
