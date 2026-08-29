@@ -9,8 +9,6 @@ Run from the repo root (not from backend/):
     uv run uvicorn run_api:app --reload --host 127.0.0.1 --port 8090
 """
 
-from fastapi.middleware.cors import CORSMiddleware
-
 from backend.api.BackendAPI import BackendAPI
 from backend.api.architecture_provider.ArchitectureProvider import (
     ArchitectureProvider,
@@ -36,17 +34,15 @@ app = BackendAPI(
     controller,
     architecture,
     extractor,
+    allowed_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
     # Same source of truth the architecture inventory uses, so /api/health and
     # /api/architecture can never disagree. Reports readiness, not mere file presence:
     # a trained artifact with no importable RL runtime cannot serve a request, and
     # health must not claim otherwise.
     model_loaded_provider=rl_inference_ready,
 ).app
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

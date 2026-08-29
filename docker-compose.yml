@@ -3,17 +3,17 @@ version: '3.8'
 services:
   backend:
     build:
-      context: .                 # Verwendet das Hauptverzeichnis als Kontext
+      context: .
       dockerfile: backend/Dockerfile
     ports:
       - "8090:8090"
-    restart: always
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=/api
+        VITE_API_URL: http://localhost:8090
     ports:
       - "3000:80"
-    restart: always
+    restart: unless-stopped
