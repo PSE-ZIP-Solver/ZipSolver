@@ -8,8 +8,8 @@ from stable_baselines3.common.utils import get_linear_fn
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 
-class ZipCNN(BaseFeaturesExtractor):
-    """CNN feature extractor for multi-channel 8x8 grid observations, optimized for HPC."""
+class ZipCNN_Deep(BaseFeaturesExtractor):
+    """Deep CNN feature extractor for complex 8x8 grid routing."""
 
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super().__init__(observation_space, features_dim)
@@ -17,23 +17,35 @@ class ZipCNN(BaseFeaturesExtractor):
         n_input_channels = observation_space.shape[0]  # 8 channels
 
         self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1),
+            # Layer 1: Startschicht erweitert auf 64 Filter
+            nn.Conv2d(n_input_channels, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+
+            # Layer 2: Erweiterung auf 128 Filter für tiefere Muster
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+
+            # Layer 3: Konsolidierung räumlicher Features
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
+
+            # Layer 4: NEU - Zwingend nötig für weitreichende Dead-End-Erkennung
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+
             nn.Flatten(),
         )
 
+        # Berechne Flatten-Größe dynamisch (wird 128 * 8 * 8 = 8192 sein)
         with torch.no_grad():
             sample = torch.zeros(1, *observation_space.shape)
-            n_flatten = self.cnn(sample).shape[1]  # Will be 4096 for 8x8 grids
+            n_flatten = self.cnn(sample).shape[1]
 
-        # Stepping down the dimensionality smoothly gives the network more capacity
-        # to learn complex spatial representations without choking the Q-network.
+        # Größeres Fully-Connected-Netzwerk hinten dran, um die 8192 Features gut zu verarbeiten
         self.linear = nn.Sequential(
-            nn.Linear(n_flatten, 1024),
+            nn.Linear(n_flatten, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
             nn.ReLU(),
             nn.Linear(1024, features_dim),
             nn.ReLU(),
@@ -50,7 +62,7 @@ class RLAgent:
         self._env = env
 
         self.policy_kwargs = dict(
-            features_extractor_class=ZipCNN,
+            features_extractor_class=ZipCNN_Deep,
             # 1. Match the new dimension from the optimized ZipCNN
             features_extractor_kwargs=dict(features_dim=512),
             # 2. Add dense layers for the Q-network to process the CNN features

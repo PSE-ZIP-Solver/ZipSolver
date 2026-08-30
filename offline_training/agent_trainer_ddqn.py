@@ -477,19 +477,19 @@ class AgentTrainer:
             agent = RLAgent(
                 trainEnv,
                 learning_rate=1e-4,
-                exploration_initial_eps=0.05,
-                exploration_final_eps=0.01,
-                exploration_fraction=0.2,
+                exploration_initial_eps=1.0,
+                exploration_final_eps=0.05,
+                exploration_fraction=0.4,
                 learning_starts=10_000,
                 buffer_size=2_000_000,
                 batch_size=512,
                 train_freq=(1, "step"),
                 gradient_steps=1,
-                target_update_interval=5_000,
+                target_update_interval=10_000,
                 gamma=0.995,
                 max_grad_norm=10,
                 seed=42,
-                tensorboard_log="./logs/zip_dqn/8x8/",
+                tensorboard_log="./logs/zip_dqn/8x8_v2/",
             )
 
         if self.useDoubleDQN:
@@ -679,10 +679,10 @@ if __name__ == "__main__":
     USE_SAVED_TRAINING_BOARDS = False
     LOAD_REPLAY_BUFFER = True
 
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8-RUN8.pkl"
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/8x8_V2_RUN1.pkl"
 
-    USE_SAVED_EVALUATION_BOARDS = True
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
+    USE_SAVED_EVALUATION_BOARDS = False
+    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/8x8-evaluation-10000boards_broad.pkl"
 
     USE_DOUBLE_DQN = True
 
@@ -701,10 +701,10 @@ if __name__ == "__main__":
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=10000,
-        nrEvaluationBoards=1000,
-        timestepsPerBoard=15_000_000,
-        loadExistingModel=True,
-        resetModel=False,
+        nrEvaluationBoards=10000,
+        timestepsPerBoard=20_000_000,
+        loadExistingModel=False,
+        resetModel=True,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
         useSavedTrainingBoards=USE_SAVED_TRAINING_BOARDS,
         loadReplayBuffer=LOAD_REPLAY_BUFFER,
