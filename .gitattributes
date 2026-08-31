@@ -1,0 +1,4 @@
+*.zip filter=lfs diff=lfs merge=lfs -text
+offline_training/trained_models/*.zip filter=lfs diff=lfs merge=lfs -text
+offline_training/trained_models/*.pkl filter=lfs diff=lfs merge=lfs -text
+offline_training/trained_models/8x8_V2.zip filter=lfs diff=lfs merge=lfs -text
