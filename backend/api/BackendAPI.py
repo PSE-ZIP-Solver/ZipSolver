@@ -161,8 +161,14 @@ class BackendAPI:
             # "127.0.0.1" as distinct origins, and Vite prints whichever the host resolves
             # to, so allowing only one produced CORS failures that looked like backend
             # outages.
+            # Also allow all Vercel preview and production domains automatically so the
+            # frontend can talk to this API when deployed there.
             allow_origins=allowed_origins
-            or ["http://localhost:5173", "http://127.0.0.1:5173"],
+            or [
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "https://*.vercel.app",
+            ],
             allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
