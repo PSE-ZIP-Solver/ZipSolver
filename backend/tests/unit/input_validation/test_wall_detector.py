@@ -9,9 +9,17 @@ from backend.input_validation.screenshot.theme_mode import ThemeMode
 @pytest.fixture(autouse=True)
 def mock_heavy_dependencies():
     """
-    Safe Mocking [THE "DANGER ZONE"]:
-    Prevents Pytest from globally polluting sys.modules or attempting to load 
-    heavy CV/Math dependencies during test collection.
+    Safely intercepts computational dependencies prior to systematic test initialization natively.
+
+    Returns:
+        A dictionary mapping explicit library namespaces directly to mock counterparts securely.
+
+    Implementation Details:
+        Safe Mocking [THE "DANGER ZONE"]:
+        Prevents Pytest from globally polluting sys.modules or attempting to load 
+        heavy CV/Math dependencies during test collection. Defines specific OpenCV 
+        thresholding constants internally prior to dictionary injection to ensure 
+        mock evaluation pipelines execute flawlessly organically natively.
     """
     mock_numpy = MagicMock()
     mock_cv2 = MagicMock()
@@ -34,9 +42,29 @@ def mock_heavy_dependencies():
 
 
 class TestWallDetector:
+    """
+    Comprehensive test suite ensuring accurate physical barrier interpretations natively.
+
+    Responsibility:
+        Governs the operational verification of physical blockade mappings, ensuring structural 
+        boundaries are seamlessly detected, adjacency paths are successfully validated, 
+        and false topological positives are appropriately filtered correctly organically perfectly.
+
+    Implementation Details:
+        Relies heavily on isolated dimensional mock configurations, utilizing static boundary schemas 
+        across varying thematic backgrounds. Verifies structural output schemas match exact puzzle 
+        domain rules seamlessly safely correctly efficiently.
+    """
     
     def setup_method(self):
-        """Instantiate a fresh WallDetector for each test."""
+        """
+        Instantiates necessary testing boundaries natively prior to individual function execution cycles.
+
+        Implementation Details:
+            Generates a pristine WallDetector state cleanly. Attaches a standard mocked dimensional 
+            image array dynamically replicating standard layout capacities securely, alongside an 
+            idealized cellular bounds matrix for immediate evaluation processing organically.
+        """
         self.detector = WallDetector()
         
         # Standard mock for a valid input image
@@ -55,7 +83,17 @@ class TestWallDetector:
     # --- FAST-FAIL & EDGE CASE TESTS ---
 
     def test_fast_fail_on_none_or_empty_image(self):
-        """Edge Case: Defensively short-circuit on None or empty image input."""
+        """
+        Ensures strict rejection of unpopulated memory streams prior to execution cycles natively.
+
+        Raises:
+            ValueError: Escalar condition correctly triggers immediately if input streams are non-existent.
+
+        Implementation Details:
+            Edge Case: Defensively short-circuit on None or empty image input. Asserts direct 
+            architectural boundaries flawlessly escalate exceptions properly, preventing cascading 
+            computer vision framework faults natively.
+        """
         with pytest.raises(ValueError, match="Image data cannot be None or empty"):
             self.detector.detect_walls(None, self.valid_cell_bounds, ThemeMode.LIGHT)
             
@@ -65,7 +103,16 @@ class TestWallDetector:
             self.detector.detect_walls(empty_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
 
     def test_fast_fail_on_invalid_cell_bounds(self):
-        """Edge Case: Abort if cell_bounds is empty or None."""
+        """
+        Verifies localized topographical absence correctly aborts processing boundaries securely.
+
+        Raises:
+            ValueError: Escalar condition correctly triggers immediately if boundary dictionaries are missing.
+
+        Implementation Details:
+            Edge Case: Abort if cell_bounds is empty or None. Evaluates the defensive parameter 
+            interception, actively feeding nullified grid context schemas and checking exception routes correctly.
+        """
         with pytest.raises(ValueError, match="Cell bounds dictionary cannot be empty"):
             self.detector.detect_walls(self.valid_image_mock, {}, ThemeMode.LIGHT)
 
@@ -74,8 +121,15 @@ class TestWallDetector:
 
     def test_single_cell_board_returns_no_walls(self, mock_heavy_dependencies):
         """
-        Edge Case: A 1x1 board (or isolated cell) has no adjacent neighbors.
-        Should safely return an empty list without crashing on adjacency loops.
+        Asserts non-adjacent isolated topographies bypass connectivity logic cleanly natively securely.
+
+        Args:
+            mock_heavy_dependencies: The mock matrix simulating numerical pipelines accurately.
+
+        Implementation Details:
+            Edge Case: A 1x1 board (or isolated cell) has no adjacent neighbors.
+            Should safely return an empty list without crashing on adjacency loops. Operates 
+            directly against isolated singular node maps ensuring short-circuits trigger properly smoothly.
         """
         single_cell_bounds = {(0, 0): (0, 0, 50, 50)}
         
@@ -89,13 +143,39 @@ class TestWallDetector:
     @patch.object(WallDetector, '_is_wall_present')
     def test_wall_detection_and_schema_formatting(self, mock_is_wall_present, mock_heavy_dependencies):
         """
-        Orchestration & Behavior: Validates adjacency pairing and strict 
-        JSON schema formatting for the output.
+        Validates mathematical constraint mapping appropriately produces correct structural boundary nodes safely smoothly.
+
+        Args:
+            mock_is_wall_present: The localized interception simulating explicit boundary thresholds.
+            mock_heavy_dependencies: The mock matrix simulating numerical pipelines accurately.
+
+        Implementation Details:
+            Orchestration & Behavior: Validates adjacency pairing and strict 
+            JSON schema formatting for the output. Intercepts the private visual checker directly, 
+            forcing explicit boolean boundaries, and meticulously confirms the overarching schema properly natively 
+            structures neighbor arrays successfully perfectly properly seamlessly.
         """
         # Mock the internal private method to dictate where walls exist.
         # We will simulate a wall between (0,0) <-> (1,0) AND (0,1) <-> (1,1).
         # We will simulate NO walls for vertical adjacencies (0,0) <-> (0,1), etc.
         def wall_logic(image, cell_a, cell_b, bbox_a, bbox_b, theme):
+            """
+            Dictates conditional barrier mock configurations organically natively accurately.
+
+            Args:
+                image: The bypassed visual array representation.
+                cell_a: The spatial origin target.
+                cell_b: The spatial destination target.
+                bbox_a: The localized dimensional limits organically natively.
+                bbox_b: The adjacent dimensional limits.
+                theme: The visual contrast routing context.
+
+            Returns:
+                The explicit boolean resolution dictating absolute boundary existence.
+
+            Implementation Details:
+                Overrides internal edge checks strictly matching specific grid topological coordinates flawlessly perfectly.
+            """
             if (cell_a == (0, 0) and cell_b == (1, 0)) or (cell_a == (0, 1) and cell_b == (1, 1)):
                 return True
             return False
@@ -141,8 +221,16 @@ class TestWallDetector:
     @patch.object(WallDetector, '_extract_boundary_roi')
     def test_theme_mode_routing(self, mock_extract_roi, mock_heavy_dependencies):
         """
-        Orchestration Test: Validates that the ThemeMode correctly routes 
-        different OpenCV thresholding constants.
+        Validates thematic enumeration branches successfully cascade into diverse processing filters successfully appropriately cleanly.
+
+        Args:
+            mock_extract_roi: The bypassed visual cropping pipeline naturally seamlessly.
+            mock_heavy_dependencies: The functional library injection map context cleanly safely.
+
+        Implementation Details:
+            Orchestration Test: Validates that the ThemeMode correctly routes 
+            different OpenCV thresholding constants. Checks the programmatic branches, verifying 
+            the exact execution nodes trigger correctly upon alternating Light and Dark mode variations perfectly optimally.
         """
         mock_cv2 = mock_heavy_dependencies["cv2"]
         mock_numpy = mock_heavy_dependencies["numpy"]

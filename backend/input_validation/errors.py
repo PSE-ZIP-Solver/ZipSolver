@@ -1,30 +1,37 @@
-"""Typed error hierarchy for board parsing (§5.5.5).
+"""
+Typed error hierarchy for board parsing (§5.5.5).
 
-``JsonInterpreter.buildBoard`` used to signal every failure with a bare ``ValueError``,
-which the API could only render as ``400 MALFORMED_REQUEST``. That is correct for a
-genuinely malformed payload, but wrong for the one semantic rule the interpreter is the
-*only* component able to enforce: duplicate walls.
+Responsibility:
+    Provides a structured taxonomy of exception classes utilized during payload 
+    interpretation. Allows the API layer to map parse failures by their categorical 
+    type rather than dynamically inspecting fragile message strings, mirroring the 
+    system's screenshot error hierarchy.
 
-Why duplicates must be caught here. ``Board`` stores walls in a ``Set[Wall]`` whose
-equality is order-independent, so ``{A,B}`` and ``{B,A}`` collapse into a single entry the
-moment they are added. By the time ``InputValidator`` receives the ``Board``, the
-duplicate is gone and unreportable — the rule is only observable against the ordered list
-in the payload. Detecting it at parse time and carrying the taxonomy code on the exception
-lets the API report the documented ``422 INVALID_WALLS`` without the interpreter having to
-know anything about HTTP.
-
-Mirrors the ``ScreenshotError`` hierarchy so the API maps parse failures by *type* rather
-than by inspecting message strings.
+Implementation Details:
+    The `JsonInterpreter.buildBoard` method previously relied upon a generic `ValueError` 
+    for every fault, culminating in broad 400 API responses. The internal rule dictating 
+    unique walls (§5.5.1) requires interception before `Board` instantiation due to its 
+    internal Set collapse behavior. Carrying the precise taxonomy code on specialized 
+    exceptions empowers the API to cleanly return distinct HTTP 422 statuses while the 
+    interpreter remains strictly unaware of HTTP context.
 """
 
 from __future__ import annotations
 
 
 class BoardParseError(ValueError):
-    """Base for every failure raised while turning a payload into a ``Board``.
+    """
+    Base for every failure raised while turning a payload into a structural board model.
 
-    Subclasses ``ValueError`` so existing callers and tests that expect one keep working.
-    ``code`` and ``http_status`` let the API map each failure mode onto the error taxonomy.
+    Responsibility:
+        Acts as the foundational exception for malformed parsing logic, securing backward 
+        compatibility for pre-existing system callers expecting generalized dictionary 
+        failure traps.
+
+    Implementation Details:
+        Inherits directly from `ValueError`. Embeds static class-level attributes matching 
+        the overarching API taxonomy, facilitating seamless routing of HTTP statuses and 
+        localized error codes up the execution chain.
     """
 
     code: str = "MALFORMED_REQUEST"
@@ -33,10 +40,19 @@ class BoardParseError(ValueError):
 
 
 class DuplicateWallError(BoardParseError):
-    """The payload lists the same wall twice (in either cell order).
+    """
+    Indicates the parsed payload explicitly defines the exact same physical barrier twice.
 
-    Semantic, not structural: the payload is well-formed, it just breaks the uniqueness
-    rule of §5.5.1 — hence 422 INVALID_WALLS rather than 400.
+    Responsibility:
+        Catches semantic payload rule-breaks (where identical coordinates define redundant 
+        walls) strictly at the translation layer, ensuring proper downstream error reporting 
+        instead of a generalized structural failure.
+
+    Implementation Details:
+        Overrides parent static fields to specifically dictate a 422 HTTP mapping. Captured 
+        and raised by the interpreter prior to object instantiation because the underlying 
+        graph algorithm heavily utilizes Sets which naturally drop unordered duplicates, 
+        permanently destroying the ability to spot this structural violation later.
     """
 
     code = "INVALID_WALLS"

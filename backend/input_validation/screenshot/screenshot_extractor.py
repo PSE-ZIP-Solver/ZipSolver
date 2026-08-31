@@ -1,5 +1,5 @@
 import json
-from backend.input_validation.screenshot.errors import (
+from backend.input_validation.screenshot.screenshot_errors import (
     NoBoardDetectedError,
     UnreadableImageError,
 )
@@ -19,11 +19,28 @@ __all__ = ["ScreenshotExtractor", "WaypointDetectionError"]
 
 class ScreenshotExtractor:
     """
-    Main orchestration class for the screenshot extraction pipeline.
-    Executes the detectors in sequence and outputs a schema-compliant result.
+    Overarching orchestrator managing the multi-stage visual recognition pipeline.
+
+    Responsibility:
+        Functions as the primary external gateway bridging unstructured graphic uploads 
+        into precisely structured payload dictionaries suitable for mathematical generation 
+        via downstream domain interpreters.
+
+    Implementation Details:
+        Maintains protected module references directly, establishing distinct responsibilities 
+        across dedicated extraction subsystems. Chains complex execution loops asynchronously, 
+        surfacing strict internal warnings or bubbling fatal pipeline halts upward transparently.
     """
 
     def __init__(self):
+        """
+        Initializes the protected execution handlers necessary for pipeline traversal.
+
+        Implementation Details:
+            Executes strictly isolated instantiations bounding internal dependencies safely 
+            behind class encapsulation. Avoids overhead penalties by ensuring heavy 
+            vision tools within these nested structures aren't invoked until explicit utilization.
+        """
         # Strict encapsulation with protected attributes. Instantiated once; the heavy
         # libraries each component needs are imported lazily inside their methods, so
         # constructing the extractor stays cheap and import-safe.
@@ -39,20 +56,28 @@ class ScreenshotExtractor:
         self, image_bytes: bytes, board_size: "Optional[int]" = None
     ) -> Dict[str, Any]:
         """
-        Runs the pipeline and returns a dict matching the Board Configuration Schema.
-
-        Designed to feed straight into ``JsonInterpreter.buildBoard(...)``; returning a
-        dict avoids a redundant serialize/deserialize round-trip at the integration point.
+        Executes sequential visual processing converting inputs to native configurations.
 
         Args:
-            image_bytes: the raw uploaded image.
-            board_size: the grid size the user already selected in the frontend (6/7/8).
-                When provided it is authoritative and removes the need to guess the size
-                from the image; when None the localizer falls back to edge estimation.
+            image_bytes: The raw transport bytes comprising the user's targeted visual capture.
+            board_size: The optional structural parameter manually fed into the evaluation to 
+                accelerate geometric bounds detection and skip legacy scale estimations.
 
-        Sequence: image load -> theme -> grid -> waypoints -> walls. Any exception raised
-        by a sub-component (ValueError, WaypointDetectionError) bubbles up unchanged and
-        halts the remaining stages.
+        Returns:
+            The comprehensively assembled metadata structured seamlessly into standard 
+            Python schema dicts.
+
+        Raises:
+            UnreadableImageError: If the provided mapping byte structure contains zero volume.
+            NoBoardDetectedError: If the extraction pipeline securely detects valid bounds but 
+                no requisite physical puzzle structures.
+
+        Implementation Details:
+            Evaluates boundaries immediately asserting input presence. Routes successful matrices 
+            sequentially into specialized sub-components, retaining contextual properties 
+            (like identified theme logic and coordinate arrays) explicitly passing them into 
+            subsequent evaluations. Evaluates final numerical outcomes compiling internal warnings 
+            while forcefully failing layouts reporting invalid marker populations.
         """
         # FAST_FAIL_IF_BYTES_NONE_OR_EMPTY — before any component runs.
         if image_bytes is None or len(image_bytes) == 0:
@@ -96,11 +121,19 @@ class ScreenshotExtractor:
         }
 
     def extract_to_json(self, image_bytes: bytes) -> str:
-        """Same pipeline as :meth:`extract_to_dict`, returned as a JSON string.
+        """
+        Executes sequential visual processing directly serializing outcomes over transport.
 
-        Provided for callers that want the serialized schema directly (e.g. an HTTP layer
-        that forwards the raw JSON). The internal ``_warnings`` key (best-effort metadata,
-        not part of the board schema) is stripped so the JSON matches the board contract.
+        Args:
+            image_bytes: The raw encoded graphic binary intended for architectural parsing.
+
+        Returns:
+            The finalized JSON string safely matching established payload schemas.
+
+        Implementation Details:
+            Delegates raw extraction directly to internal dictionary conversion loops. 
+            Actively strips internal diagnostic metadata bounds (warnings) ensuring the 
+            externalized payload complies absolutely with standard API serialization limits.
         """
         data = dict(self.extract_to_dict(image_bytes))
         data.pop("_warnings", None)

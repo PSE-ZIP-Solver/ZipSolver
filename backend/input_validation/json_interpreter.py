@@ -8,28 +8,18 @@ from backend.puzzle_logic import Position
 
 class JsonInterpreter:
     """
-    Validates and parses puzzle definition JSON of the form:
+    Validates and parses structural and topological puzzle definition JSON data.
 
-    {
-        "boardSize": 6,
-        "waypoints": [[0, 0], [2, 2], [4, 4]],
-        "walls": [ { "neighborA": [0, 0], "neighborB": [1, 0] } ],
-        "solutionPath": []
-    }
+    Responsibility:
+        Serves as the primary validation gateway for incoming layout schemas, asserting 
+        structural integrity, bounds checking, and preventing impossible geometries before 
+        passing objects downstream.
 
-    Constraints enforced by verifySyntax():
-      - boardSize must be one of {6, 7, 8}
-      - waypoints: a list of [x, y] pairs, count between 2 and boardSize**2,
-        each position inside the board, each position unique
-      - walls: a list of {"neighborA": [x, y], "neighborB": [x, y]} objects,
-        count between 0 and the max possible walls in the grid
-        (size * (size - 1) * 2, i.e. every adjacent cell pair),
-        each wall's two cells must be inside the board and adjacent
-        (cardinal neighbors only), and walls must be unique - no duplicate
-        wall between the same pair of cells (order of neighborA/neighborB
-        doesn't matter), which also guarantees a cell has at most one wall
-        per cardinal direction.
-      - solutionPath: must be present and be an empty list
+    Implementation Details:
+        Functions as a static namespace without maintaining an active state. Constrains 
+        attributes such as dimensional arrays, waypoint lengths, and adjacency rules by 
+        processing raw formats into Python dicts. Employs independent verification loops 
+        for disparate object blocks to efficiently identify logical rule breaking.
     """
 
     ALLOWED_BOARD_SIZES = (6, 7, 8)
@@ -44,10 +34,20 @@ class JsonInterpreter:
     @staticmethod
     def verifySyntax(file: Union[str, dict, Any]) -> bool:
         """
-        Takes a json file (path, open file object, or already-parsed dict)
-        and returns True if it matches the expected syntax and constraints,
-        False otherwise. Never raises - any parsing/validation failure just
-        results in False.
+        Validates whether an input file strictly matches expected syntax and constraints.
+
+        Args:
+            file: The raw file path, stream object, or parsed structure requiring evaluation.
+
+        Returns:
+            A definitive boolean confirming absolute structural and spatial adherence.
+
+        Implementation Details:
+            Acts as an all-or-nothing boolean gate designed explicitly for disk-based 
+            configurations (reference boards, fixtures) where precise error reporting is 
+            unnecessary. Submits the raw input to protected load methods, masking crashes 
+            in a defensive exception block, and delegates nested array checks to targeted 
+            validation helpers. Short-circuits heavily upon the first encountered anomaly.
         """
         try:
             data = JsonInterpreter._load(file)
@@ -85,24 +85,25 @@ class JsonInterpreter:
     @staticmethod
     def buildBoard(file: Union[str, dict, Any]) -> Board:
         """
-        Takes a json source (path, open file object, or already-parsed dict) and returns
-        a populated Board.
+        Constructs an actionable layout matrix from an input mapping source.
 
-        This performs STRUCTURAL parsing only — it checks that the payload has the right
-        keys and that coordinates are 2-integer pairs, enough to construct a Board without
-        crashing. It deliberately does NOT enforce semantic rules (board size in {6,7,8},
-        waypoint bounds/count/uniqueness, wall adjacency); those belong to InputValidator,
-        which the API runs immediately after this and which reports each failure as a
-        structured 422 rather than a blanket ValueError. Running the semantic checks here
-        too would collapse those into a 400 and lose the per-error detail.
+        Args:
+            file: The raw JSON document payload or location referencing the overarching structure.
 
-        The single exception is duplicate walls: the Board's wall set is lossy, so that
-        rule is unobservable downstream and must be enforced against the ordered payload
-        list. It raises ``DuplicateWallError``, which carries the 422 INVALID_WALLS code so
-        the API still reports it as the semantic failure it is (see ``errors.py``).
+        Returns:
+            An actively populated domain representation equipped with milestones and borders.
 
-        Raises ``BoardParseError``/``ValueError`` when the payload is too malformed to
-        build a Board at all.
+        Raises:
+            ValueError: If the supplied mapping fundamentally fails schema structure or formatting.
+            DuplicateWallError: If identical barrier parameters map out over the identical segment.
+
+        Implementation Details:
+            Applies structural parsing exclusively. Extracts valid dictionary pairs utilizing 
+            an internal cast closure (`_point`) to strip booleans and force native integer bounds. 
+            Deliberately abstains from overarching semantic checks (like dimensional size) to 
+            avoid collapsing specific error codes into blanket responses. Leverages a local 
+            `frozenset` generation hook to explicitly trap unordered wall duplication before 
+            injecting it into the lossy board-level properties.
         """
         data = JsonInterpreter._load(file)
 
@@ -161,7 +162,24 @@ class JsonInterpreter:
 
     @staticmethod
     def _load(arg: Union[str, dict, Any]) -> Dict[str, Any]:
-        """Accepts a file path (str), an open file-like object, or a dict."""
+        """
+        Translates dynamic input objects into a structured domain schema.
+
+        Args:
+            arg: The ambiguous reference target potentially matching disk paths or byte payloads.
+
+        Returns:
+            The definitively unpacked dictionary mapping native parameters.
+
+        Raises:
+            TypeError: If the supplied reference target structurally contradicts supported patterns.
+
+        Implementation Details:
+            Sequences extraction based strictly upon `duck-typing`. Evaluates Pydantic structures 
+            utilizing `.model_dump()` paired with alias rules, bypassing object inheritance checks. 
+            Applies standard UTF-8 parsing via native IO hooks directly mapping string locations 
+            and fallback memory objects into operational dictionaries.
+        """
         if isinstance(arg, dict):
             return arg
         # Pydantic models (e.g. PuzzleRequest from the API layer): serialise by alias so the
@@ -179,10 +197,37 @@ class JsonInterpreter:
     
     @staticmethod
     def _validate_board_size(board_size: Any) -> bool:
+        """
+        Confirms if a numeric scale falls within permitted execution dimensions.
+
+        Args:
+            board_size: The targeted grid span requiring authorization.
+
+        Returns:
+            A boolean denoting direct support for the requested parameters.
+
+        Implementation Details:
+            Conducts a direct membership evaluation against the class-level tuple defining 
+            architectural capacities, ensuring limits stay bounded safely.
+        """
         return board_size in JsonInterpreter.ALLOWED_BOARD_SIZES
     
     @staticmethod
     def _is_valid_point(point: Any, board_size: int) -> bool:
+        """
+        Authenticates coordinate topologies against boundary maximums and types.
+
+        Args:
+            point: The isolated array chunk mapping Cartesian sequences.
+            board_size: The bounding constraint defining out-of-bounds parameters.
+
+        Returns:
+            A boolean identifying uncorrupted and internal map placement.
+
+        Implementation Details:
+            Explicitly intercepts boolean inheritance exploits native to Python before enforcing 
+            strictly constrained zero-indexed Cartesian boundaries against both internal indices.
+        """
         if not isinstance(point, (list, tuple)) or len(point) != 2:
             return False
         x, y = point
@@ -194,6 +239,21 @@ class JsonInterpreter:
 
     @staticmethod
     def _validate_waypoints(waypoints: Any, board_size: int) -> bool:
+        """
+        Verifies milestone sequences follow spatial routing and saturation rules.
+
+        Args:
+            waypoints: The aggregated array sequence containing trajectory checkpoints.
+            board_size: The overarching spatial maximum utilized for capacity validation.
+
+        Returns:
+            A boolean acknowledging clean structural separation and correct payload depth.
+
+        Implementation Details:
+            Computes grid saturation ceilings natively utilizing basic exponents. Traverses 
+            point definitions aggressively pushing translated tuples against a generic Set 
+            tracker to instantly trigger upon coordinate repetition.
+        """
         if not isinstance(waypoints, list):
             return False
 
@@ -214,6 +274,22 @@ class JsonInterpreter:
 
     @staticmethod
     def _validate_walls(walls: Any, board_size: int) -> bool:
+        """
+        Examines barrier parameters to enforce architectural boundaries and adjacency laws.
+
+        Args:
+            walls: The extracted payload list mapping physical interruptions.
+            board_size: The dimensional framework utilized to calculate max block limits.
+
+        Returns:
+            A boolean indicating all grid partitions maintain localized rules.
+
+        Implementation Details:
+            Generates theoretical mathematical limits applying standard combination geometry 
+            to short-circuit large payloads. Evaluates positional relationships directly against 
+            Manhattan sums to enforce cardinal adjacency. Utilizes immutable `frozenset` objects 
+            to trap any identical boundary declarations without regard to directional ordering.
+        """
         if not isinstance(walls, list):
             return False
 

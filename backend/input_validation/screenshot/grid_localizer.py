@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
-from backend.input_validation.screenshot.errors import (
+from backend.input_validation.screenshot.screenshot_errors import (
     AmbiguousBoardError,
     NoBoardDetectedError,
     UnreadableImageError,
@@ -13,21 +13,20 @@ ALLOWED_SIZES = (6, 7, 8)
 
 
 class GridLocalizer:
-    """Finds and isolates the n x n puzzle grid within the overall screenshot.
+    """
+    Finds and isolates the localized puzzle grid within the overall bounding screenshot.
 
-    Two modes:
-      - board_size provided (production path): the frontend already knows which size the
-        user selected, so it is passed straight through. Geometry then reduces to finding
-        the board's square bounds and dividing by n — reliable, no fragile size guessing.
-      - board_size omitted (legacy / unit-test path): falls back to edge-based size
-        estimation. Kept so the existing localizer tests, which mock all CV, still exercise
-        the same routing.
+    Responsibility:
+        Identifies spatial origins and scales associated with the gameplay area, dividing 
+        the raw graphical matrix into clearly mapped, coordinate-bound cells for downstream 
+        marker and wall extractions.
 
-    Localization is anchored on the orange waypoint discs, which are the highest-saturation
-    features on the board and therefore the most reliable landmark. Their spacing and the
-    bright board panel together fix the grid origin and cell pitch. See the screenshot
-    corpus work for why line-based detection alone was insufficient on the app's own
-    low-contrast rendering.
+    Implementation Details:
+        Operates internally using two distinct sizing modes: a production pipeline utilizing 
+        a predetermined frontend dimension hint to reliably slice bounds without estimation, 
+        and a legacy diagnostic fallback executing edge-based estimations to determine cell scales. 
+        Calculations anchor heavily on highly saturated orange waypoint discs and background 
+        panel brightness to overcome low-contrast structural renderings.
     """
 
     def localize_grid(
@@ -36,16 +35,25 @@ class GridLocalizer:
         board_size: Optional[int] = None,
     ) -> Tuple[int, Dict[Tuple[int, int], Tuple[int, int, int, int]]]:
         """
-        Detects the board and segments the individual cells.
+        Detects the spatial board and segments the bounds for individual cells.
 
         Args:
-            image_data: normalised BGR screenshot.
-            board_size: the known grid size (6, 7, or 8) supplied by the frontend. When
-                given it is authoritative; when None the size is estimated from the image.
+            image_data: The normalized multi-channel pixel array representing the gameplay capture.
+            board_size: The explicitly defined structural dimension provided by outer orchestrators, 
+                serving as an authoritative hint to bypass estimation algorithms.
 
         Returns:
-            (grid_size, cell_bounds) where cell_bounds maps (grid_x, grid_y) ->
-            (pixel_x, pixel_y, width, height).
+            A tuple coupling the definitively identified grid dimension with a dictionary mapping 
+            logical coordinate pairs directly to raw pixel bounding boxes.
+
+        Raises:
+            UnreadableImageError: If the input array is empty or critically undefined.
+            AmbiguousBoardError: If the size cannot be mathematically resolved to supported topologies.
+
+        Implementation Details:
+            Safely delays the import of computer vision modules to prevent boot-time registry bloat. 
+            Selects geometric resolution logic dynamically based on the presence of the sizing hint, 
+            generating an active coordinate dictionary matching pixel slices to grid logicals.
         """
         if image_data is None or image_data.size == 0:
             raise UnreadableImageError("Image data cannot be None or empty.")
@@ -76,15 +84,25 @@ class GridLocalizer:
     # ── Geometry ─────────────────────────────────────────────────────────────
 
     def _solve_geometry(self, image_data, n: int) -> Tuple[float, float, float]:
-        """Return (origin_x, origin_y, pitch) for an n x n board.
+        """
+        Calculates absolute origin coordinates and uniform cell pitch scales.
 
-        Strategy (validated against the real-screenshot corpus):
-          1. Detect orange waypoint discs.
-          2. Find the bright square board panel; when found its side / n is the pitch and
-             its centre fixes the origin.
-          3. When no panel is found (board fills the crop) but there are enough discs,
-             derive the pitch from the median nearest-neighbour disc gap.
-          4. Refine the origin so disc centres land on cell centres.
+        Args:
+            image_data: The targeted pixel matrix requiring spatial extraction.
+            n: The definitive scaling limit mapping the absolute row and column counts.
+
+        Returns:
+            A mathematical grouping detailing the exact origin X, origin Y, and scalar pitch.
+
+        Raises:
+            NoBoardDetectedError: If no reliable anchors or circular discs are present.
+
+        Implementation Details:
+            Derives foundational geometry by identifying high-saturation discs and analyzing 
+            spatial nearest-neighbor gaps to calculate grid pitch. Snaps computed anchors back 
+            to identified panel limits to eliminate bounding box drift caused by external UI chrome. 
+            Actively preserves identified global disc centres within instance state to avoid 
+            per-cell boundary cutoff issues during downstream digit reading.
         """
         import numpy as np
 
@@ -201,7 +219,20 @@ class GridLocalizer:
         return origin_x, origin_y, pitch
 
     def _detect_circles(self, image_data):
-        """Detect orange waypoint discs. Returns list of (cx, cy, radius)."""
+        """
+        Locates prominent circular waypoint indicators utilizing color segmentation.
+
+        Args:
+            image_data: The target matrix containing potential milestone UI elements.
+
+        Returns:
+            An accumulated compilation grouping absolute coordinates and geometric radii.
+
+        Implementation Details:
+            Extracts strict color channels by forcing an HSV translation. Applies strict 
+            morphological thresholding isolating hyper-saturated orange values before computing 
+            contour enclosing bounds and aggressively pruning non-circular blobs.
+        """
         import cv2
         import numpy as np
 
@@ -221,7 +252,21 @@ class GridLocalizer:
         return out
 
     def _panel_bounds(self, image_data, circles):
-        """Largest bright, near-square region that contains the discs' centroid."""
+        """
+        Identifies the core grid panel by targeting the brightest centralized geometry.
+
+        Args:
+            image_data: The absolute screenshot mapping requiring panel targeting.
+            circles: The pre-calculated array of spatial nodes used as a centering heuristic.
+
+        Returns:
+            The raw coordinate block describing the structural grid plane, if found.
+
+        Implementation Details:
+            Binarizes image luminance levels using grayscale filters heavily augmented by 
+            closing operations to stitch segmented bright areas. Evaluates contour ratios 
+            seeking near-square topologies directly housing the aggregate disc centroid.
+        """
         import cv2
         import numpy as np
 
@@ -253,13 +298,20 @@ class GridLocalizer:
         return best[1:] if best else None
 
     def _disc_spacing_pitch(self, circles, approx_pitch=None):
-        """Pitch from the spacing of distinct disc columns and rows.
+        """
+        Calculates theoretical coordinate scale from discrete spacing arrays.
 
-        Discs sit at cell centres, so the gap between distinct disc columns (rows) is an
-        integer multiple of the cell pitch. On sparse boards the smallest observed gap can
-        be 2, 3 or more cells, so each measured gap is divided by the nearest integer
-        multiple of ``approx_pitch`` (the panel estimate) to recover the true single-cell
-        pitch. Returns None if it can't be determined.
+        Args:
+            circles: The grouped nodes detailing raw topological coordinates.
+            approx_pitch: The optional base scalar defining the nearest-match cluster.
+
+        Returns:
+            The normalized base spacing scale defining grid cell leaps.
+
+        Implementation Details:
+            Extracts absolute gap limits mathematically. Since waypoints may spawn non-adjacently, 
+            identifies grouped spatial gaps and normalizes them against the structural panel 
+            estimation to recover singular cell spans cleanly.
         """
         import numpy as np
 
@@ -300,7 +352,19 @@ class GridLocalizer:
         return float(np.median(candidates))
 
     def _nearest_neighbour_pitch(self, circles) -> float:
-        """Median nearest-neighbour disc gap — the cell pitch when discs are dense."""
+        """
+        Extracts foundational spatial scales assuming dense localized distributions.
+
+        Args:
+            circles: The compiled mapping nodes providing coordinate baselines.
+
+        Returns:
+            The mathematically derived minimal hop spanning adjacent structures.
+
+        Implementation Details:
+            Executes a rapid Euclidean distance map applying vectorization across node sets. 
+            Prunes outliers violating strict diagonal bounds to isolate purely cardinal relationships.
+        """
         import numpy as np
 
         pts = np.array([(c[0], c[1]) for c in circles])
@@ -314,7 +378,22 @@ class GridLocalizer:
         return float(np.median(adjacent))
 
     def _cell_bounds(self, n: int, origin_x: float, origin_y: float, pitch: float):
-        """Build the (col,row) -> (px,py,w,h) map from origin + pitch."""
+        """
+        Constructs a definitive dictionary mapping topological coordinates to absolute pixels.
+
+        Args:
+            n: The structural dimensional scale governing boundary loop caps.
+            origin_x: The definitive root X pixel coordinate anchoring the map.
+            origin_y: The definitive root Y pixel coordinate anchoring the map.
+            pitch: The mathematical scalar translating grid intervals into pixel blocks.
+
+        Returns:
+            An active dictionary structuring localized indices directly to visual areas.
+
+        Implementation Details:
+            Executes dual-axis generation utilizing rounding logic across pure floating-point 
+            steps to prevent accumulating floating-point drift at deeper grid sectors.
+        """
         cell = int(round(pitch))
         bounds: Dict[Tuple[int, int], Tuple[int, int, int, int]] = {}
         for row in range(n):
@@ -327,7 +406,19 @@ class GridLocalizer:
     # ── Legacy edge-based size estimation (no size hint) ─────────────────────
 
     def _estimate_size_from_edges(self, image_data) -> int:
-        """Fallback size estimate. Patched out in unit tests, which mock all CV."""
+        """
+        Provides fallback dimensional metrics directly querying visual contrast limits.
+
+        Args:
+            image_data: The target matrix parsed for raw visual demarcations.
+
+        Returns:
+            The raw numeric mapping defining the overall span detected via contrast peaks.
+
+        Implementation Details:
+            Maintains internal test compatibility. Invokes edge identification via Canny mapping, 
+            summing linear responses mathematically across axes to determine absolute interior volumes.
+        """
         import cv2
         import numpy as np
 

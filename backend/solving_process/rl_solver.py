@@ -56,19 +56,34 @@ class RLSolver(Solver):
     """
     Solver using pre-trained reinforcement-learning agents.
 
-    The correct model is selected according to the board size.
+    Responsibility:
+        Bridges the gap between the application's domain objects and the underlying Stable-Baselines3 
+        predictive networks. It manages model caching, maps dimensional constraints to appropriate weights, 
+        and orchestrates the deterministic step-by-step inference lifecycle to output a compliant trajectory.
 
-    Inference follows the same procedure as AgentTrainer evaluation:
+    Implementation Details:
+        The correct model is selected according to the board size.
+        Maintains an internal dictionary cache mapping grid sizes to instantiated neural models 
+        to prevent catastrophic I/O bottlenecks during repeated requests. 
 
-        RLEnvironment(board)
-        -> agent.set_env(env)
-        -> env.reset()
-        -> agent.predict(..., deterministic=True)
-        -> env.step(...)
-        -> repeat until terminated/truncated
+        Inference follows the same procedure as AgentTrainer evaluation:
+            RLEnvironment(board)
+            -> agent.set_env(env)
+            -> env.reset()
+            -> agent.predict(..., deterministic=True)
+            -> env.step(...)
+            -> repeat until terminated/truncated
     """
 
     def __init__(self):
+        """
+        Initializes the ML orchestration wrapper and its associated memory caches.
+
+        Implementation Details:
+            Sets up empty dictionaries to hold dynamically loaded agents. Environment and active 
+            agent trackers are explicitly initialized to null states awaiting an execution command.
+            The model therefore only has to be loaded from disk once.
+        """
         # Cache one model per board size.
         # The model therefore only has to be loaded from disk once.
         self._agents: dict[int, RLAgent] = {}
@@ -79,10 +94,18 @@ class RLSolver(Solver):
     @staticmethod
     def _get_board_size(board: Board) -> int:
         """
-        Return board size.
+        Extracts the linear dimensional parameter from a generalized blueprint.
 
-        Works whether getSize is implemented as a property
-        or a method.
+        Args:
+            board: The baseline blueprint managing spatial variables.
+
+        Returns:
+            The raw scalar boundary value strictly normalized to an integer.
+
+        Implementation Details:
+            Return board size.
+            Works whether getSize is implemented as a property or a method. Uses native `callable()` 
+            checks to securely adapt to shifting architectural patterns inside the board object.
         """
         size = board.getSize
 
@@ -93,7 +116,22 @@ class RLSolver(Solver):
 
     def _get_model_path(self, board_size: int) -> Path:
         """
-        Return the trained model for the given board size.
+        Resolves the absolute file directory for a specific set of model weights based on scale.
+
+        Args:
+            board_size: The dimensional parameter acting as the lookup key.
+
+        Returns:
+            The validated filepath pointing directly at the compressed agent weights.
+
+        Raises:
+            ValueError: If the requested dimension lacks a mapped configuration entry.
+            FileNotFoundError: If the mapped physical file is inexplicably absent from the disk.
+
+        Implementation Details:
+            Return the trained model for the given board size.
+            Queries the global configuration dictionary and explicitly interrogates the OS file 
+            system to guarantee the payload physically exists before attempting network ingestion.
         """
         if board_size not in MODEL_PATHS:
             raise ValueError(
@@ -112,7 +150,22 @@ class RLSolver(Solver):
 
     def _load_agent(self, board_size: int) -> RLAgent:
         """
-        Load the trained agent or reuse an already loaded model.
+        Retrieves a pre-warmed neural network from cache, or initializes it directly from disk.
+
+        Args:
+            board_size: The specific scale constraint requiring a mapped network.
+
+        Returns:
+            The fully loaded predictive agent actively bound to the current environment.
+
+        Raises:
+            RuntimeError: If execution is attempted prior to properly configuring the virtual environment.
+
+        Implementation Details:
+            Load the trained agent or reuse an already loaded model.
+            Checks the dictionary cache. If absent, executes expensive file I/O to build the network. 
+            If present, safely mutates the existing model by overriding its bound environment reference, 
+            circumventing memory leaks.
         """
         if self._environment is None:
             raise RuntimeError(
@@ -165,8 +218,17 @@ class RLSolver(Solver):
 
     def _print_debug_information(self, observation) -> None:
         """
-        Print information useful for comparing API inference
-        with AgentTrainer evaluation.
+        Generates robust system logging tracking virtual state permutations during execution.
+
+        Args:
+            observation: The raw multi-dimensional matrix generated by the virtual arena.
+
+        Implementation Details:
+            Print information useful for comparing API inference with AgentTrainer evaluation.
+            Captures deep terminal representations and generates SHA-256 cryptographic hashes of 
+            the unboxed observation matrices to ensure exact state parity verification against 
+            historical training outputs. Uses broad exception catches to prevent auxiliary logging 
+            from destroying the primary execution loop.
         """
         if self._environment is None:
             return
@@ -216,9 +278,22 @@ class RLSolver(Solver):
 
     def _run_episode(self) -> SolverResult:
         """
-        Run one deterministic inference episode.
+        Executes an unbroken string of continuous predictions until a terminal grid state is reached.
 
-        This intentionally mirrors AgentTrainer._run_board().
+        Returns:
+            The compiled execution envelope detailing mathematical routing, statuses, and performance timings.
+
+        Raises:
+            RuntimeError: If triggered while tracking variables hold uninitialized null states.
+
+        Implementation Details:
+            Run one deterministic inference episode.
+            This intentionally mirrors AgentTrainer._run_board().
+            Locks the network into deterministic mode, eliminating stochastic exploration. Feeds 
+            unboxed observations continually into the network, directly converting output tensors 
+            into pure integers for grid processing. Actively tracks runtime MS and iteration steps. 
+            If terminal success is verified natively by the environment's internal game hook, maps the 
+            history array into a structured solution wrapper. Otherwise, parses truncated flags to output failures.
         """
         if self._environment is None:
             raise RuntimeError(
@@ -343,7 +418,20 @@ class RLSolver(Solver):
 
     def solve(self, board: Board) -> SolverResult:
         """
-        Select the correct model and perform deterministic inference.
+        Manages the complete lifecycle mapping a static board topology into an active ML simulation.
+
+        Args:
+            board: The static structural blueprint awaiting calculation.
+
+        Returns:
+            The finalized result envelope capturing trajectory mapping and operational telemetry.
+
+        Implementation Details:
+            Select the correct model and perform deterministic inference.
+            Safely tears down lingering virtual environments from prior executions, mounts the new 
+            target layout natively, queries the size cache to inject the correct neural weights, and 
+            delegates execution downward. Aggressively wraps logic to catch model inference exceptions 
+            and package them as graceful FAILED envelopes to prevent API-level crashes.
         """
         print(
             "\n==================================================",
