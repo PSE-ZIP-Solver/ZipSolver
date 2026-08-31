@@ -157,19 +157,18 @@ class BackendAPI:
 
         self.app.add_middleware(
             CORSMiddleware,
-            # Both spellings of the Vite dev origin. Browsers treat "localhost" and
-            # "127.0.0.1" as distinct origins, and Vite prints whichever the host resolves
-            # to, so allowing only one produced CORS failures that looked like backend
-            # outages.
-            # Also allow deployed frontend origins from Vercel and Render, while keeping
-            # local development origins intact.
+            # Browsers treat the two localhost forms as different origins, and the
+            # wildcard syntax does not behave the way developers expect in
+            # ``allow_origins`` for subdomains such as Render. Use an explicit list for
+            # locally-hosted frontends and a regex for deployed subdomains.
             allow_origins=allowed_origins
             or [
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-                "https://*.vercel.app",
-                "https://*.onrender.com",
+                "https://zipsolver-1.onrender.com",
+                "https://zipsolver-90yf.onrender.com",
             ],
+            allow_origin_regex=r"https://.*\.onrender\.com$",
             allow_methods=["GET", "POST"],
             allow_headers=["*"],
         )
