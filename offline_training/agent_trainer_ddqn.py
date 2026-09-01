@@ -410,7 +410,7 @@ class AgentTrainer:
     @staticmethod
     def _configure_loaded_model(agent: RLAgent):
         model = AgentTrainer._get_sb3_model(agent)
-        fineTuningLearningRate = 3e-5
+        fineTuningLearningRate = 1e-5
         model.learning_rate = fineTuningLearningRate
         model.lr_schedule = lambda _: fineTuningLearningRate
 
@@ -453,7 +453,7 @@ class AgentTrainer:
             agent = RLAgent(
                 trainEnv,
                 model_path=self.modelPath,
-                tensorboard_log="./logs/zip_dqn/8x8/",
+                tensorboard_log="./logs/zip_dqn/8x8_v2/",
             )
 
             if self.loadReplayBuffer and replayBufferFile.exists():
@@ -468,18 +468,18 @@ class AgentTrainer:
             self._configure_loaded_model(agent)
 
             agent.set_exploration_schedule(
-                initial_eps=0.2,
-                final_eps=0.02,
-                fraction=0.3,
+                initial_eps=0.05,
+                final_eps=0.01,
+                fraction=0.2,
             )
         else:
             print("Creating new agent")
             agent = RLAgent(
                 trainEnv,
-                learning_rate=1e-4,
-                exploration_initial_eps=1.0,
-                exploration_final_eps=0.05,
-                exploration_fraction=0.4,
+                learning_rate=1e-5,
+                exploration_initial_eps=0.05,
+                exploration_final_eps=0.01,
+                exploration_fraction=0.2,
                 learning_starts=10_000,
                 buffer_size=2_000_000,
                 batch_size=512,
@@ -702,7 +702,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=10000,
         nrEvaluationBoards=10000,
-        timestepsPerBoard=20_000_000,
+        timestepsPerBoard=15_000_000,
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
