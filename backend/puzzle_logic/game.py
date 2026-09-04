@@ -5,35 +5,32 @@ from .data_models import Position
 
 class Game:
     """
-    Orchestrates the high-level operational lifecycle between spatial layout, rules, and game state.
+    Manages the game session, coordinating the board, rules, and player progress.
 
     Responsibility:
-        Serves as the primary behavioral facade directing internal mathematical configurations. 
-        It gracefully encapsulates setup logic, coordinates movement validations by piping data 
-        through rule engines, and cleanly mutates state without exposing underlying component intricacies.
+        Acts as the main interface for playing a puzzle. It handles starting a game, 
+        checking whether moves are valid, applying moves to advance the game state, 
+        and determining when the puzzle is solved.
 
     Implementation Details:
-        Maintains persistent composition dependencies linking a static `Board` blueprint, a dynamic 
-        `GameState` tracker, and a stateless `PuzzleRules` validator. Instantiation enforces severe 
-        defensive fast-failing measures to guarantee the environment is logically playable out-of-the-box.
+        Brings together a Board, GameState, and PuzzleRules instance. Initializes the game 
+        at waypoint 1, validates each step using the rules engine before updating the state, 
+        and advances waypoint progress as milestones are reached.
     """
 
     def __init__(self, board: Board):
         """
-        Initializes a fresh localized playing session using parsed board schematics.
+        Starts a new game on the provided board.
 
         Args:
-            board: The foundational grid topology retaining waypoints and bounding matrices.
+            board: The board layout to play on.
 
         Raises:
-            ValueError: If the requested configuration completely lacks a foundational starting 
-                requirement at sequential sequence order 1.
+            ValueError: If the board does not contain a starting waypoint (order 1).
 
         Implementation Details:
-            Stores native layout data directly and seamlessly instantiates standalone evaluation modules. 
-            Actively scans internal property constraints explicitly mapping to integer 1, instantly 
-            invoking a fast-fail exception state upon failures to strictly preserve computational integrity 
-            before generating tracked states.
+            Stores the board, creates a PuzzleRules instance, locates waypoint 1, 
+            and initializes GameState at that starting position.
         """
         self._board = board
         self._rules = PuzzleRules()
@@ -47,36 +44,37 @@ class Game:
 
     def isValidNextStep(self, target: Position) -> bool:
         """
-        Assesses via internal routing if engaging onto a localized coordinate satisfies mechanics.
+        Checks whether moving to the target position is allowed.
 
         Args:
-            target: The desired adjacent grid space awaiting verification checks.
+            target: The position to check.
 
         Returns:
-            True if all spatial algorithms natively compute clear passages securely.
+            True if the move is valid according to puzzle rules; False otherwise.
 
         Implementation Details:
-            Delegates functional authority straight into the managed stateless rule engines, parsing in 
-            both local internal parameters and targeted vectors strictly to bypass local tracking scopes.
+            Delegates the check to the PuzzleRules engine using the current board and game state.
         """
         return self._rules.isValidMove(self._board, self._state, target)
     
 
     def step(self, target: Position) -> bool:
         """
-        Formally attempts to transition into a new localized parameter and lock it sequentially.
+        Attempts to move to the target position.
 
         Args:
-            target: The actively requested localized index pending transition locks.
+            target: The destination position to move to.
 
         Returns:
-            True if physical and algorithmic shifts were successfully integrated, False on rejection.
+            True if the move was valid and applied; False if the move was rejected.
 
         Implementation Details:
-            Activates immediate fast-fail checking gates routing into rules modules first. Pending 
-            clean clearances, initiates strict internal mutations inserting arrays into chronology matrices. 
-            Queries spatial boundaries mapping to upcoming sequenced demands, proactively updating parameters 
-            if exact overlaps form successfully.
+            Follows a four-step sequence:
+            1. Validates the candidate move using isValidNextStep.
+            2. If valid, appends the position to GameState via addStep.
+            3. Checks if the target cell contains the next expected waypoint, and if so,
+               advances the waypoint counter via incrementNextWaypointOrder.
+            4. Returns True if the move was accepted, or False if rejected.
         """
 
         if not self.isValidNextStep(target):
@@ -93,28 +91,30 @@ class Game:
     
     def isFinished(self) -> bool:
         """
-        Polls internal matrices to determine if overarching Hamiltonian conditions are presently met.
+        Checks whether the puzzle has been solved.
 
         Returns:
-            True if terminal evaluations verify entirely complete conditions smoothly.
+            True if the current path forms a complete and valid solution; False otherwise.
 
         Implementation Details:
-            Passes complete dynamic internal logs scaling dynamically through stateless functional evaluators 
-            to evaluate peak sequential completeness.
+            Delegates to PuzzleRules.isCompleteSolution passing the board and the recorded 
+            path from GameState.
         """
         return self._rules.isCompleteSolution(self._board, self._state.getPath)
     
     def reset(self):
         """
-        Wipes active progression vectors seamlessly restoring tracking environments back to zero.
+        Resets the game back to the starting position.
 
         Raises:
-            ValueError: If during re-evaluation parameters entirely fail identifying chronological order 1.
+            ValueError: If the board lacks a starting waypoint (order 1).
+
+        Returns:
+            None.
 
         Implementation Details:
-            Defensively queries origin constraints scanning strictly for baseline scalar value 1. Throws 
-            system exceptions automatically if missing, else overrides internal memory instances mapping 
-            direct origins directly over historic paths mathematically.
+            Locates waypoint 1 on the board (raising ValueError if missing) and resets 
+            the GameState to that origin position.
         """
         startWaypoint = self._board.getWaypointByOrder(1)
 
@@ -126,38 +126,38 @@ class Game:
     @property
     def getBoard(self) -> Board:
         """
-        Retrieves the rigid baseline spatial blueprint.
+        Gets the board used in this game.
 
         Returns:
-            The configured foundational module handling physical limits and bounds.
+            The board instance.
 
         Implementation Details:
-            Allows highly restricted superficial exposure to the structurally instantiated base via decorators.
+            Exposes read-only access to the internal board instance via a property decorator.
         """
         return self._board
     
     @property
     def getRules(self) -> PuzzleRules:
         """
-        Retrieves the stateless computational evaluator configured for restrictions.
+        Gets the rules engine used for this game.
 
         Returns:
-            The centralized ruleset checking processor.
+            The PuzzleRules instance.
 
         Implementation Details:
-            Opens encapsulated local properties referencing the internal structural logic component.
+            Exposes read-only access to the internal rules engine instance via a property decorator.
         """
         return self._rules
     
     @property
     def getState(self) -> GameState:
         """
-        Returns the constantly evolving active memory map handling localized puzzle progress.
+        Gets the current game state tracking progress and path history.
 
         Returns:
-            The specific tracker object holding chronological and physical vectors.
+            The GameState instance.
 
         Implementation Details:
-            Facilitates direct retrieval via property hooks of the dynamically changing tracking variable.
+            Exposes read-only access to the internal game state instance via a property decorator.
         """
         return self._state

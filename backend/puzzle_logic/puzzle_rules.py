@@ -6,36 +6,39 @@ from .data_models import Position
 
 class PuzzleRules:
     """
-    Validates logical and spatial constraints dictated by the puzzle's domain restrictions.
+    Enforces the rules and movement constraints of the puzzle.
 
     Responsibility:
-        Functions as a stateless evaluation engine responsible for authenticating granular 
-        cellular transitions against rigid physics parameters (wall avoidance, boundaries) 
-        and assessing macro-level winning conditions (Hamiltonian sequencing checks).
+        Serves as the rule-checking engine. It determines whether individual moves are 
+        allowed (checking boundaries, walls, unvisited cells, and waypoint order) and 
+        verifies whether a full path solves the puzzle.
 
     Implementation Details:
-        Operates entirely as a detached processor without altering object state. Strictly employs 
-        a defensive, fast-fail execution methodology by aggressively chaining micro-validation 
-        methods and instantaneously rejecting invalid data via immediate short-circuiting.
+        Operates statelessly without modifying game data. Validates moves and complete 
+        solutions by checking conditions sequentially and returning False as soon as any 
+        rule is violated.
     """
 
     def isValidMove(self, board: Board, state: GameState, target: Position) -> bool:
         """
-        Scrutinizes a proposed movement against real-time physical constraints and game history.
+        Checks if moving to the target position is a valid next step.
 
         Args:
-            board: The rigid physical layout detailing physical walls and dimensional parameters.
-            state: The dynamically shifting active tracking profile preserving path history.
-            target: The adjacent theoretical physical focal point being queried.
+            board: The puzzle board containing grid boundaries and walls.
+            state: The current game state tracking the path and visited cells.
+            target: The position the player wants to move to.
 
         Returns:
-            True if all spatial restrictions align mathematically, False if any constraint triggers.
+            True if the move obeys all game rules; False otherwise.
 
         Implementation Details:
-            Invokes an explicitly sequenced chain of defensive sub-routines. Immediately short-circuits 
-            upon the very first rejection. Routines include boundary containment verifications, 
-            mathematical cardinational adjacencies, barrier blockage scans, visitation intersections, 
-            sequential order tracking guarantees, and finally overarching endpoint mathematical locks.
+            Performs checks in order:
+            1. Target is within board boundaries.
+            2. Target is adjacent to the current position.
+            3. No wall blocks the move between current position and target.
+            4. Target has not already been visited.
+            5. Target does not violate waypoint visit order.
+            6. Target satisfies the endpoint rule (final waypoint entered only on the last move).
         """
         current = state.getCurrentPosition
 
@@ -62,20 +65,22 @@ class PuzzleRules:
 
     def isCompleteSolution(self, board: Board, path: List[Position]) -> bool:
         """
-        Computes if a finalized navigational path completely satisfies all global success constraints.
+        Checks whether a complete path successfully solves the puzzle.
 
         Args:
-            board: The definitive foundational blueprint enforcing target requirements.
-            path: The strictly structured historical tracking listing containing full traversals.
+            board: The puzzle board defining the rules and layout.
+            path: The sequence of positions representing the full path.
 
         Returns:
-            True if the route acts as a pure chronological Hamiltonian path mapping cleanly between bounds.
+            True if the path satisfies all winning conditions; False otherwise.
 
         Implementation Details:
-            Synchronously evaluates complex success parameters natively: validates initialization 
-            at the absolute lowest numerical constraint, calculates ending bounds on the terminal target, 
-            checks against complete volume metrics for pure coverage without overlaps, and validates 
-            ongoing barrier avoidance alongside strict sequenced sequencing checks.
+            Verifies all conditions for a solved puzzle:
+            1. Starts at waypoint 1.
+            2. Ends at the highest-numbered waypoint.
+            3. Visits every cell on the board exactly once.
+            4. Contains only valid, connected moves with no wall collisions.
+            5. Visits all waypoints in ascending order.
         """
         return (
             self._startsAtFirstWaypoint(board, path)
@@ -89,20 +94,20 @@ class PuzzleRules:
     # PRIVATE METHODS:
     def _preservesWaypointOrder(self, board: Board, state: GameState, target: Position) -> bool:
         """
-        Assesses if navigating into a proposed coordinate breaches sequencing targets.
+        Checks if moving to the target cell follows waypoint ordering rules.
 
         Args:
-            board: The underlying grid matrix defining coordinate rules.
-            state: The real-time actively monitored pathway variables.
-            target: The queried terminal localization coordinate.
+            board: The puzzle board containing waypoint locations.
+            state: The current game state tracking the next expected waypoint order.
+            target: The position being moved into.
 
         Returns:
-            True if stepping onto the cell validates or remains neutral, False if out of chronological sync.
+            True if the move is allowed; False if it visits a waypoint out of order.
 
         Implementation Details:
-            Extracts the underlying coordinate via property scans. If sterile, returns successfully. 
-            If occupied, specifically checks if the mathematical configuration rigidly matches the 
-            historically awaited target integer.
+            Queries the board for a waypoint at the target position. If none exists, 
+            allows the move (returns True). If a waypoint is present, checks whether its order 
+            strictly equals the next expected waypoint order from the game state.
         """
         waypoint = board.getWaypointAt(target)
 
@@ -113,36 +118,40 @@ class PuzzleRules:
 
     def _coversEveryCellExactlyOnce(self, board: Board, path: List[Position]) -> bool:
         """
-        Quantifies if a traversal perfectly represents a mathematically true Hamiltonian pattern.
+        Checks if the path visits every cell on the board exactly once.
 
         Args:
-            board: The structured baseline retaining physical scale rules.
-            path: The compiled chronology list representing complete executed pathways.
+            board: The puzzle board to compare against.
+            path: The path of visited positions.
 
         Returns:
-            True if exact volumetric coverage mapping equates perfectly without duplications.
+            True if every board cell is visited exactly once; False otherwise.
 
         Implementation Details:
-            Pairs a highly optimized length parity verification against baseline parameters, followed 
-            strictly by enforcing a dynamic set-cast against universally sourced complete grids.
+            Follows a two-step verification:
+            1. Confirms the path length matches the total number of cells on the board.
+            2. Converts the path to a set and verifies it contains all board positions, 
+               ensuring full coverage with no repeated cells.
         """
         return len(path) == board.getCellCount() and set(path) == board.getAllPositions()
 
     def _containsOnlyValidMoves(self, board: Board, path: List[Position]) -> bool:
         """
-        Interrogates a complete chronology to detect any hidden physical baseline fractures.
+        Verifies that every step in the path is continuous and avoids walls.
 
         Args:
-            board: The structural blueprint holding barriers and boundaries.
-            path: The chronologically indexed path coordinates tracked dynamically.
+            board: The puzzle board with boundaries and walls.
+            path: The list of positions to verify.
 
         Returns:
-            True if zero invalid shifts or wall clipping incidents appear across the timeline.
+            True if all consecutive steps are adjacent and not blocked by walls; False otherwise.
 
         Implementation Details:
-            Short-circuits immediately against empty sequences. Sweeps the complete list iteratively 
-            checking intrinsic grid limits, then iterates pairwise offsets utilizing loop mechanics to 
-            determine valid sequential cardinal movements and barrier clearances.
+            Follows a three-step continuity check:
+            1. Verifies the path is not empty or null.
+            2. Checks that every position in the path lies inside the board boundaries.
+            3. Iterates over consecutive pairs of positions to ensure each move is cardinally 
+               adjacent and has no wall between them.
         """
         #Path empty or None
         if not path:
@@ -169,19 +178,20 @@ class PuzzleRules:
     # NEW METHODE
     def _visitsWaypointsInCorrectOrder(self, board: Board, path: List[Position]) -> bool:
         """
-        Validates the strict sequential occurrence of milestones embedded throughout a path sequence.
+        Verifies that all waypoints are visited in ascending numerical order along the path.
 
         Args:
-            board: The structured layout managing internal configurations.
-            path: The dynamically ordered history marking traversal checkpoints.
+            board: The puzzle board containing waypoints.
+            path: The path to check.
 
         Returns:
-            True if the sequential milestones exactly match standard increasing sorted orders.
+            True if waypoints are visited in strictly ascending order; False otherwise.
 
         Implementation Details:
-            Provisions a fresh matrix array, subsequently stepping over every occupied localized path entry. 
-            Whenever constraints arise natively on standard queries, compiles the raw parameter values. 
-            Finalizes validation securely by generating sorted internal lists matching pure blueprint data.
+            Follows a three-step waypoint ordering check:
+            1. Scans the path to collect the order numbers of all waypoints visited.
+            2. Retrieves and sorts all waypoint orders configured on the board.
+            3. Compares the two sequences to verify waypoints are visited in strictly ascending order.
         """
         waypoint_orders = []
 
@@ -198,20 +208,21 @@ class PuzzleRules:
     # NEW METHOD
     def _preservesEndpointRule(self, board: Board, state: GameState, target: Position) -> bool:
         """
-        Ensures the paramount final checkpoint is definitively entered only on the last valid move.
+        Ensures the final waypoint is only entered as the very last move of the puzzle.
 
         Args:
-            board: The spatial mapping dictionary encapsulating all requirements.
-            state: The overarching traversal metadata mapping current bounds.
-            target: The mathematically calculated upcoming point.
+            board: The puzzle board containing waypoints.
+            state: The current game state.
+            target: The position to move to.
 
         Returns:
-            True if terminal protocols operate properly, False if moving violates endpoint logic.
+            True if moving to or from the final waypoint is allowed; False otherwise.
 
         Implementation Details:
-            Calculates extreme parameter magnitudes dynamically. Restricts active exit attempts strictly 
-            from peak variables, subsequently preventing any incoming transit queries onto terminal bounds 
-            unless intrinsic active chronological lengths securely equal optimal coverage mathematics.
+            Enforces endpoint constraints through two rules:
+            1. If currently standing on the final waypoint, prevents moving away from it.
+            2. If attempting to step onto the final waypoint, only permits the move if it would
+               visit the last remaining cell on the board (path length + 1 equals total cell count).
         """
         waypoints = board.getWaypoints
         if not waypoints:
@@ -235,19 +246,18 @@ class PuzzleRules:
     
     def _startsAtFirstWaypoint(self, board: Board, path: List[Position]) -> bool:
         """
-        Checks if the baseline trajectory mathematically originates upon requirement 1.
+        Checks if the path begins at waypoint 1.
 
         Args:
-            board: The spatial mapping blueprint tracking sequence rules.
-            path: The continuous chronology tracking.
+            board: The puzzle board to look up waypoint 1.
+            path: The solution path to check.
 
         Returns:
-            True if index zero properly points directly at mathematical target 1.
+            True if the first position in the path matches waypoint 1; False otherwise.
 
         Implementation Details:
-            Guards rigorously against empty datasets via null traps, invokes standard numerical lookup 
-            mechanisms targeting scalar parameter 1, and matches property references strictly against 
-            index zero.
+            Verifies the path is not empty, retrieves waypoint 1 from the board, and 
+            confirms that the first position in the path (index 0) matches its location.
         """
         if not path:
             return False
@@ -261,19 +271,18 @@ class PuzzleRules:
 
     def _endsAtLastWaypoint(self, board: Board, path: List[Position]) -> bool:
         """
-        Determines if the ongoing trajectory successfully halts upon the maximum ordered requirement.
+        Checks if the path ends at the highest-numbered waypoint.
 
         Args:
-            board: The centralized matrix determining milestone magnitudes.
-            path: The compiled chronology indicating ongoing tracking vectors.
+            board: The puzzle board containing waypoints.
+            path: The solution path to check.
 
         Returns:
-            True if the terminal index natively overlays the absolute maximum required localized target.
+            True if the last position in the path matches the final waypoint; False otherwise.
 
         Implementation Details:
-            Safely denies null parameters, computationally extracts peak coordinate magnitudes across 
-            underlying internal sets via functional programming structures, and rigidly binds the matching 
-            property parameters securely against final chronological arrays natively.
+            Verifies the path is not empty, finds the waypoint with the highest order number 
+            on the board, and confirms that the last position in the path (index -1) matches its location.
         """
         if not path:
             return False

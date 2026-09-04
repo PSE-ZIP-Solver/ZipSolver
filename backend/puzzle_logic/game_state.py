@@ -5,31 +5,28 @@ from .board import Board
 
 class GameState:
     """
-    Tracks and maintains the localized progression of an active Hamiltonian path attempt.
+    Tracks the current progress and history of moves in a puzzle game.
 
     Responsibility:
-        Governs the ongoing temporal evolution of the puzzle session by carefully chronicling 
-        all traversed steps, archiving path histories, monitoring cell visitation statuses, 
-        and determining the upcoming mathematical waypoint target.
+        Maintains the player's current position, the sequence of moves made so far, 
+        the set of visited cells, and the next waypoint number that needs to be reached.
 
     Implementation Details:
-        Employs dual internal data structures to preserve operations: an explicitly ordered list 
-        preserves chronological traversal histories, while an identically mapped set structure 
-        facilitates immediate O(1) performance lookup queries during complex movement validations. 
-        Operates fully isolated from rule validation logic to adhere to Separation of Concerns.
+        Stores the path as an ordered list of positions and keeps a matching set of 
+        visited positions for fast lookup. Does not validate moves itself, focusing 
+        purely on tracking state.
     """
 
     def __init__(self, startPosition: Position):
         """
-        Initializes the dynamic progression tracker and stages the puzzle at a known baseline.
+        Initializes game state at the given starting position.
 
         Args:
-            startPosition: The definitive physical coordinate marking the origination of the path.
+            startPosition: The position where the game begins.
 
         Implementation Details:
-            Secures the active coordinate location into memory. Automatically instantiates the 
-            chronological list and matching internal lookup set natively populated with the original 
-            provided parameter. Seeds the chronological next target sequence strictly to 2.
+            Sets the current position, initializes the path and visited set with the start 
+            position, and sets the next expected waypoint order to 2.
         """
         self._currentPosition = startPosition
         self._path: List[Position] = [startPosition]
@@ -38,15 +35,17 @@ class GameState:
 
     def addStep(self, position: Position):
         """
-        Incorporates a newly validated spatial traversal into the chronological game state.
+        Records a move to a new position.
 
         Args:
-            position: The localized destination coordinate finalizing the executed transition.
+            position: The new position to add to the path.
+
+        Returns:
+            None.
 
         Implementation Details:
-            Transitions the overarching live position attribute. Sequentially appends the metric 
-            into the historical tracking list whilst appending it identically into the high-performance 
-            visitation hash set for future validation lookups.
+            Updates the current position to the given position, appends it to the 
+            chronological path list, and inserts it into the visited cells set.
         """
         self._currentPosition = position
         self._path.append(position)
@@ -54,47 +53,49 @@ class GameState:
 
     def isVisited(self, position: Position) -> bool:
         """
-        Interrogates the ongoing history to verify if a coordinate has already been occupied.
+        Checks whether a position has already been visited.
 
         Args:
-            position: The targeted spatial coordinate to query against memory banks.
+            position: The position to check.
 
         Returns:
-            True if the specified localized metric was historically tracked, False otherwise.
+            True if the position is in the visited set; False otherwise.
 
         Implementation Details:
-            Queries the underlying protected hash set of visited cells, guaranteeing rapid 
-            O(1) time complexity logic evaluation critical for tight loop validations.
+            Performs a fast set membership lookup in the internal visited cells set.
         """
         return position in self._visitedCells
 
     def getUnvisitedCells(self, board: Board) -> Set[Position]:
         """
-        Isolates and computes the remaining available puzzle cells untouched by the current history.
+        Finds all cells on the board that have not yet been visited.
 
         Args:
-            board: The baseline blueprint orchestrating physical boundaries and cell counts.
+            board: The board to check against.
 
         Returns:
-            A unique set enclosing all physical coordinates absent from current path histories.
+            A set of positions that have not been visited yet.
 
         Implementation Details:
-            Leverages high-speed Python native set mathematics. Triggers the baseline board to 
-            generate a full scope matrix layout and subtracts the internal protected visitation 
-            set, instantly yielding mathematically unpopulated boundaries.
+            Queries the board for all valid cell positions and performs a set difference 
+            against the visited cells set to yield all untouched positions.
         """
         return board.getAllPositions() - self._visitedCells
 
     def reset(self, startPosition: Position):
         """
-        Terminates active sequence histories and forcefully returns internal tracking to a fresh start.
+        Resets the game state back to the starting position.
 
         Args:
-            startPosition: The baseline original anchor point resolving the pristine game launch.
+            startPosition: The initial position to restart from.
+
+        Returns:
+            None.
 
         Implementation Details:
-            Purges active history sets and lists, entirely replacing them with identical single-element 
-            data structures. Fully overrides the chronological progression target constraint back to 2.
+            Sets the current position to startPosition, replaces both the path list and 
+            the visited set with single-element collections containing only startPosition, 
+            and resets the next expected waypoint order back to 2.
         """
         self._currentPosition = startPosition
         self._path = [startPosition]
@@ -104,11 +105,13 @@ class GameState:
     # NEW METHOD
     def incrementNextWaypointOrder(self):
         """
-        Dynamically escalates the chronological waypoint sequence tracker to the subsequent requirement.
+        Advances the next expected waypoint number by one.
+
+        Returns:
+            None.
 
         Implementation Details:
-            Mutates the rigidly guarded integer tracking parameter upwards by an exact magnitude of 1, 
-            signifying the successful traversal over a mandatory targeted puzzle sequence.
+            Increments the internal next waypoint order integer attribute by 1.
         """
         self._nextWaypointOrder += 1
 
@@ -116,53 +119,51 @@ class GameState:
     @property
     def getCurrentPosition(self) -> Position:
         """
-        Retrieves the exact present coordinate actively occupying the terminal tip of the path.
+        Gets the current position in the game.
 
         Returns:
-            The localized endpoint coordinate representation.
+            The most recent position reached in the path.
 
         Implementation Details:
-            Exposes immutable accessibility to the localized spatial tracker variable using 
-            decorator protections.
+            Exposes read-only access to the internal current position attribute via a property decorator.
         """
         return self._currentPosition
 
     @property
     def getPath(self) -> List[Position]:
         """
-        Reclaims the comprehensive chronological ordered sequence of movements performed thus far.
+        Gets the full sequence of moves made so far.
 
         Returns:
-            A sequentially structured list of traversed coordinate milestones.
+            The list of positions representing the path taken.
 
         Implementation Details:
-            Reveals external access to the exact protected timeline listing managed natively 
-            by the internal state processor.
+            Exposes read-only access to the internal path list via a property decorator.
         """
         return self._path
 
     @property
     def getVisitedCells(self) -> Set[Position]:
         """
-        Retrieves the high-performance hashed matrix representing globally touched grid squares.
+        Gets the set of all visited cells.
 
         Returns:
-            A distinct set populated with identical historically occupied variables.
+            The set of positions that have been visited.
 
         Implementation Details:
-            Transmits read-access down into the encapsulated internal matrix designed for rapid evaluations.
+            Exposes read-only access to the internal visited cells set via a property decorator.
         """
         return self._visitedCells
 
     @property
     def getNextWaypointOrder(self) -> int:
         """
-        Extracts the strictly required mathematical chronological value needed sequentially next.
+        Gets the order number of the next waypoint that must be visited.
 
         Returns:
-            The raw integer parameter expected to be intersected to maintain puzzle compliance.
+            The next expected waypoint order number.
 
         Implementation Details:
-            Fetches superficial external access to the precisely tracked numerical condition variable.
+            Exposes read-only access to the internal next waypoint order integer via a property decorator.
         """
         return self._nextWaypointOrder

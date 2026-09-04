@@ -1,28 +1,26 @@
 class Position:
     """
-    Represents a specific two-dimensional coordinate on the puzzle grid.
+    Represents a coordinate on the puzzle grid.
 
     Responsibility:
-        Provides a standardized mathematical representation for grid cells, allowing other 
-        game components to pinpoint locations, determine spatial adjacency, and define physical boundaries.
+        Identifies a specific cell on the board using column (x) and row (y) indices, 
+        making it easy to track locations, check adjacency, and compare positions.
 
     Implementation Details:
-        Follows a strict Top-Left origin (0, 0) coordinate system. The x-axis represents columns 
-        (horizontal) and the y-axis represents rows (vertical). Encapsulates state within protected 
-        attributes and overrides native equality and hashing methods to enable value-based comparisons 
-        and seamless integration within hash-based collections.
+        Uses a coordinate system where (0, 0) is the top-left corner. Stores x and y 
+        internally and implements equality and hash methods so positions can be compared 
+        by value and stored in sets or dictionaries.
     """
     def __init__(self, x: int, y: int):
         """
-        Initializes a spatial coordinate on the grid.
+        Creates a new position on the grid.
 
         Args:
-            x: The horizontal column index.
-            y: The vertical row index.
+            x: The column index.
+            y: The row index.
 
         Implementation Details:
-            Assigns the provided integer coordinates directly into protected internal attributes 
-            to enforce strict encapsulation principles.
+            Stores the x and y coordinates in internal attributes.
         """
         self._x = x
         self._y = y
@@ -30,85 +28,81 @@ class Position:
     @property
     def getX(self) -> int:
         """
-        Retrieves the horizontal column coordinate.
+        Gets the column index of this position.
 
         Returns:
-            The horizontal axis value.
+            The x coordinate.
 
         Implementation Details:
-            Exposes read-only access to the protected horizontal coordinate attribute via 
-            a property decorator.
+            Returns the internal horizontal coordinate.
         """
         return self._x
     
     @property
     def getY(self) -> int:
         """
-        Retrieves the vertical row coordinate.
+        Gets the row index of this position.
 
         Returns:
-            The vertical axis value.
+            The y coordinate.
 
         Implementation Details:
-            Exposes read-only access to the protected vertical coordinate attribute via 
-            a property decorator.
+            Returns the internal vertical coordinate.
         """
         return self._y
 
     def __eq__(self, other):
         """
-        Evaluates whether this position is spatially identical to another object.
+        Checks if another object represents the same grid position.
 
         Args:
-            other: The instance to compare against.
+            other: The object to compare with.
 
         Returns:
-            True if the other object is a valid position with identical physical coordinates, False otherwise.
+            True if other is a Position with the same x and y coordinates; False otherwise.
 
         Implementation Details:
-            Employs `isinstance` to ensure safe, fail-fast type comparison, then cross-references 
-            exact equality between the encapsulated horizontal and vertical attributes of both instances.
+            Verifies that other is a Position instance using isinstance, then checks that both 
+            x and y coordinates match.
         """
         return isinstance(other, Position) and self._x == other._x and self._y == other._y
     
     def __hash__(self):
         """
-        Generates a unique deterministic hash value for the spatial coordinate.
+        Computes a hash value based on the x and y coordinates.
 
         Returns:
-            The integer hash representation of the coordinate sequence.
+            An integer hash representing this position.
 
         Implementation Details:
-            Packs the protected internal attributes into a strictly ordered tuple and evaluates 
-            it using the native Python `hash()` function.
+            Packs the x and y coordinates into a tuple (x, y) and computes its hash using 
+            Python's built-in hash function.
         """
         return hash((self._x, self._y))
 
 
 class Waypoint:
     """
-    Represents a mandatory milestone cell on the grid that must be traversed.
+    Represents a numbered waypoint that must be visited in order.
 
     Responsibility:
-        Associates a specific spatial coordinate with a strict numerical sequence, dictating 
-        the exact chronological order in which the player must visit it to formulate a valid path.
+        Connects a grid position with a number indicating when that cell must be 
+        visited in the solution path.
 
     Implementation Details:
-        Maintains strict state integrity by storing positional tracking and ordering logic internally. 
-        Relies purely on properties for read-only access to guarantee immutability throughout 
-        the application's lifecycle.
+        Stores the position and its visit order internally, providing read-only 
+        properties to keep the waypoint data unchanged.
     """
     def __init__(self, position: Position, order: int):
         """
-        Initializes a new sequential milestone constraint.
+        Creates a new waypoint at the specified position and visit order.
 
         Args:
-            position: The exact spatial coordinate configuring the milestone's physical location.
-            order: The required chronological numerical sequence value.
+            position: The grid position of the waypoint.
+            order: The number indicating when this waypoint should be visited.
 
         Implementation Details:
-            Captures the coordinate instance and sequence requirement, safely housing them 
-            within protected attributes.
+            Stores the position and order values in internal attributes.
         """
         self._position = position
         self._order = order
@@ -116,53 +110,53 @@ class Waypoint:
     @property
     def getPosition(self) -> Position:
         """
-        Retrieves the physical location of the waypoint.
+        Gets the grid position of the waypoint.
 
         Returns:
-            The spatial coordinate of the cell containing the milestone.
+            The position of the waypoint.
 
         Implementation Details:
-            Exposes read-only access to the protected coordinate object via a property decorator.
+            Returns the internal position object.
         """
         return self._position
     
     @property
     def getOrder(self) -> int:
         """
-        Retrieves the required chronological sequence number.
+        Gets the required visit order of the waypoint.
 
         Returns:
-            The strict numerical target value of the waypoint.
+            The order number of the waypoint.
 
         Implementation Details:
-            Exposes read-only access to the protected sequence sequence attribute via a property decorator.
+            Returns the internal order value.
         """
         return self._order
     
 
 class Wall:
     """
-    Represents an impassable physical barrier between two directly adjacent grid cells.
+    Represents a barrier between two adjacent grid cells that blocks movement.
 
     Responsibility:
-        Defines non-traversable boundaries internal to the grid that the Hamiltonian path 
-        must dynamically route around, preventing illegal coordinate movements.
+        Defines an obstacle between two neighboring cells so players and solvers 
+        cannot move directly between them.
 
     Implementation Details:
-        Engineered to be entirely direction-agnostic. Safely encapsulates the two neighboring 
-        coordinates it separates and implements specific hashing logic to guarantee that a wall 
-        defining A-to-B is mathematically identical to B-to-A during complex rule validations.
+        Treats the barrier as bidirectional, meaning a wall between A and B is the 
+        same as between B and A. Implements equality and hashing so walls can be 
+        compared and stored in sets regardless of cell order.
     """
     def __init__(self, a: Position, b: Position):
         """
-        Initializes a definitive physical barrier separating two coordinates.
+        Creates a wall between two grid cells.
 
         Args:
-            a: The foundational coordinate on one side of the barrier.
-            b: The neighboring coordinate on the opposite side.
+            a: The position of the cell on one side of the wall.
+            b: The position of the cell on the other side of the wall.
 
         Implementation Details:
-            Captures and isolates the boundary definitions strictly within protected cell attributes.
+            Stores both cell positions in internal attributes.
         """
         self._cellA = a
         self._cellB = b
@@ -170,73 +164,72 @@ class Wall:
     @property
     def getCellA(self) -> Position:
         """
-        Retrieves the first bordering coordinate of this wall.
+        Gets the first cell bordering this wall.
 
         Returns:
-            The primary spatial coordinate location.
+            The position of the first cell.
 
         Implementation Details:
-            Exposes read-only access to the primary boundary definition via a property decorator.
+            Returns the internal reference to the first cell.
         """
         return self._cellA
 
     @property
     def getCellB(self) -> Position:
         """
-        Retrieves the second bordering coordinate of this wall.
+        Gets the second cell bordering this wall.
 
         Returns:
-            The secondary spatial coordinate location.
+            The position of the second cell.
 
         Implementation Details:
-            Exposes read-only access to the secondary boundary definition via a property decorator.
+            Returns the internal reference to the second cell.
         """
         return self._cellB
     
     def connects(self, a: Position, b: Position) -> bool:
         """
-        Determines if this wall directly separates a specific pair of coordinates.
+        Checks if this wall sits between two specific positions.
 
         Args:
-            a: The preliminary spatial coordinate to test.
-            b: The subsequent spatial coordinate to test.
+            a: The first position to check.
+            b: The second position to check.
 
         Returns:
-            A boolean indicating if the barrier spans exactly between the provided points.
+            True if the wall separates positions a and b; False otherwise.
 
         Implementation Details:
-            Checks both possible bidirectional pairings (A-to-B and B-to-A) against the 
-            encapsulated properties, ensuring the validation logic remains inherently 
-            directionless and safe for all pathing algorithms.
+            Performs a bidirectional check: verifies if either (cellA equals a and cellB equals b) 
+            or (cellA equals b and cellB equals a).
         """
         return (self._cellA == a and self._cellB == b) or (self._cellA == b and self._cellB == a)
     
     def __eq__(self, other):
         """
-        Evaluates whether this barrier is physically identical to another object.
+        Checks if another object represents the same wall.
 
         Args:
-            other: The secondary instance to compare against.
+            other: The object to compare with.
 
         Returns:
-            True if the other object is a wall occupying the exact same inter-cell space.
+            True if other is a Wall separating the same two cells; False otherwise.
 
         Implementation Details:
-            Leverages defensive type checking via `isinstance`, then invokes the internal 
-            direction-agnostic `connects` method to cross-reference boundary definitions.
+            Verifies that other is a Wall instance using isinstance and delegates to connects() 
+            to compare the bordering cells regardless of direction.
         """
         return  isinstance(other, Wall) and self.connects(other._cellA, other._cellB)
     
     def __hash__(self):
         """
-        Computes a consistent, uniform hash for the boundary regardless of initial cell order.
+        Computes a hash value for the wall regardless of cell order.
 
         Returns:
-            The deterministic integer hash value corresponding to the wall's location.
+            An integer hash for this wall.
 
         Implementation Details:
-            Extracts coordinate data manually via property getters, packs them into lexicographically 
-            sorted tuples to guarantee deterministic ordering, and hashes the resulting frozen structure.
+            Extracts the (x, y) coordinates of both cells, sorts them so order does not matter, 
+            and hashes the resulting tuple using Python's built-in hash function.
         """
         cells = sorted([(self._cellA.getX, self._cellA.getY), (self._cellB.getX, self._cellB.getY)])
         return hash(tuple(cells))
