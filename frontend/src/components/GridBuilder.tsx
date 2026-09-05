@@ -22,6 +22,7 @@ export default function GridBuilder() {
         pathShakeVersion,
         victoryAnimationVersion,
         playModeState,
+        isPlayCompleted,
         nextWaypoint,
         activePosition,
         handleGridSizeChange,
@@ -87,6 +88,7 @@ export default function GridBuilder() {
                         editMode={editMode}
                         viewMode={viewMode}
                         isSolving={isSolving}
+                        isPlayCompleted={isPlayCompleted}
                         onGridSizeChange={handleGridSizeChange}
                         onEditModeChange={handleModeChange}
                         onHint={handleHint}
@@ -103,6 +105,7 @@ export default function GridBuilder() {
                     <ActionPanel
                         canSolve={board.waypoints.length >= 2}
                         canPlay={board.waypoints.length >= 2}
+                        isPlayCompleted={isPlayCompleted}
                         isSolving={isSolving}
                         isImporting={isImporting}
                         viewMode={viewMode}

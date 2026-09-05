@@ -139,6 +139,10 @@ export default function useGridBuilderState() {
 
     function handleCellClick(position: Position) {
         if (viewMode === "PLAY") {
+            if (hasCompletedAllWaypoints(playModeState, board)) {
+                return;
+            }
+
             const currentPosition = getActivePosition(playModeState, board.waypoints[0] ?? null);
 
             if (!currentPosition) {
@@ -352,6 +356,10 @@ export default function useGridBuilderState() {
             return;
         }
 
+        if (hasCompletedAllWaypoints(playModeState, board)) {
+            return;
+        }
+
         const availableSolution = await ensurePlaySolution();
 
         if (!availableSolution) {
@@ -378,6 +386,10 @@ export default function useGridBuilderState() {
     }
 
     async function handleShowSolutionInPlay() {
+        if (hasCompletedAllWaypoints(playModeState, board)) {
+            return;
+        }
+
         const availableSolution = await ensurePlaySolution();
 
         if (!availableSolution) {
@@ -405,6 +417,10 @@ export default function useGridBuilderState() {
     }
 
     function handleClearPlayPath() {
+        if (hasCompletedAllWaypoints(playModeState, board)) {
+            return;
+        }
+
         setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
         setHintPath(null);
     }
@@ -588,6 +604,7 @@ export default function useGridBuilderState() {
     }, [board.boardSize, board.waypoints, playModeState, viewMode]);
 
     const nextWaypoint = viewMode === "PLAY" ? getExpectedNextWaypoint(playModeState, board) : null;
+    const isPlayCompleted = viewMode === "PLAY" && hasCompletedAllWaypoints(playModeState, board);
 
     return {
         board,
@@ -604,6 +621,7 @@ export default function useGridBuilderState() {
         pathShakeVersion,
         victoryAnimationVersion,
         playModeState,
+        isPlayCompleted,
         nextWaypoint,
         activePosition: getActivePosition(playModeState, board.waypoints[0] ?? null),
         handleGridSizeChange,

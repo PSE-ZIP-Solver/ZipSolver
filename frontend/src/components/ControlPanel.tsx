@@ -12,6 +12,8 @@ interface ControlPanelProps {
 
     isSolving: boolean;
 
+    isPlayCompleted: boolean;
+
     onGridSizeChange:
     (size: GridSize) => void;
 
@@ -45,6 +47,7 @@ export default function ControlPanel({
     editMode,
     viewMode,
     isSolving,
+    isPlayCompleted,
     onGridSizeChange,
     onEditModeChange,
     onHint,
@@ -82,7 +85,7 @@ export default function ControlPanel({
                     <button
                         type="button"
                         onClick={onHint}
-                        disabled={isSolving}
+                        disabled={isSolving || isPlayCompleted}
                         className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-colors ui-transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Take Hint
@@ -91,7 +94,7 @@ export default function ControlPanel({
                         <button
                             type="button"
                             onClick={onClearSolution}
-                            disabled={isSolving}
+                            disabled={isSolving || isPlayCompleted}
                             className="rounded-lg border border-board-border bg-background/80 px-4 py-2 text-sm font-semibold text-text transition-colors ui-transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Clear Solution
@@ -99,7 +102,7 @@ export default function ControlPanel({
                         <button
                             type="button"
                             onClick={onUndo}
-                            disabled={isSolving}
+                            disabled={isSolving || isPlayCompleted}
                             className="rounded-lg border border-board-border bg-background/80 px-4 py-2 text-sm font-semibold text-text transition-colors ui-transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Undo
@@ -115,7 +118,7 @@ export default function ControlPanel({
                             <button
                                 key={size}
                                 type="button"
-                                disabled={isSolving}
+                                disabled={isSolving || isPlayCompleted}
                                 onClick={() => onGridSizeChange(size)}
                                 className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ui-transition ${boardSize === size
                                     ? "bg-primary text-on-primary"
