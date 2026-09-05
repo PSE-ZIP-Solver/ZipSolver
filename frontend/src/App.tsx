@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HelpModal from './components/HelpModal';
-import GridBuilder from './components/GridBuilder.tsx';
+import GridBuilder from './components/GridBuilder';
 
 export const App: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);

@@ -5,6 +5,7 @@ import type { GridSize } from "../types/board";
 import { IMAGE_ACCEPT_ATTRIBUTE } from "../utils/fileValidation";
 import ImportSizeModal from "./ImportSizeModal";
 
+/** Primary actions for solving, importing, sharing, resetting, and changing mode. */
 interface ActionPanelProps {
   canSolve: boolean;
   canPlay: boolean;
@@ -19,6 +20,7 @@ interface ActionPanelProps {
   onImport: (file: File, imageBoardSize: GridSize) => void;
 }
 
+/** Renders the primary puzzle workflow actions and import-size dialog. */
 export default function ActionPanel({
   canSolve,
   canPlay,

@@ -1,6 +1,5 @@
 import { type BoardConfig } from "../types/board";
-
-
+/** Metadata and immutable board configuration for one built-in example. */
 export interface ExampleBoard {
     id: string;
     name: string;
@@ -8,7 +7,8 @@ export interface ExampleBoard {
 }
 
 
-export const Examples: ExampleBoard[] = [
+/** Built-in examples grouped by the board size shown in the UI. */
+export const Examples: readonly ExampleBoard[] = [
             {
         id: "maze-6x6-vincents-loop",
         name: "Vincent's Loop",

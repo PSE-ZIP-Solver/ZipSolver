@@ -1,3 +1,4 @@
+/** One section rendered by the help modal. */
 export interface HelpSection {
   id: string;
   title: string;
@@ -5,7 +6,8 @@ export interface HelpSection {
   content: string[];
 }
 
-export const HELP_SECTIONS: HelpSection[] = [
+/** Static user guidance shown in the help modal. */
+export const HELP_SECTIONS: readonly HelpSection[] = [
   {
     id: "what-is-zipsolver",
     title: "What is ZipSolver?",

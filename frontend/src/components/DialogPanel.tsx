@@ -3,6 +3,7 @@ import {
 } from "../types/message";
 
 
+/** Message state displayed in the contextual status panel. */
 interface DialogPanelProps {
 
     message: AppMessage;
@@ -10,6 +11,7 @@ interface DialogPanelProps {
 }
 
 
+/** Renders an application message with severity-specific styling. */
 export default function DialogPanel(
     {
         message

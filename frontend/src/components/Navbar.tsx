@@ -1,5 +1,6 @@
 import logo from "../assets/logoNoBg.png";
 
+/** Navigation actions and current theme state supplied by the application shell. */
 interface NavbarProps {
   onOpenHelp: () => void;
 
@@ -7,6 +8,7 @@ interface NavbarProps {
   onToggleTheme: () => void;
 }
 
+/** Renders the application identity and global help/theme actions. */
 export default function Navbar({
   onOpenHelp,
   isDarkTheme,
@@ -106,6 +108,7 @@ export default function Navbar({
           {/* Help */}
 
           <button
+            type="button"
             onClick={onOpenHelp}
             className="
                             p-2
@@ -123,6 +126,7 @@ export default function Navbar({
           </button>
 
           <button
+            type="button"
             onClick={onToggleTheme}
             className="
                             p-2

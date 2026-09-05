@@ -5,16 +5,19 @@ export interface PlayModeState {
     visitedCells: SolutionPath;
 }
 
+/** Creates the immutable player path, optionally beginning at the first waypoint. */
 export function createPlayModeState(startCell: Position | null = null): PlayModeState {
     return {
         visitedCells: startCell ? [startCell] : [],
     };
 }
 
+/** Resets the player path while preserving the play-mode state shape. */
 export function resetPlayModeState(startCell: Position | null = null): PlayModeState {
     return createPlayModeState(startCell);
 }
 
+/** Appends a valid player move without mutating the previous state. */
 export function appendVisitedCell(state: PlayModeState, cell: Position): PlayModeState {
     return {
         ...state,
@@ -22,6 +25,7 @@ export function appendVisitedCell(state: PlayModeState, cell: Position): PlayMod
     };
 }
 
+/** Removes the latest move, retaining the starting cell. */
 export function undoVisitedCell(state: PlayModeState): PlayModeState {
     if (state.visitedCells.length <= 1) {
         return state;
@@ -33,26 +37,17 @@ export function undoVisitedCell(state: PlayModeState): PlayModeState {
     };
 }
 
+/** Checks whether the player has already visited a cell in the current path. */
 export function isCellAlreadyVisited(state: PlayModeState, cell: Position) {
     return state.visitedCells.some((position) => position[0] === cell[0] && position[1] === cell[1]);
 }
 
+/** Returns the current player cell, falling back to the board's starting waypoint. */
 export function getActivePosition(state: PlayModeState, startCell: Position | null) {
     return state.visitedCells[state.visitedCells.length - 1] ?? startCell ?? null;
 }
 
-export function getHintPosition(solution: SolutionPath | null, state: PlayModeState, board: BoardConfig) {
-    if (!solution || solution.length === 0) {
-        return board.waypoints[0] ?? null;
-    }
-
-    const offset = state.visitedCells.length > 0 && isSamePosition(state.visitedCells[0], board.waypoints[0] ?? null)
-        ? 1
-        : 0;
-
-    return solution[state.visitedCells.length - offset] ?? null;
-}
-
+/** Returns the next waypoint required by the ordered waypoint rules. */
 export function getExpectedNextWaypoint(state: PlayModeState, board: BoardConfig) {
     if (board.waypoints.length <= 1) {
         return null;
@@ -85,6 +80,7 @@ function isSamePosition(a: Position | null, b: Position | null) {
     return a[0] === b[0] && a[1] === b[1];
 }
 
+/** Checks whether the path covers every cell and visits waypoints in order. */
 export function hasCompletedAllWaypoints(state: PlayModeState, board: BoardConfig) {
     const totalCells = board.boardSize * board.boardSize;
 

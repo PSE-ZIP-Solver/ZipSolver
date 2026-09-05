@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import { HELP_SECTIONS } from "../data/helpContent";
 
+/** Visibility and dismissal contract for the help dialog. */
 interface HelpModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+/** Displays help content and temporarily locks page scrolling while open. */
 export default function HelpModal({
   isOpen,
   onClose,
@@ -84,6 +86,7 @@ export default function HelpModal({
           </h2>
 
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close help modal"
             className="
@@ -145,6 +148,7 @@ export default function HelpModal({
           "
         >
           <button
+            type="button"
             onClick={onClose}
             className="btn-primary"
           >

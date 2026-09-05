@@ -1,6 +1,7 @@
 import type { EditMode, GridSize, ViewMode } from "../types/grid";
 
 
+/** Controls for switching edit modes, board sizes, and play actions. */
 interface ControlPanelProps {
 
     boardSize: GridSize;
@@ -38,6 +39,7 @@ const editModes: EditMode[] = [
 ];
 
 
+/** Renders controls whose available actions depend on the current view mode. */
 export default function ControlPanel({
     boardSize,
     editMode,
