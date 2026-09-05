@@ -65,6 +65,13 @@ describe("useGridBuilderState workflows", () => {
         expect(result.current.metrics).toEqual(solvedResponse.metrics);
         expect(result.current.message.message).toBe(solvedResponse.message);
         expect(result.current.isSolving).toBe(false);
+
+        act(() => {
+            result.current.handleCellClick([2, 2]);
+        });
+
+        expect(result.current.solution).toBeNull();
+        expect(result.current.metrics).toBeNull();
     });
 
     it("invalidates an in-flight solve when reset is pressed", async () => {

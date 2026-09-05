@@ -78,6 +78,10 @@ function createWall(a: Position, b: Position): Wall {
 	};
 }
 
+function areAdjacentPositions(first: Position, second: Position) {
+	return Math.abs(first[0] - second[0]) + Math.abs(first[1] - second[1]) === 1;
+}
+
 /** Renders board cells, walls, waypoint markers, and animated paths. */
 export default function Grid({
 	board,
@@ -255,6 +259,7 @@ export default function Grid({
 
 				const previous = solutionPathToRender[i - 1];
 				const current = solutionPathToRender[i];
+				if (!areAdjacentPositions(previous, current)) continue;
 				const segmentProgress = Math.max(
 					0,
 					Math.min(1, visibleSegments - (i - 1))
@@ -336,6 +341,7 @@ export default function Grid({
 
 				const previous = hintPath[i - 1];
 				const current = hintPath[i];
+				if (!areAdjacentPositions(previous, current)) continue;
 				const segmentProgress = Math.max(
 					0,
 					Math.min(1, visibleSegments - (i - 1))
@@ -411,7 +417,7 @@ export default function Grid({
 			const y = position[0] * stride + cellSize / 2;
 			if (index === 0) {
 				ctx.moveTo(x, y);
-			} else {
+			} else if (areAdjacentPositions(pathToRender[index - 1], position)) {
 				ctx.lineTo(x, y);
 			}
 		});
