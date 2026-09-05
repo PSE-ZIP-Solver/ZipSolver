@@ -1,0 +1,7 @@
+case,theme,board_size,expected_outcome,http_status,exact_board,expected_error_matched,warning_free,response_stable,median_ms,p95_ms
+6x6-light,light,6,success,200,True,False,True,True,72.719,101.452
+6x6-dark,dark,6,success,200,True,False,True,True,54.855,63.998
+8x8-light,light,8,success,200,True,False,True,True,103.354,117.4
+8x8-dark,dark,8,success,200,True,False,True,True,103.798,118.576
+blank-light,light,6,error,422,False,True,False,True,37.637,43.377
+blank-dark,dark,6,error,422,False,True,False,True,39.854,50.063

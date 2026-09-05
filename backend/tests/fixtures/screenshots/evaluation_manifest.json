@@ -1,0 +1,56 @@
+{
+  "name": "ZipSolver screenshot-import development set v1",
+  "datasetRole": "development_regression",
+  "groundTruth": "expected_boards.json",
+  "notes": "The four real screenshots were used while correcting the importer. Results from this set are regression evidence, not an unbiased final accuracy estimate.",
+  "cases": [
+    {
+      "id": "6x6-light",
+      "theme": "light",
+      "boardSize": 6,
+      "image": "6x6-light.png",
+      "expectedBoardKey": "6x6"
+    },
+    {
+      "id": "6x6-dark",
+      "theme": "dark",
+      "boardSize": 6,
+      "image": "6x6-dark.png",
+      "expectedBoardKey": "6x6"
+    },
+    {
+      "id": "8x8-light",
+      "theme": "light",
+      "boardSize": 8,
+      "image": "8x8-light.png",
+      "expectedBoardKey": "8x8"
+    },
+    {
+      "id": "8x8-dark",
+      "theme": "dark",
+      "boardSize": 8,
+      "image": "8x8-dark.png",
+      "expectedBoardKey": "8x8"
+    },
+    {
+      "id": "blank-light",
+      "theme": "light",
+      "boardSize": 6,
+      "syntheticSolidRgb": [255, 249, 241],
+      "expectedError": {
+        "status": 422,
+        "code": "NO_BOARD_DETECTED"
+      }
+    },
+    {
+      "id": "blank-dark",
+      "theme": "dark",
+      "boardSize": 6,
+      "syntheticSolidRgb": [47, 36, 25],
+      "expectedError": {
+        "status": 422,
+        "code": "NO_BOARD_DETECTED"
+      }
+    }
+  ]
+}

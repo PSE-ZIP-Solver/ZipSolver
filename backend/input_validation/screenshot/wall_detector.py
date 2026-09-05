@@ -6,9 +6,6 @@ from backend.input_validation.screenshot.theme_mode import ThemeMode
 if TYPE_CHECKING:
     import numpy as np
 
-# Fraction of the boundary that must read as "heavy" ink for a wall to be present.
-WALL_FILL_RATIO = 0.15
-
 # How far a boundary pixel must differ from the adjacent cell interior to count as wall
 # ink. Measured: a wall bar differs by ~150 levels, an ordinary grid line by only ~40.
 WALL_CONTRAST_DELTA = 80
@@ -133,12 +130,19 @@ class WallDetector:
             ref = self._cell_reference_level(image_data, bbox_a, bbox_b)
             if ref is None:
                 return False
-            ink = (int(ref) - gray.astype(np.int16)) > WALL_CONTRAST_DELTA
-            filled = int(np.count_nonzero(ink))
-            total = int(gray.shape[0] * gray.shape[1])
-            if not total:
+            ink = np.abs(int(ref) - gray.astype(np.int16)) > WALL_CONTRAST_DELTA
+            # Measure how far a thick stroke runs along the edge. A fixed
+            # fraction of the whole ROI loses thin walls at larger cell sizes.
+            # Ignore edge endpoints where perpendicular walls can intersect.
+            vertical = bbox_b[0] > bbox_a[0]
+            scan = ink if vertical else ink.T
+            margin = max(1, scan.shape[0] // 8)
+            scan = scan[margin:-margin]
+            if scan.size == 0:
                 return False
-            return (filled / total) >= WALL_FILL_RATIO
+            min_thickness = max(3, int(round(min(bbox_a[2:]) * 0.04)))
+            heavy = np.count_nonzero(scan, axis=1) >= min_thickness
+            return bool(np.mean(heavy) >= 0.5)
         except (TypeError, AttributeError, ValueError):
             # Mocked cv2/numpy in unit tests can return non-numeric values.
             return False
@@ -156,22 +160,24 @@ class WallDetector:
             The normalized raw metric providing statistical baseline luminance.
 
         Implementation Details:
-            Explicitly constrains evaluations strictly into spatial cores targeting precise 
-            center percentages. Eliminates anti-aliased boundaries and active waypoint circles 
-            gathering pure floor medians enabling accurate comparative contrast tests securely.
+            Samples inset cell corners to avoid centred waypoint discs and
+            boundary strokes, then combines the samples using their median.
         """
         import cv2
         import numpy as np
 
         samples = []
         for (px, py, w, h) in (bbox_a, bbox_b):
-            # Inner core only, so the cell border and any waypoint disc are excluded.
-            y0, y1 = int(py + h * 0.3), int(py + h * 0.7)
-            x0, x1 = int(px + w * 0.3), int(px + w * 0.7)
-            patch = image_data[max(0, y0):y1, max(0, x0):x1]
-            if patch is None or getattr(patch, "size", 0) == 0:
-                continue
-            samples.append(float(np.median(cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY))))
+            # Markers occupy the cell CENTRE. Sample inset corners so neither
+            # the marker nor the border becomes the reference background.
+            for fx in (0.1, 0.8):
+                for fy in (0.1, 0.8):
+                    y0, y1 = int(py + h * fy), int(py + h * (fy + 0.1))
+                    x0, x1 = int(px + w * fx), int(px + w * (fx + 0.1))
+                    patch = image_data[max(0, y0):y1, max(0, x0):x1]
+                    if patch is None or getattr(patch, "size", 0) == 0:
+                        continue
+                    samples.append(float(np.median(cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY))))
         if not samples:
             return None
         return float(np.median(samples))

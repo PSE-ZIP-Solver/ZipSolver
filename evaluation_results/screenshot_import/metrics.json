@@ -1,0 +1,511 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-05T10:39:14.602925+00:00",
+  "dataset": {
+    "name": "ZipSolver screenshot-import development set v1",
+    "role": "development_regression",
+    "notes": "The four real screenshots were used while correcting the importer. Results from this set are regression evidence, not an unbiased final accuracy estimate.",
+    "manifest": "backend/tests/fixtures/screenshots/evaluation_manifest.json"
+  },
+  "execution": {
+    "mode": "FastAPI TestClient (in-process POST /api/import)",
+    "repetitionsPerCase": 20,
+    "python": "3.13.14",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "summary": {
+    "cases": 6,
+    "validCases": 4,
+    "negativeCases": 2,
+    "successfulImportRate": 1.0,
+    "exactBoardAccuracy": 1.0,
+    "waypointOrderAccuracy": 1.0,
+    "warningFreeRate": 1.0,
+    "expectedErrorAccuracy": 1.0,
+    "waypointPositions": {
+      "tp": 40,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "walls": {
+      "tp": 36,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "latency": {
+      "samples": 120,
+      "minMs": 36.22,
+      "medianMs": 68.989,
+      "p95Ms": 109.106,
+      "maxMs": 260.864
+    }
+  },
+  "byTheme": {
+    "dark": {
+      "cases": 3,
+      "validCases": 2,
+      "negativeCases": 1,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": 1.0,
+      "waypointPositions": {
+        "tp": 20,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 18,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 60,
+        "minMs": 36.349,
+        "medianMs": 55.06,
+        "p95Ms": 107.036,
+        "maxMs": 127.522
+      }
+    },
+    "light": {
+      "cases": 3,
+      "validCases": 2,
+      "negativeCases": 1,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": 1.0,
+      "waypointPositions": {
+        "tp": 20,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 18,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 60,
+        "minMs": 36.22,
+        "medianMs": 72.719,
+        "p95Ms": 111.689,
+        "maxMs": 260.864
+      }
+    }
+  },
+  "byBoardSize": {
+    "6": {
+      "cases": 4,
+      "validCases": 2,
+      "negativeCases": 2,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": 1.0,
+      "waypointPositions": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 36.22,
+        "medianMs": 53.672,
+        "p95Ms": 79.356,
+        "maxMs": 260.864
+      }
+    },
+    "8": {
+      "cases": 2,
+      "validCases": 2,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 32,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 20,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 40,
+        "minMs": 99.982,
+        "medianMs": 103.602,
+        "p95Ms": 118.576,
+        "maxMs": 131.508
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "6x6-light",
+      "theme": "light",
+      "boardSize": 6,
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "responseStable": true,
+      "latencyMs": [
+        260.864,
+        72.622,
+        93.062,
+        72.817,
+        72.879,
+        79.351,
+        73.831,
+        70.709,
+        69.95,
+        77.257,
+        74.487,
+        79.865,
+        77.096,
+        71.498,
+        70.252,
+        68.993,
+        72.246,
+        69.325,
+        68.985,
+        69.621
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 68.985,
+        "medianMs": 72.719,
+        "p95Ms": 101.452,
+        "maxMs": 260.864
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark",
+      "theme": "dark",
+      "boardSize": 6,
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "responseStable": true,
+      "latencyMs": [
+        53.82,
+        53.717,
+        53.93,
+        54.427,
+        55.425,
+        55.507,
+        54.604,
+        55.161,
+        59.078,
+        55.029,
+        54.443,
+        55.091,
+        55.179,
+        54.022,
+        53.627,
+        54.68,
+        54.409,
+        57.018,
+        79.449,
+        63.184
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 53.627,
+        "medianMs": 54.855,
+        "p95Ms": 63.998,
+        "maxMs": 79.449
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light",
+      "theme": "light",
+      "boardSize": 8,
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "responseStable": true,
+      "latencyMs": [
+        103.359,
+        106.932,
+        104.809,
+        102.143,
+        116.657,
+        131.508,
+        101.914,
+        103.805,
+        102.711,
+        103.349,
+        100.748,
+        101.146,
+        106.266,
+        102.476,
+        106.763,
+        101.781,
+        100.664,
+        108.984,
+        111.428,
+        101.394
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 100.664,
+        "medianMs": 103.354,
+        "p95Ms": 117.4,
+        "maxMs": 131.508
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark",
+      "theme": "dark",
+      "boardSize": 8,
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "responseStable": true,
+      "latencyMs": [
+        105.602,
+        106.98,
+        101.714,
+        102.39,
+        102.421,
+        118.105,
+        105.933,
+        105.819,
+        104.057,
+        127.522,
+        106.166,
+        108.096,
+        101.86,
+        103.458,
+        103.093,
+        103.115,
+        103.405,
+        99.982,
+        103.746,
+        103.85
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 99.982,
+        "medianMs": 103.798,
+        "p95Ms": 118.576,
+        "maxMs": 127.522
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "blank-light",
+      "theme": "light",
+      "boardSize": 6,
+      "expectedOutcome": "error",
+      "httpStatus": 422,
+      "responseStable": true,
+      "latencyMs": [
+        39.012,
+        40.237,
+        38.002,
+        37.832,
+        37.967,
+        36.915,
+        37.895,
+        37.002,
+        37.441,
+        36.349,
+        37.42,
+        37.067,
+        36.272,
+        36.938,
+        37.154,
+        36.22,
+        38.16,
+        44.684,
+        43.308,
+        39.526
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 36.22,
+        "medianMs": 37.637,
+        "p95Ms": 43.377,
+        "maxMs": 44.684
+      },
+      "importSucceeded": false,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": true,
+      "actualErrorCode": "NO_BOARD_DETECTED",
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "blank-dark",
+      "theme": "dark",
+      "boardSize": 6,
+      "expectedOutcome": "error",
+      "httpStatus": 422,
+      "responseStable": true,
+      "latencyMs": [
+        41.398,
+        43.467,
+        40.893,
+        42.461,
+        56.809,
+        49.098,
+        45.376,
+        42.873,
+        49.708,
+        40.897,
+        38.814,
+        37.067,
+        37.263,
+        36.721,
+        36.789,
+        37.663,
+        36.729,
+        36.349,
+        37.041,
+        38.26
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 36.349,
+        "medianMs": 39.854,
+        "p95Ms": 50.063,
+        "maxMs": 56.809
+      },
+      "importSucceeded": false,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": true,
+      "actualErrorCode": "NO_BOARD_DETECTED",
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0
+      }
+    }
+  ]
+}
