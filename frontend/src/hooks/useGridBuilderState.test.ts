@@ -1,6 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { importPuzzle, solvePuzzle } from "../api/apiCalls";
+import { ApiError } from "../api/apiClient";
 import type { BoardConfig } from "../types/board";
 import type { ImportResult } from "../types/validation";
 import type { SolverResponse } from "../types/solver";
@@ -151,5 +152,80 @@ describe("useGridBuilderState workflows", () => {
         expect(writeText).toHaveBeenCalledOnce();
         expect(writeText.mock.calls[0]?.[0]).toContain("board=v1.");
         expect(result.current.message.message).toBe("Share link copied to clipboard");
+    });
+
+    it("shows a warning instead of calling the solver for an incomplete board", async () => {
+        const { result } = renderHook(() => useGridBuilderState());
+
+        await act(async () => {
+            await result.current.handleSolveClick();
+        });
+
+        expect(mockedSolvePuzzle).not.toHaveBeenCalled();
+        expect(result.current.message.message).toBe("Add at least two waypoints first");
+    });
+
+    it.each([
+        ["UNSOLVABLE", "No solution exists"],
+        ["TIMEOUT", "Solver timed out"],
+        ["FAILED", "Solver failed"],
+    ] as const)("renders a warning or error for solver status %s", async (status, message) => {
+        mockedSolvePuzzle.mockResolvedValue({
+            status,
+            success: false,
+            solutionPath: null,
+            solverUsed: "AlgorithmicSolver",
+            message,
+            metrics: { runtimeMs: 8, steps: 0, attempts: 1 },
+        });
+        const { result } = renderHook(() => useGridBuilderState());
+
+        act(() => result.current.handleSelectExample(board, "Test board"));
+        await waitFor(() => expect(result.current.board).toEqual(board));
+        await act(async () => {
+            await result.current.handleSolveClick();
+        });
+
+        expect(result.current.solution).toBeNull();
+        expect(result.current.message.message).toBe(message);
+    });
+
+    it("maps import API errors to a user-facing message", async () => {
+        mockedImportPuzzle.mockRejectedValue(new ApiError(422, "No board", "NO_BOARD_DETECTED"));
+        const { result } = renderHook(() => useGridBuilderState());
+        const file = new File(["image"], "board.png", { type: "image/png" });
+
+        await act(async () => {
+            await result.current.handleImportScreenshot(file, 6);
+        });
+
+        expect(result.current.message.message).toBe("No Zip board found in that image. Upload a screenshot showing the full grid");
+        expect(result.current.isImporting).toBe(false);
+    });
+
+    it("requires Play mode before generating a hint", async () => {
+        const { result } = renderHook(() => useGridBuilderState());
+
+        await act(async () => {
+            await result.current.handleHint();
+        });
+
+        expect(mockedSolvePuzzle).not.toHaveBeenCalled();
+        expect(result.current.message.message).toBe("Switch to Play mode first");
+    });
+
+    it("enters Play mode and resets the player path at the first waypoint", async () => {
+        mockedSolvePuzzle.mockResolvedValue(solvedResponse);
+        const { result } = renderHook(() => useGridBuilderState());
+
+        act(() => result.current.handleSelectExample(board, "Test board"));
+        await waitFor(() => expect(result.current.board).toEqual(board));
+        await act(async () => {
+            await result.current.handleViewModeChange("PLAY");
+        });
+
+        expect(result.current.viewMode).toBe("PLAY");
+        expect(result.current.playModeState.visitedCells).toEqual([[0, 0]]);
+        expect(result.current.message.message).toContain("Play mode");
     });
 });
