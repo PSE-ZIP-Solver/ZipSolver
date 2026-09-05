@@ -230,16 +230,21 @@ class WaypointDetector:
         hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
 
         # Is there an orange disc in this cell? (saturated orange covering a real fraction.)
-        disc = ((hue > 5) & (hue < 30) & (sat > 120) & (val > 120))
+        disc = ((hue > 5) & (hue < 30) & (sat > 65) & (val > 120))
         if disc.sum() < (w * h) * 0.12:
             return None  # no marker here
 
-        # Isolate the white numeral: low-saturation, high-value pixels in the disc core.
-        # Restrict to the central region to avoid the disc's anti-aliased rim.
+        # Restrict glyph detection to the core, away from the anti-aliased rim.
         cy0, cy1 = int(h * 0.18), int(h * 0.82)
         cx0, cx1 = int(w * 0.18), int(w * 0.82)
         core = hsv[cy0:cy1, cx0:cx1]
+        # The glyph polarity is local to its disc: dark-theme ZipSolver uses
+        # dark ink, while other sources may keep white ink on a dark page.
+        # Inspect both polarities within the core, away from the disc edge.
         white = ((core[:, :, 1] < 70) & (core[:, :, 2] > 190)).astype(np.uint8) * 255
+        dark = (core[:, :, 2] < 85).astype(np.uint8) * 255
+        if cv2.countNonZero(dark) > cv2.countNonZero(white):
+            white = dark
         # Threshold relative to cell area so this works whether the image was downscaled to
         # ~1024px (pipeline default) or left full-res.
         min_glyph_px = max(6, int(w * h * 0.004))
@@ -350,49 +355,21 @@ class WaypointDetector:
         return canvas
 
     def _digit_templates(self):
-        """
-        Synthesizes standard visual classification templates actively buffering rendering calls.
+        """Load the same pre-rendered digit shapes on Windows and Linux.
 
-        Returns:
-            A cached multidimensional mapping matrix translating integers strictly against pixel shapes.
-
-        Implementation Details:
-            Queries active system environments isolating standardized sans-bold fonts aggressively 
-            rendering theoretical markers. Pushes resulting canvas evaluations directly back 
-            into specialized instance property bindings avoiding catastrophic CPU cycles on 
-            successive identification runs completely.
+        Templates contain glyph masks, not a font file. Their generation is
+        documented in scripts/build_screenshot_digit_templates.py. Loading
+        numeric arrays with pickle disabled keeps this independent of host fonts.
         """
         cache = getattr(self, "_digit_template_cache", None)
         if cache is not None:
             return cache
 
-        import os
-
+        from pathlib import Path
         import numpy as np
-        from PIL import Image, ImageDraw, ImageFont
 
-        font_paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        ]
-        fonts = [p for p in font_paths if os.path.exists(p)]
-
-        def render(digit: int, font_path: str, size: int = 80):
-            img = Image.new("L", (120, 140), 0)
-            draw = ImageDraw.Draw(img)
-            font = ImageFont.truetype(font_path, size)
-            s = str(digit)
-            bb = draw.textbbox((0, 0), s, font=font)
-            tw, th = bb[2] - bb[0], bb[3] - bb[1]
-            draw.text(((120 - tw) / 2 - bb[0], (140 - th) / 2 - bb[1]), s, fill=255, font=font)
-            arr = np.array(img)
-            ys, xs = np.where(arr > 0)
-            return arr[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
-
-        cache = {}
-        for digit in range(10):
-            cache[digit] = [self._normalise_glyph(render(digit, fp)) for fp in fonts]
+        with np.load(Path(__file__).with_name("digit_templates.npz"), allow_pickle=False) as data:
+            cache = {digit: data[str(digit)].astype(np.float32) for digit in range(10)}
         self._digit_template_cache = cache
         return cache
 

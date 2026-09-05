@@ -238,7 +238,9 @@ class GridLocalizer:
 
         hsv = cv2.cvtColor(image_data, cv2.COLOR_BGR2HSV)
         hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
-        mask = ((hue > 5) & (hue < 30) & (sat > 120) & (val > 120)).astype(np.uint8) * 255
+        # Dark-theme markers are pale orange, with much less saturation than
+        # light-theme markers. Circularity below distinguishes them from walls.
+        mask = ((hue > 5) & (hue < 30) & (sat > 65) & (val > 120)).astype(np.uint8) * 255
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         out = []
@@ -252,30 +254,36 @@ class GridLocalizer:
         return out
 
     def _panel_bounds(self, image_data, circles):
-        """
-        Identifies the core grid panel by targeting the brightest centralized geometry.
+        """Find a square panel from bright areas or repeated cell colours.
 
-        Args:
-            image_data: The absolute screenshot mapping requiring panel targeting.
-            circles: The pre-calculated array of spatial nodes used as a centering heuristic.
-
-        Returns:
-            The raw coordinate block describing the structural grid plane, if found.
-
-        Implementation Details:
-            Binarizes image luminance levels using grayscale filters heavily augmented by 
-            closing operations to stitch segmented bright areas. Evaluates contour ratios 
-            seeking near-square topologies directly housing the aggregate disc centroid.
+        Morphology joins cells across grid lines. A candidate must contain the
+        marker centroid; the returned box anchors the disc-derived cell spacing.
         """
         import cv2
         import numpy as np
 
         gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
         h, w = gray.shape
-        bright = (gray >= 244).astype(np.uint8) * 255
-        bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, np.ones((31, 31), np.uint8))
-        bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, np.ones((31, 31), np.uint8))
-        contours, _ = cv2.findContours(bright, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        masks = [(gray >= 244).astype(np.uint8) * 255]
+        # Flat cell backgrounds form a large square in either theme. Candidate
+        # colours come from the image itself; do not assume a white board or
+        # invert the whole screenshot (that also changes marker colours).
+        pixels = image_data[::4, ::4].reshape(-1, 3)
+        colours, counts = np.unique(pixels, axis=0, return_counts=True)
+        signed_image = image_data.astype(np.int16)
+        for index in np.argsort(counts)[-8:]:
+            if counts[index] < len(pixels) * 0.02:
+                continue
+            colour = colours[index].astype(np.int16)
+            mask = np.all(np.abs(signed_image - colour) <= 4, axis=2)
+            masks.append(mask.astype(np.uint8) * 255)
+
+        contours = []
+        for mask in masks:
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((31, 31), np.uint8))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((31, 31), np.uint8))
+            found, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours.extend(found)
 
         ccx = float(np.median([c[0] for c in circles])) if circles else None
         ccy = float(np.median([c[1] for c in circles])) if circles else None
