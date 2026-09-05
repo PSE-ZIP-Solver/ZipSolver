@@ -42,13 +42,13 @@ MODEL_PATHS: dict[int, Path] = {
     #     / "7x7-agent.zip"
     # ),
     #
-    # 8: (
-    #     PROJECT_ROOT
-    #     / "offline_training"
-    #     / "trained_models"
-    #     / "8x8"
-    #     / "8x8-agent.zip"
-    # ),
+     8: (
+        PROJECT_ROOT
+        / "offline_training"
+        / "trained_models"
+        / "8x8"
+        / "8x8-agent.zip"
+     ),
 }
 
 
