@@ -1,37 +1,46 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-09-05T10:39:14.602925+00:00",
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-05T14:25:02.758410+00:00",
   "dataset": {
-    "name": "ZipSolver screenshot-import development set v1",
-    "role": "development_regression",
-    "notes": "The four real screenshots were used while correcting the importer. Results from this set are regression evidence, not an unbiased final accuracy estimate.",
+    "name": "ZipSolver screenshot regression and robustness v2",
+    "role": "development_regression_and_derived_robustness",
+    "notes": "Four previously used screenshots of two boards. Six fixed transformations each; correlated derivatives, not independent unseen data. Conditions piloted before final repeated measurement. All failures retained.",
     "manifest": "backend/tests/fixtures/screenshots/evaluation_manifest.json"
   },
   "execution": {
     "mode": "FastAPI TestClient (in-process POST /api/import)",
     "repetitionsPerCase": 20,
     "python": "3.13.14",
-    "platform": "Windows-11-10.0.26200-SP0"
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "fastapi": "0.139.2",
+      "starlette": "1.3.1",
+      "numpy": "2.5.0",
+      "opencv-python-headless": "5.0.0.93",
+      "pillow": "12.3.0",
+      "httpx": "0.28.1"
+    },
+    "timingPolicy": "All repetitions including first use; image transformations excluded"
   },
   "summary": {
-    "cases": 6,
-    "validCases": 4,
+    "cases": 30,
+    "validCases": 28,
     "negativeCases": 2,
     "successfulImportRate": 1.0,
-    "exactBoardAccuracy": 1.0,
-    "waypointOrderAccuracy": 1.0,
-    "warningFreeRate": 1.0,
+    "exactBoardAccuracy": 0.821429,
+    "waypointOrderAccuracy": 0.821429,
+    "warningFreeRate": 0.821429,
     "expectedErrorAccuracy": 1.0,
     "waypointPositions": {
-      "tp": 40,
+      "tp": 268,
       "fp": 0,
-      "fn": 0,
+      "fn": 12,
       "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0
+      "recall": 0.957143,
+      "f1": 0.978102
     },
     "walls": {
-      "tp": 36,
+      "tp": 252,
       "fp": 0,
       "fn": 0,
       "precision": 1.0,
@@ -39,33 +48,33 @@
       "f1": 1.0
     },
     "latency": {
-      "samples": 120,
-      "minMs": 36.22,
-      "medianMs": 68.989,
-      "p95Ms": 109.106,
-      "maxMs": 260.864
+      "samples": 600,
+      "minMs": 37.715,
+      "medianMs": 93.845,
+      "p95Ms": 201.241,
+      "maxMs": 631.135
     }
   },
   "byTheme": {
     "dark": {
-      "cases": 3,
-      "validCases": 2,
+      "cases": 15,
+      "validCases": 14,
       "negativeCases": 1,
       "successfulImportRate": 1.0,
-      "exactBoardAccuracy": 1.0,
-      "waypointOrderAccuracy": 1.0,
-      "warningFreeRate": 1.0,
+      "exactBoardAccuracy": 0.785714,
+      "waypointOrderAccuracy": 0.785714,
+      "warningFreeRate": 0.785714,
       "expectedErrorAccuracy": 1.0,
       "waypointPositions": {
-        "tp": 20,
+        "tp": 134,
         "fp": 0,
-        "fn": 0,
+        "fn": 6,
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0
+        "recall": 0.957143,
+        "f1": 0.978102
       },
       "walls": {
-        "tp": 18,
+        "tp": 126,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -73,32 +82,32 @@
         "f1": 1.0
       },
       "latency": {
-        "samples": 60,
-        "minMs": 36.349,
-        "medianMs": 55.06,
-        "p95Ms": 107.036,
-        "maxMs": 127.522
+        "samples": 300,
+        "minMs": 37.715,
+        "medianMs": 92.172,
+        "p95Ms": 189.259,
+        "maxMs": 263.23
       }
     },
     "light": {
-      "cases": 3,
-      "validCases": 2,
+      "cases": 15,
+      "validCases": 14,
       "negativeCases": 1,
       "successfulImportRate": 1.0,
-      "exactBoardAccuracy": 1.0,
-      "waypointOrderAccuracy": 1.0,
-      "warningFreeRate": 1.0,
+      "exactBoardAccuracy": 0.857143,
+      "waypointOrderAccuracy": 0.857143,
+      "warningFreeRate": 0.857143,
       "expectedErrorAccuracy": 1.0,
       "waypointPositions": {
-        "tp": 20,
+        "tp": 134,
         "fp": 0,
-        "fn": 0,
+        "fn": 6,
         "precision": 1.0,
-        "recall": 1.0,
-        "f1": 1.0
+        "recall": 0.957143,
+        "f1": 0.978102
       },
       "walls": {
-        "tp": 18,
+        "tp": 126,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -106,18 +115,18 @@
         "f1": 1.0
       },
       "latency": {
-        "samples": 60,
-        "minMs": 36.22,
-        "medianMs": 72.719,
-        "p95Ms": 111.689,
-        "maxMs": 260.864
+        "samples": 300,
+        "minMs": 38.119,
+        "medianMs": 95.004,
+        "p95Ms": 212.954,
+        "maxMs": 631.135
       }
     }
   },
   "byBoardSize": {
     "6": {
-      "cases": 4,
-      "validCases": 2,
+      "cases": 16,
+      "validCases": 14,
       "negativeCases": 2,
       "successfulImportRate": 1.0,
       "exactBoardAccuracy": 1.0,
@@ -125,7 +134,7 @@
       "warningFreeRate": 1.0,
       "expectedErrorAccuracy": 1.0,
       "waypointPositions": {
-        "tp": 8,
+        "tp": 56,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -133,7 +142,75 @@
         "f1": 1.0
       },
       "walls": {
-        "tp": 16,
+        "tp": 112,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 320,
+        "minMs": 37.715,
+        "medianMs": 72.422,
+        "p95Ms": 123.086,
+        "maxMs": 343.676
+      }
+    },
+    "8": {
+      "cases": 14,
+      "validCases": 14,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 0.642857,
+      "waypointOrderAccuracy": 0.642857,
+      "warningFreeRate": 0.642857,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 212,
+        "fp": 0,
+        "fn": 12,
+        "precision": 1.0,
+        "recall": 0.946429,
+        "f1": 0.972477
+      },
+      "walls": {
+        "tp": 140,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 280,
+        "minMs": 69.312,
+        "medianMs": 121.909,
+        "p95Ms": 221.799,
+        "maxMs": 631.135
+      }
+    }
+  },
+  "byCondition": {
+    "blur-0.8": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 0.75,
+      "waypointOrderAccuracy": 0.75,
+      "warningFreeRate": 0.75,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 36,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -142,15 +219,15 @@
       },
       "latency": {
         "samples": 80,
-        "minMs": 36.22,
-        "medianMs": 53.672,
-        "p95Ms": 79.356,
-        "maxMs": 260.864
+        "minMs": 55.937,
+        "medianMs": 100.722,
+        "p95Ms": 125.01,
+        "maxMs": 144.285
       }
     },
-    "8": {
-      "cases": 2,
-      "validCases": 2,
+    "crop-12": {
+      "cases": 4,
+      "validCases": 4,
       "negativeCases": 0,
       "successfulImportRate": 1.0,
       "exactBoardAccuracy": 1.0,
@@ -158,7 +235,7 @@
       "warningFreeRate": 1.0,
       "expectedErrorAccuracy": null,
       "waypointPositions": {
-        "tp": 32,
+        "tp": 40,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -166,7 +243,7 @@
         "f1": 1.0
       },
       "walls": {
-        "tp": 20,
+        "tp": 36,
         "fp": 0,
         "fn": 0,
         "precision": 1.0,
@@ -174,11 +251,310 @@
         "f1": 1.0
       },
       "latency": {
+        "samples": 80,
+        "minMs": 53.088,
+        "medianMs": 93.102,
+        "p95Ms": 262.928,
+        "maxMs": 631.135
+      }
+    },
+    "jpeg-q65": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 0.5,
+      "waypointOrderAccuracy": 0.5,
+      "warningFreeRate": 0.5,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 36,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 70.589,
+        "medianMs": 104.852,
+        "p95Ms": 143.908,
+        "maxMs": 186.179
+      }
+    },
+    "negative": {
+      "cases": 2,
+      "validCases": 0,
+      "negativeCases": 2,
+      "successfulImportRate": null,
+      "exactBoardAccuracy": null,
+      "waypointOrderAccuracy": null,
+      "warningFreeRate": null,
+      "expectedErrorAccuracy": 1.0,
+      "waypointPositions": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "walls": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "latency": {
         "samples": 40,
-        "minMs": 99.982,
-        "medianMs": 103.602,
-        "p95Ms": 118.576,
-        "maxMs": 131.508
+        "minMs": 37.715,
+        "medianMs": 39.977,
+        "p95Ms": 46.201,
+        "maxMs": 50.102
+      }
+    },
+    "original": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 36,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 53.327,
+        "medianMs": 113.827,
+        "p95Ms": 202.188,
+        "maxMs": 343.676
+      }
+    },
+    "pad-40": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 36,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 85.043,
+        "medianMs": 114.668,
+        "p95Ms": 183.781,
+        "maxMs": 213.5
+      }
+    },
+    "scale-125": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 36,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 75.375,
+        "medianMs": 149.173,
+        "p95Ms": 231.253,
+        "maxMs": 263.23
+      }
+    },
+    "scale-75": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 0.5,
+      "waypointOrderAccuracy": 0.5,
+      "warningFreeRate": 0.5,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 28,
+        "fp": 0,
+        "fn": 12,
+        "precision": 1.0,
+        "recall": 0.7,
+        "f1": 0.823529
+      },
+      "walls": {
+        "tp": 36,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 37.839,
+        "medianMs": 69.826,
+        "p95Ms": 100.982,
+        "maxMs": 114.619
+      }
+    }
+  },
+  "bySourceKind": {
+    "derived_robustness": {
+      "cases": 24,
+      "validCases": 24,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 0.791667,
+      "waypointOrderAccuracy": 0.791667,
+      "warningFreeRate": 0.791667,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 228,
+        "fp": 0,
+        "fn": 12,
+        "precision": 1.0,
+        "recall": 0.95,
+        "f1": 0.974359
+      },
+      "walls": {
+        "tp": 216,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 480,
+        "minMs": 37.839,
+        "medianMs": 99.123,
+        "p95Ms": 203.06,
+        "maxMs": 631.135
+      }
+    },
+    "real_original": {
+      "cases": 4,
+      "validCases": 4,
+      "negativeCases": 0,
+      "successfulImportRate": 1.0,
+      "exactBoardAccuracy": 1.0,
+      "waypointOrderAccuracy": 1.0,
+      "warningFreeRate": 1.0,
+      "expectedErrorAccuracy": null,
+      "waypointPositions": {
+        "tp": 40,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "walls": {
+        "tp": 36,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "latency": {
+        "samples": 80,
+        "minMs": 53.327,
+        "medianMs": 113.827,
+        "p95Ms": 202.188,
+        "maxMs": 343.676
+      }
+    },
+    "synthetic_negative": {
+      "cases": 2,
+      "validCases": 0,
+      "negativeCases": 2,
+      "successfulImportRate": null,
+      "exactBoardAccuracy": null,
+      "waypointOrderAccuracy": null,
+      "warningFreeRate": null,
+      "expectedErrorAccuracy": 1.0,
+      "waypointPositions": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "walls": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "latency": {
+        "samples": 40,
+        "minMs": 37.715,
+        "medianMs": 39.977,
+        "p95Ms": 46.201,
+        "maxMs": 50.102
       }
     }
   },
@@ -187,37 +563,1145 @@
       "id": "6x6-light",
       "theme": "light",
       "boardSize": 6,
+      "condition": "original",
+      "sourceKind": "real_original",
       "expectedOutcome": "success",
       "httpStatus": 200,
+      "payloadSha256": "ac6d5fbbdcd501a204c83e7803b06feac464e421a3ac356984b4030ced6df411",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
       "responseStable": true,
       "latencyMs": [
-        260.864,
-        72.622,
-        93.062,
-        72.817,
-        72.879,
-        79.351,
-        73.831,
-        70.709,
-        69.95,
-        77.257,
-        74.487,
-        79.865,
-        77.096,
-        71.498,
-        70.252,
-        68.993,
-        72.246,
-        69.325,
-        68.985,
-        69.621
+        343.676,
+        83.198,
+        85.218,
+        159.625,
+        110.89,
+        85.596,
+        90.379,
+        81.821,
+        81.497,
+        78.692,
+        77.66,
+        86.518,
+        76.858,
+        78.587,
+        79.948,
+        71.687,
+        70.295,
+        71.121,
+        69.943,
+        82.409
       ],
       "latency": {
         "samples": 20,
-        "minMs": 68.985,
-        "medianMs": 72.719,
-        "p95Ms": 101.452,
-        "maxMs": 260.864
+        "minMs": 69.943,
+        "medianMs": 81.659,
+        "p95Ms": 168.828,
+        "maxMs": 343.676
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-light--scale-75",
+      "theme": "light",
+      "boardSize": 6,
+      "condition": "scale-75",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "8fd1b2a217326968eb9a5b9a9d17b3d43d2b0008e59d1a34e13d80cd7bbbbd30",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        48.57,
+        43.544,
+        45.267,
+        52.969,
+        64.804,
+        81.655,
+        54.519,
+        52.135,
+        54.723,
+        48.191,
+        61.22,
+        61.53,
+        82.528,
+        67.215,
+        65.951,
+        78.346,
+        47.816,
+        48.415,
+        53.323,
+        48.105
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 43.544,
+        "medianMs": 53.921,
+        "p95Ms": 81.699,
+        "maxMs": 82.528
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-light--scale-125",
+      "theme": "light",
+      "boardSize": 6,
+      "condition": "scale-125",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "186c037f4f0ee1b717cb8137e26042dd7d0b6f09e66b2b1d8c7cf388d616e722",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        128.432,
+        125.798,
+        129.786,
+        122.796,
+        137.165,
+        151.674,
+        123.066,
+        122.971,
+        116.912,
+        134.023,
+        159.65,
+        161.407,
+        117.829,
+        123.465,
+        118.758,
+        118.395,
+        107.794,
+        100.975,
+        104.315,
+        101.583
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 100.975,
+        "medianMs": 123.018,
+        "p95Ms": 159.738,
+        "maxMs": 161.407
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-light--jpeg-q65",
+      "theme": "light",
+      "boardSize": 6,
+      "condition": "jpeg-q65",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "d0176a36041a00d1e35be53fdb5b963883d20805e093f8ac98317b7b68745b5c",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        88.464,
+        95.166,
+        102.957,
+        87.809,
+        91.824,
+        86.787,
+        92.864,
+        90.458,
+        93.001,
+        82.541,
+        79.886,
+        95.891,
+        85.437,
+        87.275,
+        82.663,
+        80.785,
+        80.903,
+        81.733,
+        84.065,
+        80.009
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 79.886,
+        "medianMs": 87.031,
+        "p95Ms": 96.244,
+        "maxMs": 102.957
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-light--blur-0.8",
+      "theme": "light",
+      "boardSize": 6,
+      "condition": "blur-0.8",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "2fd80c8d8eaeef9d1b5dc48bb19a5775d7dbb27f2f4e503b0889b5f087c9854a",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        74.333,
+        72.245,
+        73.097,
+        73.358,
+        73.317,
+        74.056,
+        71.317,
+        70.835,
+        72.393,
+        71.673,
+        70.892,
+        74.425,
+        72.45,
+        75.451,
+        94.448,
+        99.634,
+        105.213,
+        82.686,
+        86.401,
+        77.813
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 70.835,
+        "medianMs": 73.707,
+        "p95Ms": 99.913,
+        "maxMs": 105.213
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-light--pad-40",
+      "theme": "light",
+      "boardSize": 6,
+      "condition": "pad-40",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "22ee23531d8dee43ea479207caebd1f38f37935e259539b8fcda1b54ac173b1a",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        90.967,
+        89.526,
+        93.759,
+        91.219,
+        87.542,
+        86.825,
+        85.871,
+        86.574,
+        86.803,
+        88.39,
+        87.608,
+        86.972,
+        86.309,
+        87.789,
+        86.902,
+        88.628,
+        86.978,
+        86.649,
+        91.799,
+        86.547
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 85.871,
+        "medianMs": 87.26,
+        "p95Ms": 91.897,
+        "maxMs": 93.759
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-light--crop-12",
+      "theme": "light",
+      "boardSize": 6,
+      "condition": "crop-12",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "da8f04dbc8de3c3edbff6240f1daa4cf32b59616983ff3e06d06e9fabdd38446",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        65.835,
+        66.113,
+        76.662,
+        85.932,
+        72.14,
+        65.06,
+        70.035,
+        71.93,
+        68.953,
+        67.173,
+        66.084,
+        68.371,
+        82.805,
+        65.099,
+        65.673,
+        66.042,
+        66.923,
+        66.025,
+        67.623,
+        67.965
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 65.06,
+        "medianMs": 67.398,
+        "p95Ms": 82.961,
+        "maxMs": 85.932
       },
       "importSucceeded": true,
       "exactBoard": true,
@@ -241,37 +1725,1145 @@
       "id": "6x6-dark",
       "theme": "dark",
       "boardSize": 6,
+      "condition": "original",
+      "sourceKind": "real_original",
       "expectedOutcome": "success",
       "httpStatus": 200,
+      "payloadSha256": "5778892681e3958c2634acf16ddc74d4a2400ff67b0719bb54e6367d5a4d3fe0",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
       "responseStable": true,
       "latencyMs": [
-        53.82,
-        53.717,
-        53.93,
-        54.427,
-        55.425,
-        55.507,
-        54.604,
-        55.161,
-        59.078,
-        55.029,
-        54.443,
-        55.091,
-        55.179,
-        54.022,
-        53.627,
-        54.68,
-        54.409,
-        57.018,
-        79.449,
-        63.184
+        53.456,
+        53.567,
+        55.235,
+        56.054,
+        68.808,
+        65.186,
+        54.985,
+        55.397,
+        55.659,
+        53.798,
+        55.71,
+        53.327,
+        60.288,
+        61.763,
+        59.168,
+        56.998,
+        54.668,
+        58.232,
+        59.275,
+        68.6
       ],
       "latency": {
         "samples": 20,
-        "minMs": 53.627,
-        "medianMs": 54.855,
-        "p95Ms": 63.998,
-        "maxMs": 79.449
+        "minMs": 53.327,
+        "medianMs": 55.882,
+        "p95Ms": 68.611,
+        "maxMs": 68.808
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark--scale-75",
+      "theme": "dark",
+      "boardSize": 6,
+      "condition": "scale-75",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "96f7a7a857f333e891f4b47e0d30ea6bb58a0aa43a8309863e2510da1c8c0831",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        41.348,
+        39.838,
+        43.238,
+        39.456,
+        38.84,
+        39.23,
+        39.735,
+        39.151,
+        39.784,
+        38.346,
+        38.522,
+        38.564,
+        38.37,
+        39.151,
+        38.121,
+        41.096,
+        38.56,
+        37.839,
+        39.59,
+        38.339
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 37.839,
+        "medianMs": 39.151,
+        "p95Ms": 41.443,
+        "maxMs": 43.238
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark--scale-125",
+      "theme": "dark",
+      "boardSize": 6,
+      "condition": "scale-125",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "6514ad1917e2ec3cccd3e8644acb7b8e3338b702faba49c55cf6d2aa892b2f4a",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        76.966,
+        80.98,
+        79.001,
+        76.792,
+        86.828,
+        113.181,
+        80.866,
+        83.333,
+        90.584,
+        93.232,
+        82.238,
+        83.352,
+        75.375,
+        77.979,
+        78.334,
+        89.286,
+        79.795,
+        80.527,
+        78.57,
+        79.708
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 75.375,
+        "medianMs": 80.697,
+        "p95Ms": 94.229,
+        "maxMs": 113.181
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark--jpeg-q65",
+      "theme": "dark",
+      "boardSize": 6,
+      "condition": "jpeg-q65",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "259a83e243b52564ad8bd6d765630923048a7f32078d162801e465352f025a6f",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        72.17,
+        73.092,
+        74.035,
+        72.122,
+        70.589,
+        71.06,
+        71.991,
+        73.108,
+        74.346,
+        75.458,
+        94.955,
+        103.078,
+        97.608,
+        99.145,
+        88.407,
+        99.1,
+        94.742,
+        88.649,
+        89.304,
+        74.886
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 70.589,
+        "medianMs": 75.172,
+        "p95Ms": 99.341,
+        "maxMs": 103.078
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark--blur-0.8",
+      "theme": "dark",
+      "boardSize": 6,
+      "condition": "blur-0.8",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "855640320f64c351bfc07a48231e66793fd90342e686d2fe68a74e86a1ae9cff",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        57.722,
+        55.937,
+        70.22,
+        62.562,
+        61.209,
+        59.507,
+        57.222,
+        61.554,
+        57.99,
+        62.518,
+        139.103,
+        90.165,
+        94.487,
+        139.262,
+        118.322,
+        87.597,
+        83.911,
+        72.968,
+        72.004,
+        68.696
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 55.937,
+        "medianMs": 69.458,
+        "p95Ms": 139.111,
+        "maxMs": 139.262
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark--pad-40",
+      "theme": "dark",
+      "boardSize": 6,
+      "condition": "pad-40",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "13e0b2a382f37a832c00eb89bb36784f13beaf994d47264df0bcc04cf0a3a020",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        97.975,
+        118.409,
+        100.664,
+        85.124,
+        91.015,
+        127.315,
+        85.043,
+        106.024,
+        102.221,
+        86.227,
+        124.098,
+        128.801,
+        88.671,
+        94.423,
+        94.68,
+        95.388,
+        86.312,
+        93.931,
+        92.436,
+        86.211
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 85.043,
+        "medianMs": 94.551,
+        "p95Ms": 127.389,
+        "maxMs": 128.801
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 4,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 8,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "6x6-dark--crop-12",
+      "theme": "dark",
+      "boardSize": 6,
+      "condition": "crop-12",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "7b779c1a84f0b7aefcc60da940d30abd340256231622a318f97a9078dd5853d1",
+      "actualResponse": {
+        "board": {
+          "boardSize": 6,
+          "waypoints": [
+            [
+              1,
+              0
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                1,
+                0
+              ],
+              "neighborB": [
+                1,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                0
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                1
+              ],
+              "neighborB": [
+                2,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                1
+              ],
+              "neighborB": [
+                5,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                0,
+                4
+              ],
+              "neighborB": [
+                1,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                4
+              ],
+              "neighborB": [
+                1,
+                5
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                4
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                4
+              ],
+              "neighborB": [
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        59.265,
+        62.644,
+        55.051,
+        56.501,
+        54.819,
+        55.376,
+        57.816,
+        55.213,
+        56.48,
+        58.267,
+        56.301,
+        55.284,
+        55.122,
+        56.449,
+        55.299,
+        55.397,
+        78.042,
+        65.754,
+        53.088,
+        57.32
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 53.088,
+        "medianMs": 56.375,
+        "p95Ms": 66.368,
+        "maxMs": 78.042
       },
       "importSucceeded": true,
       "exactBoard": true,
@@ -295,37 +2887,1625 @@
       "id": "8x8-light",
       "theme": "light",
       "boardSize": 8,
+      "condition": "original",
+      "sourceKind": "real_original",
       "expectedOutcome": "success",
       "httpStatus": 200,
+      "payloadSha256": "9da949881a2fe7ad8e478ad1f9db1a615c4b70d92ab77114d4bce6644c694c4b",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
       "responseStable": true,
       "latencyMs": [
-        103.359,
-        106.932,
-        104.809,
-        102.143,
-        116.657,
-        131.508,
-        101.914,
-        103.805,
-        102.711,
-        103.349,
-        100.748,
-        101.146,
-        106.266,
-        102.476,
-        106.763,
-        101.781,
-        100.664,
-        108.984,
-        111.428,
-        101.394
+        104.646,
+        188.352,
+        210.957,
+        116.763,
+        125.803,
+        175.977,
+        147.545,
+        138.041,
+        120.128,
+        158.351,
+        146.734,
+        165.903,
+        163.226,
+        177.67,
+        298.33,
+        201.727,
+        211.542,
+        139.064,
+        201.006,
+        166.124
       ],
       "latency": {
         "samples": 20,
-        "minMs": 100.664,
-        "medianMs": 103.354,
-        "p95Ms": 117.4,
-        "maxMs": 131.508
+        "minMs": 104.646,
+        "medianMs": 164.564,
+        "p95Ms": 215.882,
+        "maxMs": 298.33
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light--scale-75",
+      "theme": "light",
+      "boardSize": 8,
+      "condition": "scale-75",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "8bc308197776cedabdbc29f929ef886b3e4f69d1b63278e8e7e0b6cbaedb7ddf",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              3,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": [
+          {
+            "code": "WAYPOINT_ORDER_INFERRED",
+            "message": "Waypoint numbers could not be read confidently; order was inferred \u2014 please verify.",
+            "cell": null
+          }
+        ]
+      },
+      "responseStable": true,
+      "latencyMs": [
+        91.305,
+        76.284,
+        92.89,
+        73.662,
+        69.312,
+        69.353,
+        92.495,
+        100.974,
+        101.141,
+        83.848,
+        94.841,
+        86.742,
+        87.183,
+        92.864,
+        80.047,
+        69.585,
+        80.928,
+        71.963,
+        79.985,
+        90.663
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 69.312,
+        "medianMs": 85.295,
+        "p95Ms": 100.982,
+        "maxMs": 101.141
+      },
+      "importSucceeded": true,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [
+        "WAYPOINT_ORDER_INFERRED"
+      ],
+      "waypointPositionCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 6
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light--scale-125",
+      "theme": "light",
+      "boardSize": 8,
+      "condition": "scale-125",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "736e4a48b98f75c5acbe7114e37df4f2f24969767f9d4e3519ebd8f3508fc611",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        205.891,
+        171.256,
+        169.276,
+        150.102,
+        154.833,
+        148.243,
+        152.85,
+        150.385,
+        174.437,
+        155.072,
+        147.754,
+        152.117,
+        157.3,
+        174.704,
+        241.725,
+        164.113,
+        142.518,
+        166.736,
+        251.203,
+        197.106
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 142.518,
+        "medianMs": 160.706,
+        "p95Ms": 242.198,
+        "maxMs": 251.203
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light--jpeg-q65",
+      "theme": "light",
+      "boardSize": 8,
+      "condition": "jpeg-q65",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "da80a1bc82c242aa664c6d9dc723ae06c7eee167b09da1fe467781332eab99e9",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": [
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (5, 6) could not be read; using detected order.",
+            "cell": [
+              5,
+              6
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 11 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              6,
+              2
+            ]
+          }
+        ]
+      },
+      "responseStable": true,
+      "latencyMs": [
+        112.173,
+        138.777,
+        186.179,
+        120.107,
+        143.674,
+        113.84,
+        136.345,
+        122.075,
+        120.473,
+        113.943,
+        113.072,
+        109.144,
+        118.996,
+        112.61,
+        112.406,
+        109.703,
+        112.234,
+        117.945,
+        113.358,
+        131.531
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 109.144,
+        "medianMs": 115.944,
+        "p95Ms": 145.8,
+        "maxMs": 186.179
+      },
+      "importSucceeded": true,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_DUPLICATE"
+      ],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light--blur-0.8",
+      "theme": "light",
+      "boardSize": 8,
+      "condition": "blur-0.8",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "1e87a835ceb9190b1940ab1bd1ffe7987e8ba8dd9f89e61b8e7534d3c3d3ba1e",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        124.708,
+        106.259,
+        103.501,
+        119.554,
+        104.196,
+        100.236,
+        100.741,
+        102.704,
+        105.458,
+        98.841,
+        101.599,
+        103.072,
+        105.566,
+        102.874,
+        100.758,
+        101.064,
+        102.788,
+        99.77,
+        102.531,
+        100.704
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 98.841,
+        "medianMs": 102.746,
+        "p95Ms": 119.812,
+        "maxMs": 124.708
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light--pad-40",
+      "theme": "light",
+      "boardSize": 8,
+      "condition": "pad-40",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "2e4a024a2b609e854ad9561718fd07c9a24f069dae48bb6341c970c5c7355ae1",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        169.786,
+        139.949,
+        119.528,
+        119.099,
+        127.809,
+        121.742,
+        210.033,
+        167.03,
+        137.839,
+        140.333,
+        112.178,
+        109.519,
+        115.179,
+        114.158,
+        111.65,
+        203.317,
+        183.476,
+        189.58,
+        213.5,
+        165.599
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 109.519,
+        "medianMs": 138.894,
+        "p95Ms": 210.207,
+        "maxMs": 213.5
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-light--crop-12",
+      "theme": "light",
+      "boardSize": 8,
+      "condition": "crop-12",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "a0d263c2dea14c12cfd6ceefbf84b09da139f95db2bb8f8996b406f6f48f0be5",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        143.289,
+        189.163,
+        231.689,
+        233.047,
+        220.562,
+        434.985,
+        212.925,
+        221.691,
+        358.685,
+        355.088,
+        631.135,
+        258.078,
+        186.635,
+        215.722,
+        166.019,
+        158.964,
+        141.554,
+        156.643,
+        191.904,
+        133.29
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 133.29,
+        "medianMs": 214.324,
+        "p95Ms": 444.793,
+        "maxMs": 631.135
       },
       "importSucceeded": true,
       "exactBoard": true,
@@ -349,37 +4529,1747 @@
       "id": "8x8-dark",
       "theme": "dark",
       "boardSize": 8,
+      "condition": "original",
+      "sourceKind": "real_original",
       "expectedOutcome": "success",
       "httpStatus": 200,
+      "payloadSha256": "8fd1e94382d89ba31567c9f82ba121cf56f73a0f50ff2cfc8f5120a629c4f810",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
       "responseStable": true,
       "latencyMs": [
-        105.602,
-        106.98,
-        101.714,
-        102.39,
-        102.421,
-        118.105,
-        105.933,
-        105.819,
-        104.057,
-        127.522,
-        106.166,
-        108.096,
-        101.86,
-        103.458,
-        103.093,
-        103.115,
-        103.405,
-        99.982,
-        103.746,
-        103.85
+        161.743,
+        176.005,
+        120.745,
+        128.402,
+        136.536,
+        183.897,
+        188.569,
+        150.713,
+        167.118,
+        148.803,
+        171.422,
+        144.539,
+        145.345,
+        189.107,
+        145.773,
+        136.392,
+        109.366,
+        169.119,
+        153.144,
+        160.745
       ],
       "latency": {
         "samples": 20,
-        "minMs": 99.982,
-        "medianMs": 103.798,
-        "p95Ms": 118.576,
-        "maxMs": 127.522
+        "minMs": 109.366,
+        "medianMs": 151.928,
+        "p95Ms": 188.596,
+        "maxMs": 189.107
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark--scale-75",
+      "theme": "dark",
+      "boardSize": 8,
+      "condition": "scale-75",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "e8b75006c31354aa28dfa4656c3a412d58110edb9e0f5673dcb55883d81dac6b",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              3,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": [
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              6,
+              2
+            ]
+          }
+        ]
+      },
+      "responseStable": true,
+      "latencyMs": [
+        84.597,
+        91.908,
+        114.619,
+        79.159,
+        90.429,
+        74.558,
+        105.809,
+        81.458,
+        96.442,
+        87.988,
+        76.796,
+        73.621,
+        82.663,
+        70.066,
+        82.352,
+        108.595,
+        95.568,
+        75.669,
+        89.816,
+        89.592
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 70.066,
+        "medianMs": 86.293,
+        "p95Ms": 108.896,
+        "maxMs": 114.619
+      },
+      "importSucceeded": true,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [
+        "WAYPOINT_NUMBER_DUPLICATE"
+      ],
+      "waypointPositionCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 6
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark--scale-125",
+      "theme": "dark",
+      "boardSize": 8,
+      "condition": "scale-125",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "6273ba939ea291026c61bbf9da48b5fb4f0cfe45c818377a2a64bc69977ac731",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        231.128,
+        223.854,
+        182.369,
+        203.047,
+        192.374,
+        219.327,
+        196.228,
+        201.174,
+        192.138,
+        179.455,
+        184.803,
+        207.142,
+        180.03,
+        205.434,
+        168.621,
+        193.243,
+        233.619,
+        263.23,
+        198.844,
+        201.215
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 168.621,
+        "medianMs": 200.009,
+        "p95Ms": 235.099,
+        "maxMs": 263.23
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark--jpeg-q65",
+      "theme": "dark",
+      "boardSize": 8,
+      "condition": "jpeg-q65",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "cddd25db7ca3ae8197b5e8fd3b4ea31afd53ccf5fb16bb5a3bc854c680a8804b",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": [
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              0,
+              4
+            ]
+          }
+        ]
+      },
+      "responseStable": true,
+      "latencyMs": [
+        148.359,
+        152.667,
+        159.079,
+        118.767,
+        107.734,
+        106.625,
+        108.58,
+        111.009,
+        114.817,
+        119.534,
+        120.686,
+        123.639,
+        115.545,
+        108.969,
+        112.635,
+        110.846,
+        107.508,
+        108.885,
+        108.031,
+        109.419
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 106.625,
+        "medianMs": 111.822,
+        "p95Ms": 152.987,
+        "maxMs": 159.079
+      },
+      "importSucceeded": true,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [
+        "WAYPOINT_NUMBER_DUPLICATE"
+      ],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark--blur-0.8",
+      "theme": "dark",
+      "boardSize": 8,
+      "condition": "blur-0.8",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "fa40c36411b629ec0c29c76989dda10b3914cd7cbb373b89a267ca6fc98ff67a",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": [
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              3,
+              7
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (5, 6) could not be read; using detected order.",
+            "cell": [
+              5,
+              6
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              2,
+              6
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              6,
+              5
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (1, 5) could not be read; using detected order.",
+            "cell": [
+              1,
+              5
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (0, 4) could not be read; using detected order.",
+            "cell": [
+              0,
+              4
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              7,
+              3
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (0, 3) could not be read; using detected order.",
+            "cell": [
+              0,
+              3
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 11 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              6,
+              2
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (1, 2) could not be read; using detected order.",
+            "cell": [
+              1,
+              2
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 1 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              5,
+              1
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (2, 1) could not be read; using detected order.",
+            "cell": [
+              2,
+              1
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_DUPLICATE",
+            "message": "Waypoint number 11 was read more than once; numbering may be wrong \u2014 please verify the order.",
+            "cell": [
+              4,
+              0
+            ]
+          },
+          {
+            "code": "WAYPOINT_NUMBER_UNREADABLE",
+            "message": "Marker at cell (3, 0) could not be read; using detected order.",
+            "cell": [
+              3,
+              0
+            ]
+          }
+        ]
+      },
+      "responseStable": true,
+      "latencyMs": [
+        111.457,
+        106.263,
+        103.758,
+        106.359,
+        106.482,
+        105.998,
+        104.647,
+        108.027,
+        103.677,
+        116.829,
+        144.285,
+        130.744,
+        109.747,
+        109.841,
+        105.769,
+        104.448,
+        105.662,
+        112.322,
+        109.764,
+        106.31
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 103.677,
+        "medianMs": 106.42,
+        "p95Ms": 131.421,
+        "maxMs": 144.285
+      },
+      "importSucceeded": true,
+      "exactBoard": false,
+      "waypointOrderExact": false,
+      "warningFree": false,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_UNREADABLE",
+        "WAYPOINT_NUMBER_DUPLICATE",
+        "WAYPOINT_NUMBER_UNREADABLE"
+      ],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark--pad-40",
+      "theme": "dark",
+      "boardSize": 8,
+      "condition": "pad-40",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "5c056b51d220175ccf41798ca4bf273b2dca9b96b1d2feb3b423f4264a88754e",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        124.431,
+        133.157,
+        132.22,
+        127.473,
+        131.233,
+        168.698,
+        131.712,
+        135.764,
+        130.097,
+        129.447,
+        155.763,
+        128.649,
+        128.799,
+        133.321,
+        132.19,
+        128.951,
+        129.551,
+        128.352,
+        130.761,
+        129.873
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 124.431,
+        "medianMs": 130.429,
+        "p95Ms": 156.41,
+        "maxMs": 168.698
+      },
+      "importSucceeded": true,
+      "exactBoard": true,
+      "waypointOrderExact": true,
+      "warningFree": true,
+      "expectedErrorMatched": false,
+      "actualErrorCode": null,
+      "warningCodes": [],
+      "waypointPositionCounts": {
+        "tp": 16,
+        "fp": 0,
+        "fn": 0
+      },
+      "wallCounts": {
+        "tp": 10,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "id": "8x8-dark--crop-12",
+      "theme": "dark",
+      "boardSize": 8,
+      "condition": "crop-12",
+      "sourceKind": "derived_robustness",
+      "expectedOutcome": "success",
+      "httpStatus": 200,
+      "payloadSha256": "f08556550c89096909ece7d31fbf5ece4f4f84006bd25132442f1b81d2fbf41b",
+      "actualResponse": {
+        "board": {
+          "boardSize": 8,
+          "waypoints": [
+            [
+              3,
+              7
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              0,
+              4
+            ],
+            [
+              2,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              5,
+              1
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              7,
+              4
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              4,
+              7
+            ]
+          ],
+          "walls": [
+            {
+              "neighborA": [
+                3,
+                1
+              ],
+              "neighborB": [
+                4,
+                1
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                2
+              ],
+              "neighborB": [
+                4,
+                2
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                3
+              ],
+              "neighborB": [
+                3,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                3
+              ],
+              "neighborB": [
+                4,
+                4
+              ]
+            },
+            {
+              "neighborA": [
+                1,
+                6
+              ],
+              "neighborB": [
+                1,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                2,
+                6
+              ],
+              "neighborB": [
+                2,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                3,
+                6
+              ],
+              "neighborB": [
+                3,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                4,
+                6
+              ],
+              "neighborB": [
+                4,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                5,
+                6
+              ],
+              "neighborB": [
+                5,
+                7
+              ]
+            },
+            {
+              "neighborA": [
+                6,
+                6
+              ],
+              "neighborB": [
+                6,
+                7
+              ]
+            }
+          ]
+        },
+        "valid": true,
+        "message": "Board configuration is valid.",
+        "errors": [],
+        "warnings": []
+      },
+      "responseStable": true,
+      "latencyMs": [
+        104.124,
+        103.489,
+        104.679,
+        100.273,
+        103.759,
+        116.36,
+        106.266,
+        104.489,
+        100.713,
+        104.311,
+        100.981,
+        101.091,
+        104.353,
+        101.458,
+        112.326,
+        103.901,
+        101.541,
+        109.132,
+        115.381,
+        113.189
+      ],
+      "latency": {
+        "samples": 20,
+        "minMs": 100.273,
+        "medianMs": 104.218,
+        "p95Ms": 115.43,
+        "maxMs": 116.36
       },
       "importSucceeded": true,
       "exactBoard": true,
@@ -403,37 +6293,47 @@
       "id": "blank-light",
       "theme": "light",
       "boardSize": 6,
+      "condition": "negative",
+      "sourceKind": "synthetic_negative",
       "expectedOutcome": "error",
       "httpStatus": 422,
+      "payloadSha256": "e2a50a7a099608b52e35a02574d578541635d5190543cbeb46ce9d08d46295b4",
+      "actualResponse": {
+        "status": 422,
+        "code": "NO_BOARD_DETECTED",
+        "message": "No Zip puzzle board could be detected in this image. Upload a screenshot that shows the full grid with its numbered markers.",
+        "details": null,
+        "timestamp": "2026-09-05T14:25:01.150249+00:00"
+      },
       "responseStable": true,
       "latencyMs": [
-        39.012,
-        40.237,
-        38.002,
-        37.832,
-        37.967,
-        36.915,
-        37.895,
-        37.002,
-        37.441,
-        36.349,
-        37.42,
-        37.067,
-        36.272,
-        36.938,
-        37.154,
-        36.22,
-        38.16,
-        44.684,
-        43.308,
-        39.526
+        44.203,
+        46.201,
+        43.171,
+        39.872,
+        43.541,
+        39.504,
+        39.416,
+        38.428,
+        38.334,
+        39.059,
+        38.119,
+        38.432,
+        41.269,
+        38.679,
+        38.827,
+        44.974,
+        45.335,
+        41.693,
+        40.596,
+        41.37
       ],
       "latency": {
         "samples": 20,
-        "minMs": 36.22,
-        "medianMs": 37.637,
-        "p95Ms": 43.377,
-        "maxMs": 44.684
+        "minMs": 38.119,
+        "medianMs": 40.234,
+        "p95Ms": 45.379,
+        "maxMs": 46.201
       },
       "importSucceeded": false,
       "exactBoard": false,
@@ -457,37 +6357,47 @@
       "id": "blank-dark",
       "theme": "dark",
       "boardSize": 6,
+      "condition": "negative",
+      "sourceKind": "synthetic_negative",
       "expectedOutcome": "error",
       "httpStatus": 422,
+      "payloadSha256": "b981a382520ab60ad9e3ec254e7f67341a2d5531449a65aa3533edf76cff46d7",
+      "actualResponse": {
+        "status": 422,
+        "code": "NO_BOARD_DETECTED",
+        "message": "No Zip puzzle board could be detected in this image. Upload a screenshot that shows the full grid with its numbered markers.",
+        "details": null,
+        "timestamp": "2026-09-05T14:25:01.976179+00:00"
+      },
       "responseStable": true,
       "latencyMs": [
-        41.398,
-        43.467,
-        40.893,
-        42.461,
-        56.809,
-        49.098,
-        45.376,
-        42.873,
-        49.708,
-        40.897,
-        38.814,
-        37.067,
-        37.263,
-        36.721,
-        36.789,
-        37.663,
-        36.729,
-        36.349,
-        37.041,
-        38.26
+        41.823,
+        39.937,
+        41.751,
+        38.051,
+        40.237,
+        38.648,
+        37.923,
+        39.62,
+        40.544,
+        38.041,
+        41.482,
+        38.297,
+        37.715,
+        40.017,
+        44.899,
+        46.202,
+        50.102,
+        45.469,
+        39.607,
+        39.733
       ],
       "latency": {
         "samples": 20,
-        "minMs": 36.349,
-        "medianMs": 39.854,
-        "p95Ms": 50.063,
-        "maxMs": 56.809
+        "minMs": 37.715,
+        "medianMs": 39.977,
+        "p95Ms": 46.397,
+        "maxMs": 50.102
       },
       "importSucceeded": false,
       "exactBoard": false,
