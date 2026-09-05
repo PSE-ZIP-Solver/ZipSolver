@@ -246,7 +246,7 @@ def _evaluate_single_board(args: Tuple[int, Board, int]) -> BoardEvaluationResul
 # 3. Evaluation Runner
 # ----------------------------------------------------------------------
 class EvaluationHarness:
-    def __init__(self, evaluation_boards_path: Path, timeout_ms: int = 10000, milestone_interval: int = 1000):
+    def __init__(self, evaluation_boards_path: Path, timeout_ms: int = 10000000, milestone_interval: int = 1000):
         self.evaluation_boards_path = evaluation_boards_path
         self.timeout_ms = timeout_ms
         self.milestone_interval = milestone_interval
@@ -426,7 +426,8 @@ class EvaluationHarness:
 # 4. Entrypoint
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
-    pickle_path = Path("offline_training/evaluation_boards/8x8-evaluation-10000boards_broad.pkl")
+    pickle_path = Path("offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl")
+
     
     # Increased timeout to 5000ms (5 seconds) to allow 8x8 boards sufficient search budget
     harness = EvaluationHarness(evaluation_boards_path=pickle_path, timeout_ms=5000, milestone_interval=1000)
