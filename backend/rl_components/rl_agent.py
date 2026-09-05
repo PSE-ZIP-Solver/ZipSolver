@@ -8,12 +8,12 @@ from stable_baselines3.common.utils import get_linear_fn
 
 
 class ZipCNN(BaseFeaturesExtractor):
-    """Small CNN feature extractor for multi-channel grid observations."""
+    """Original small CNN kept for compatibility with older saved agents."""
 
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 128):
         super().__init__(observation_space, features_dim)
 
-        n_input_channels = observation_space.shape[0]  # 8 channels currently
+        n_input_channels = observation_space.shape[0]
 
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=3, stride=1, padding=1),
@@ -25,7 +25,6 @@ class ZipCNN(BaseFeaturesExtractor):
             nn.Flatten(),
         )
 
-        # Compute flattened size dynamically so this works across board sizes.
         with torch.no_grad():
             sample = torch.zeros(1, *observation_space.shape)
             n_flatten = self.cnn(sample).shape[1]
@@ -39,17 +38,79 @@ class ZipCNN(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
 
 
+class ZipCNN_Deep(BaseFeaturesExtractor):
+    """Deeper CNN feature extractor for 7x7/8x8 Zip grid routing."""
+
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
+        super().__init__(observation_space, features_dim)
+
+        n_input_channels = observation_space.shape[0]
+
+        self.cnn = nn.Sequential(
+            # Local grid features
+            nn.Conv2d(n_input_channels, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+
+            # Deeper spatial patterns
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+
+            # Fourth 3x3 layer increases the receptive field.
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+
+            nn.Flatten(),
+        )
+
+        # Dynamic, so the same extractor works for 7x7 and 8x8.
+        # 7x7 -> 128 * 7 * 7 = 6272
+        # 8x8 -> 128 * 8 * 8 = 8192
+        with torch.no_grad():
+            sample = torch.zeros(1, *observation_space.shape)
+            n_flatten = self.cnn(sample).shape[1]
+
+        self.linear = nn.Sequential(
+            nn.Linear(n_flatten, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, features_dim),
+            nn.ReLU(),
+        )
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
+        return self.linear(self.cnn(observations))
+
+
 class RLAgent:
     """Wraps a Stable-Baselines3 DQN model for training and inference."""
 
-    def __init__(self, env: gym.Env, model_path: str | None = None, **dqn_kwargs):
+    def __init__(
+        self,
+        env: gym.Env,
+        model_path: str | None = None,
+        use_deep_cnn: bool = True,
+        **dqn_kwargs,
+    ):
         self._env = env
+        self.use_deep_cnn = use_deep_cnn
 
-        self.policy_kwargs = dict(
-            features_extractor_class=ZipCNN,
-            features_extractor_kwargs=dict(features_dim=128),
-            normalize_images=False,
-        )
+        if use_deep_cnn:
+            self.policy_kwargs = dict(
+                features_extractor_class=ZipCNN_Deep,
+                features_extractor_kwargs=dict(features_dim=512),
+                net_arch=[512, 256],
+                normalize_images=False,
+            )
+        else:
+            self.policy_kwargs = dict(
+                features_extractor_class=ZipCNN,
+                features_extractor_kwargs=dict(features_dim=128),
+                normalize_images=False,
+            )
 
         if model_path is not None:
             self._model = self.load(model_path, **dqn_kwargs)
@@ -111,15 +172,16 @@ class RLAgent:
         self._model.save(path)
 
     def load(self, path: str, **dqn_kwargs) -> sb.DQN:
-        """Load a trained model from disk."""
-        custom_objects = {
-            "policy_kwargs": self.policy_kwargs,
-        }
+        """
+        Load a trained model.
 
+        We intentionally do not overwrite policy_kwargs here. The architecture
+        saved inside the model is used, so old ZipCNN and new ZipCNN_Deep models
+        remain loadable independently.
+        """
         return sb.DQN.load(
             path,
             env=self._env,
-            custom_objects=custom_objects,
             device="auto",
             **dqn_kwargs,
         )
@@ -150,7 +212,9 @@ class RLAgent:
             action_int = int(action)
             actions.append(action_int)
 
-            observation, reward, terminated, truncated, info = self._env.step(action_int)
+            observation, reward, terminated, truncated, info = self._env.step(
+                action_int
+            )
             total_reward += float(reward)
 
             if terminated or truncated:

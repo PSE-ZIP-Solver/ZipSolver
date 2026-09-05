@@ -241,6 +241,7 @@ class AgentTrainer:
         targetUpdateInterval: int = 500,
         gamma: float = 0.98,
         gradientSteps: int = 24,
+        nSteps: int = 1,
     ):
         self.boardSize = boardSize
         self.modelPath = modelPath
@@ -266,7 +267,8 @@ class AgentTrainer:
         self.targetUpdateInterval = targetUpdateInterval
         self.gamma = gamma
         self.gradientSteps = gradientSteps
-        self.tensorboardLog = f"./logs/zip_ddqn/{boardSize}x{boardSize}/"
+        self.nSteps = nSteps
+        self.tensorboardLog = f"./logs/zip_ddqn_v2/{boardSize}x{boardSize}/"
 
         if not 0 <= self.minNrOfWalls <= nrOfWalls:
             raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
@@ -499,6 +501,7 @@ class AgentTrainer:
         model.gamma = self.gamma
         model.batch_size = self.batchSize
         model.gradient_steps = self.gradientSteps
+        model.n_steps = self.nSteps
         model.max_grad_norm = 10
 
     @staticmethod
@@ -522,9 +525,19 @@ class AgentTrainer:
         activeEnvs = min(self.nEnvs, len(self.trainingBoards))
         print(f"Spawning {activeEnvs} parallel environment processes...")
 
+        # Split the fixed board pool across workers instead of copying all
+        # 10,000 boards into every subprocess. Each worker samples uniformly
+        # from its own partition; together the 24 workers cover the full pool.
+        shuffledBoards = list(self.trainingBoards)
+        random.Random(42).shuffle(shuffledBoards)
+        boardPartitions = [
+            shuffledBoards[workerIndex::activeEnvs]
+            for workerIndex in range(activeEnvs)
+        ]
+
         envFactories = [
-            make_sampling_env(self.trainingBoards)
-            for _ in range(activeEnvs)
+            make_sampling_env(boardPartition)
+            for boardPartition in boardPartitions
         ]
         trainEnv = SubprocVecEnv(envFactories)
 
@@ -565,6 +578,7 @@ class AgentTrainer:
                 gradient_steps=self.gradientSteps,
                 target_update_interval=self.targetUpdateInterval,
                 gamma=self.gamma,
+                n_steps=self.nSteps,
                 max_grad_norm=10,
                 seed=42,
                 tensorboard_log=self.tensorboardLog,
@@ -779,43 +793,47 @@ if __name__ == "__main__":
     BOARD_SIZE = 7
     N_ENVS = 24
 
+    # Full-range 7x7 distribution, matching the broad E7-B range.
     RANDOMIZE_BOARD_COMPLEXITY = True
-    MIN_NR_OF_WALLS = 8
+    MIN_NR_OF_WALLS = 0
     NR_OF_WALLS = 34
-    MIN_NR_OF_WAYPOINTS = 8
+    MIN_NR_OF_WAYPOINTS = 0
     NR_OF_WAYPOINTS = 34
 
-    NR_TRAINING_BOARDS = 1500
-    NR_EVALUATION_BOARDS = 1000  
+    NR_TRAINING_BOARDS = 10_000
+    NR_EVALUATION_BOARDS = 10_000
 
-    # Start a new broader 1500-board generalization pool.
-    USE_SAVED_TRAINING_BOARDS = False
     TRAINING_BOARDS_PATH = (
         "offline_training/training_boards/7x7/"
-        "7x7-generalization-1500boards-8to34.pkl"
+        "7x7-ddqn-v2-10000boards-0to34.pkl"
     )
+
+    # First run: generate and save the 10k pool.
+    # If the pool already exists (e.g. after a cancelled job), reuse it.
+    USE_SAVED_TRAINING_BOARDS = Path(TRAINING_BOARDS_PATH).exists()
 
     USE_SAVED_EVALUATION_BOARDS = True
     EVALUATION_BOARDS_PATH = (
         "offline_training/evaluation_boards/7x7/"
-        "7x7-evaluation-random-0-34-1000boards.pkl"
+        "7x7-evaluation-random-0-34-10000boards.pkl"
     )
 
+    # Separate V2 paths so the retained 19M DDQN-v1 agent is never overwritten.
     MODEL_PATH = (
-        "offline_training/trained_models/7x7/"
-        "7x7-agent.zip"
+        "offline_training/trained_models/7x7_v2/"
+        "7x7-ddqn-v2-agent.zip"
     )
 
     ARCHIVE_MODEL_PATH = (
-        "offline_training/trained_models/7x7(all)/"
-        "7x7-agent-23.0M.zip"
+        "offline_training/trained_models/7x7_v2(all)/"
+        "7x7-ddqn-v2-agent-20.0M.zip"
     )
 
     USE_DOUBLE_DQN = True
 
-    # Continue from the retained 19.0M model on a new broader 1500-board pool.
-    LOAD_EXISTING_MODEL = True
-    RESET_MODEL = False
+    # Completely fresh DDQN-v2 run.
+    LOAD_EXISTING_MODEL = False
+    RESET_MODEL = True
     LOAD_REPLAY_BUFFER = False
 
     TRAIN_MODEL = True
@@ -835,7 +853,7 @@ if __name__ == "__main__":
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
         nrTrainingBoards=NR_TRAINING_BOARDS,
         nrEvaluationBoards=NR_EVALUATION_BOARDS,
-        timestepsPerBoard=4_000_000,
+        timestepsPerBoard=20_000_000,
         loadExistingModel=LOAD_EXISTING_MODEL,
         resetModel=RESET_MODEL,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,
@@ -845,25 +863,27 @@ if __name__ == "__main__":
         useSavedEvaluationBoards=USE_SAVED_EVALUATION_BOARDS,
         evaluationBoardsPath=EVALUATION_BOARDS_PATH,
         useDoubleDQN=USE_DOUBLE_DQN,
-        explorationInitialEps=0.5,
+
+        # Fresh-run exploration.
+        explorationInitialEps=1.0,
         explorationFinalEps=0.05,
-        explorationFraction=0.8,
+        explorationFraction=0.5,
+
+        # DDQN-v2 parameters.
         learningRate=1e-4,
-        learningStarts=500,
-        bufferSize=50_000,
+        learningStarts=10_000,
+        bufferSize=200_000,
         batchSize=64,
-        targetUpdateInterval=500,
-        gamma=0.98,
+        targetUpdateInterval=5_000,
+        gamma=0.99,
         gradientSteps=24,
+        nSteps=3,
     )
 
     agent = trainer.train() if TRAIN_MODEL else trainer.load_saved_agent()
 
     if TRAIN_MODEL:
-        # Keep only the current model + replay buffer in trained_models/7x7/.
         trainer.save(agent)
-
-        # Keep historical agent checkpoints in 7x7(all), named only by cumulative steps.
         trainer.save_model_only(agent, ARCHIVE_MODEL_PATH)
 
         if SHOW_FIRST_TRAINING_RUN:
