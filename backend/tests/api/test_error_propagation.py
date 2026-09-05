@@ -23,7 +23,13 @@ import pytest
 from backend.api.dtos.ValidationResult import ValidationError
 from backend.api.solver_dtos.SolverStatus import SolverStatus
 
-from backend.tests.api.conftest import IMAGE_UPLOAD, VALID_BODY, make_path, make_solver_result, make_validation_result
+from backend.tests.api.conftest import (
+    IMAGE_UPLOAD,
+    VALID_BODY,
+    make_path,
+    make_solver_result,
+    make_validation_result,
+)
 
 ERROR_ENVELOPE_KEYS = {"status", "code", "message", "details", "timestamp"}
 ENDPOINTS = [("POST", "/api/solve")]
@@ -49,17 +55,22 @@ def _invalid_result(code: str, field: str | None = None):
         pytest.param({}, id="empty-object"),
         pytest.param({"boardSize": 6}, id="missing-waypoints"),
         pytest.param({"waypoints": [[0, 0]]}, id="missing-boardSize"),
-        pytest.param({"boardSize": "six", "waypoints": [[0, 0]]}, id="boardSize-string"),
+        pytest.param(
+            {"boardSize": "six", "waypoints": [[0, 0]]}, id="boardSize-string"
+        ),
         pytest.param({"boardSize": None, "waypoints": [[0, 0]]}, id="boardSize-null"),
         pytest.param({"boardSize": 6, "waypoints": "nope"}, id="waypoints-string"),
         pytest.param({"boardSize": 6, "waypoints": [[0]]}, id="short-coordinate"),
-        pytest.param({"boardSize": 6, "waypoints": [["a", "b"]]}, id="non-int-coordinate"),
+        pytest.param(
+            {"boardSize": 6, "waypoints": [["a", "b"]]}, id="non-int-coordinate"
+        ),
         pytest.param(
             {"boardSize": 6, "waypoints": [[0, 0]], "walls": [{"neighborA": [0, 0]}]},
             id="wall-missing-neighborB",
         ),
         pytest.param(
-            {"boardSize": 6, "waypoints": [[0, 0]], "walls": "not-a-list"}, id="walls-string"
+            {"boardSize": 6, "waypoints": [[0, 0]], "walls": "not-a-list"},
+            id="walls-string",
         ),
     ],
 )
@@ -77,7 +88,10 @@ def test_malformed_bodies_return_400_not_422(client, path, payload):
 @pytest.mark.parametrize(("method", "path"), ENDPOINTS)
 def test_unparseable_json_returns_400(client, method, path):
     response = client.request(
-        method, path, content=b"{not valid json", headers={"Content-Type": "application/json"}
+        method,
+        path,
+        content=b"{not valid json",
+        headers={"Content-Type": "application/json"},
     )
     assert response.status_code == 400
     assert response.json()["code"] == "MALFORMED_REQUEST"
@@ -113,8 +127,11 @@ def test_import_missing_file_returns_422(client):
 
 def test_import_unreadable_image_returns_400(make_api, screenshot_extractor):
     """When ScreenshotExtractor cannot decode the image (ValueError), the endpoint returns
-    400 — the upload itself was unusable, distinct from a board that read but is invalid."""
-    screenshot_extractor.extract_to_dict.side_effect = ValueError("Failed to decode image data.")
+    400 — the upload itself was unusable, distinct from a board that read but is invalid.
+    """
+    screenshot_extractor.extract_to_dict.side_effect = ValueError(
+        "Failed to decode image data."
+    )
     _, client = make_api()
 
     response = client.post("/api/import", files=IMAGE_UPLOAD)
@@ -125,8 +142,11 @@ def test_import_unreadable_image_returns_400(make_api, screenshot_extractor):
 def test_import_inconsistent_waypoints_returns_422(make_api, screenshot_extractor):
     """A board that reads but whose waypoints are inconsistent (a sequence gap, duplicate,
     or unreadable marker) surfaces as 422 — the image was fine, the puzzle was not. The
-    extractor signals this with WaypointDetectionError, which the endpoint maps to 422."""
-    from backend.input_validation.screenshot.waypoint_detector import WaypointDetectionError
+    extractor signals this with WaypointDetectionError, which the endpoint maps to 422.
+    """
+    from backend.input_validation.screenshot.waypoint_detector import (
+        WaypointDetectionError,
+    )
 
     screenshot_extractor.extract_to_dict.side_effect = WaypointDetectionError(
         "Missing waypoint in sequence (gap detected)."
@@ -158,9 +178,12 @@ def test_import_without_extractor_returns_503(make_api):
     "code",
     ["UNSUPPORTED_BOARD_SIZE", "INVALID_WAYPOINTS", "INVALID_WALLS"],
 )
-def test_validator_error_code_propagates_to_the_envelope(make_api, input_validator, path, code):
+def test_validator_error_code_propagates_to_the_envelope(
+    make_api, input_validator, path, code
+):
     """§8.2.4: "correct propagation of validation errors from input validation to
-    API-level error responses". For /api/solve a semantic rejection is a 422 envelope."""
+    API-level error responses". For /api/solve a semantic rejection is a 422 envelope.
+    """
     input_validator.validate.return_value = _invalid_result(code)
     _, client = make_api()
 
@@ -173,7 +196,9 @@ def test_validator_error_code_propagates_to_the_envelope(make_api, input_validat
     "code",
     ["UNSUPPORTED_BOARD_SIZE", "INVALID_WAYPOINTS", "INVALID_WALLS"],
 )
-def test_import_validator_errors_surface_in_result_not_envelope(make_api, input_validator, code):
+def test_import_validator_errors_surface_in_result_not_envelope(
+    make_api, input_validator, code
+):
     """Import differs from solve here: a board that extracts cleanly but fails semantic
     validation returns 200 with ``valid: False`` and the errors inside the ImportResult —
     not a 4xx envelope. The board still round-trips so the user can correct it in the
@@ -189,14 +214,18 @@ def test_import_validator_errors_surface_in_result_not_envelope(make_api, input_
     assert [e["errorCode"] for e in body["errors"]] == [code]
 
 
-def test_unrecognised_validator_code_falls_back_to_invalid_waypoints(make_api, input_validator):
+def test_unrecognised_validator_code_falls_back_to_invalid_waypoints(
+    make_api, input_validator
+):
     """``InputValidator`` may emit domain codes outside the HTTP taxonomy. The handler
     must degrade to a known code rather than emitting an unmappable one that would fail
     the frontend's switch."""
     input_validator.validate.return_value = _invalid_result("SOME_INTERNAL_DOMAIN_CODE")
     _, client = make_api()
 
-    assert client.post("/api/solve", json=VALID_BODY).json()["code"] == "INVALID_WAYPOINTS"
+    assert (
+        client.post("/api/solve", json=VALID_BODY).json()["code"] == "INVALID_WAYPOINTS"
+    )
 
 
 def test_empty_error_list_falls_back_to_invalid_waypoints(make_api, input_validator):
@@ -214,7 +243,9 @@ def test_empty_error_list_falls_back_to_invalid_waypoints(make_api, input_valida
 
 
 def test_validator_details_are_forwarded(make_api, input_validator):
-    input_validator.validate.return_value = _invalid_result("INVALID_WALLS", field="walls")
+    input_validator.validate.return_value = _invalid_result(
+        "INVALID_WALLS", field="walls"
+    )
     _, client = make_api()
 
     details = client.post("/api/solve", json=VALID_BODY).json()["details"]
@@ -228,8 +259,12 @@ def test_multiple_validation_errors_are_all_forwarded(make_api, input_validator)
         valid=False,
         message="Multiple problems.",
         errors=[
-            ValidationError(errorCode="INVALID_WAYPOINTS", affectedField="waypoints", message="dup"),
-            ValidationError(errorCode="INVALID_WALLS", affectedField="walls", message="diagonal"),
+            ValidationError(
+                errorCode="INVALID_WAYPOINTS", affectedField="waypoints", message="dup"
+            ),
+            ValidationError(
+                errorCode="INVALID_WALLS", affectedField="walls", message="diagonal"
+            ),
         ],
     )
     _, client = make_api()
@@ -277,7 +312,9 @@ def test_collaborator_exception_becomes_500_envelope(make_api, request, collabor
         "input_validator": "validate",
         "solver_controller": "solve",
     }[collaborator]
-    getattr(stub, method).side_effect = RuntimeError("internal detail that must not leak")
+    getattr(stub, method).side_effect = RuntimeError(
+        "internal detail that must not leak"
+    )
 
     _, client = make_api()
     response = client.post("/api/solve", json=VALID_BODY)
@@ -296,7 +333,9 @@ def test_collaborator_exception_becomes_500_envelope(make_api, request, collabor
         MemoryError(),
     ],
 )
-def test_internal_exception_details_never_reach_the_client(make_api, solver_controller, exception):
+def test_internal_exception_details_never_reach_the_client(
+    make_api, solver_controller, exception
+):
     """No stack traces, file paths, credentials, or internal attribute names may cross
     the boundary — the API is the trust boundary in both directions."""
     solver_controller.solve.side_effect = exception
@@ -355,7 +394,9 @@ def test_service_recovers_after_an_internal_error(make_api, solver_controller):
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
+def _all_error_responses(
+    client, make_api, input_validator, solver_controller, screenshot_extractor
+):
     """Yield one response per reachable error class."""
     yield client.post("/api/solve", json={"boardSize": "six"})  # 400 (solve shape)
     yield client.post("/api/import")  # 400 (import missing file part)
@@ -380,7 +421,9 @@ def _all_error_responses(client, make_api, input_validator, solver_controller, s
 def test_every_error_uses_the_same_envelope(
     client, make_api, input_validator, solver_controller, screenshot_extractor
 ):
-    for response in _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
+    for response in _all_error_responses(
+        client, make_api, input_validator, solver_controller, screenshot_extractor
+    ):
         body = response.json()
         assert set(body) == ERROR_ENVELOPE_KEYS, response.status_code
         assert body["status"] == response.status_code
@@ -391,7 +434,9 @@ def test_every_error_uses_the_same_envelope(
 def test_every_error_carries_a_parseable_utc_timestamp(
     client, make_api, input_validator, solver_controller, screenshot_extractor
 ):
-    for response in _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
+    for response in _all_error_responses(
+        client, make_api, input_validator, solver_controller, screenshot_extractor
+    ):
         timestamp = response.json()["timestamp"]
         parsed = datetime.fromisoformat(timestamp)
         assert parsed.tzinfo is not None, f"{timestamp} is not timezone-aware"
@@ -403,7 +448,9 @@ def test_every_error_code_is_in_the_documented_taxonomy(
     from backend.api.dtos.ErrorResponse import ErrorCode
 
     taxonomy = {member.value for member in ErrorCode}
-    for response in _all_error_responses(client, make_api, input_validator, solver_controller, screenshot_extractor):
+    for response in _all_error_responses(
+        client, make_api, input_validator, solver_controller, screenshot_extractor
+    ):
         assert response.json()["code"] in taxonomy
 
 
@@ -472,7 +519,9 @@ def test_empty_waypoints_list_passes_shape_and_is_rejected_semantically(
     structurally valid and must produce 422, not 400."""
     input_validator.validate.return_value = _invalid_result("INVALID_WAYPOINTS")
 
-    response = client.post("/api/solve", json={"boardSize": 6, "waypoints": [], "walls": []})
+    response = client.post(
+        "/api/solve", json={"boardSize": 6, "waypoints": [], "walls": []}
+    )
     assert response.status_code == 422
 
 
@@ -486,7 +535,9 @@ def test_solver_status_non_results_are_never_http_errors(client, solver_controll
     UNSOLVABLE / TIMEOUT / FAILED are 200 outcomes. Some frontend sequence diagrams show
     422 for UNSOLVABLE; the backend contract is 200 and this test is the tiebreaker."""
     for status in (SolverStatus.UNSOLVABLE, SolverStatus.TIMEOUT, SolverStatus.FAILED):
-        solver_controller.solve.return_value = make_solver_result(status=status, path=None)
+        solver_controller.solve.return_value = make_solver_result(
+            status=status, path=None
+        )
 
         response = client.post("/api/solve", json=VALID_BODY)
         assert response.status_code == 200, f"{status.value} must not be an HTTP error"

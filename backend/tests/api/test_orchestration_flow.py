@@ -14,8 +14,6 @@ The canonical solve lifecycle under test (§3.2.1):
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
 import pytest
 
 from backend.api.solver_dtos.SolverStatus import SolverStatus
@@ -48,7 +46,9 @@ def test_solve_invokes_collaborators_in_documented_order(make_api, call_recorder
     ]
 
 
-def test_import_runs_extract_then_build_then_validate(make_api, call_recorder, screenshot_extractor):
+def test_import_runs_extract_then_build_then_validate(
+    make_api, call_recorder, screenshot_extractor
+):
     """Import runs extraction, then the shared build+validate front half, and stops there —
     it must never reach the solver. The recorder captures interpreter/validator ordering;
     the extractor runs first, before either."""
@@ -60,7 +60,9 @@ def test_import_runs_extract_then_build_then_validate(make_api, call_recorder, s
     assert invoked == ["interpreter.buildBoard", "input_validator.validate"]
 
 
-def test_validator_receives_the_board_the_interpreter_built(client, interpreter, input_validator):
+def test_validator_receives_the_board_the_interpreter_built(
+    client, interpreter, input_validator
+):
     """No board substitution between the two stages."""
     client.post("/api/solve", json=VALID_BODY)
 
@@ -132,7 +134,11 @@ def test_invalid_import_returns_200_with_errors_and_board(make_api, input_valida
     input_validator.validate.return_value = make_validation_result(
         valid=False,
         message="Wall between non-adjacent cells.",
-        errors=[ValidationError(errorCode="INVALID_WALLS", affectedField="walls", message="x")],
+        errors=[
+            ValidationError(
+                errorCode="INVALID_WALLS", affectedField="walls", message="x"
+            )
+        ],
     )
     _, client = make_api()
 
@@ -190,7 +196,8 @@ def test_metrics_are_passed_through_unmodified(client, solver_controller):
     from backend.api.solver_dtos.SolverMetrics import SolverMetrics
 
     solver_controller.solve.return_value = make_solver_result(
-        metrics=SolverMetrics(runtimeMs=4999, steps=0, attempts=3), path=make_path([(0, 0)])
+        metrics=SolverMetrics(runtimeMs=4999, steps=0, attempts=3),
+        path=make_path([(0, 0)]),
     )
 
     assert client.post("/api/solve", json=VALID_BODY).json()["metrics"] == {
@@ -234,11 +241,19 @@ def test_identical_requests_produce_identical_responses(client):
 def test_response_key_set_is_stable_across_outcomes(client, solver_controller):
     """The frontend destructures a fixed shape; keys must not appear and disappear with
     the outcome."""
-    expected_keys = {"status", "success", "solutionPath", "solverUsed", "message", "metrics"}
+    expected_keys = {
+        "status",
+        "success",
+        "solutionPath",
+        "solverUsed",
+        "message",
+        "metrics",
+    }
 
     for status in SolverStatus:
         solver_controller.solve.return_value = make_solver_result(
-            status=status, path=make_path([(0, 0)]) if status is SolverStatus.SOLVED else None
+            status=status,
+            path=make_path([(0, 0)]) if status is SolverStatus.SOLVED else None,
         )
         assert set(client.post("/api/solve", json=VALID_BODY).json()) == expected_keys
 
@@ -275,7 +290,8 @@ def test_concurrent_style_interleaving_is_isolated(make_api):
     client_b = TestClient(api.app, raise_server_exceptions=False)
 
     api._solver_controller.solve.return_value = make_solver_result(
-        metrics=SolverMetrics(runtimeMs=1, steps=1, attempts=1), path=make_path([(0, 0)])
+        metrics=SolverMetrics(runtimeMs=1, steps=1, attempts=1),
+        path=make_path([(0, 0)]),
     )
     body_a = client_a.post("/api/solve", json=VALID_BODY).json()
     body_b = client_b.post("/api/solve", json=VALID_BODY).json()

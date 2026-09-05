@@ -22,13 +22,13 @@ class ScreenshotExtractor:
     Overarching orchestrator managing the multi-stage visual recognition pipeline.
 
     Responsibility:
-        Functions as the primary external gateway bridging unstructured graphic uploads 
-        into precisely structured payload dictionaries suitable for mathematical generation 
+        Functions as the primary external gateway bridging unstructured graphic uploads
+        into precisely structured payload dictionaries suitable for mathematical generation
         via downstream domain interpreters.
 
     Implementation Details:
-        Maintains protected module references directly, establishing distinct responsibilities 
-        across dedicated extraction subsystems. Chains complex execution loops asynchronously, 
+        Maintains protected module references directly, establishing distinct responsibilities
+        across dedicated extraction subsystems. Chains complex execution loops asynchronously,
         surfacing strict internal warnings or bubbling fatal pipeline halts upward transparently.
     """
 
@@ -37,8 +37,8 @@ class ScreenshotExtractor:
         Initializes the protected execution handlers necessary for pipeline traversal.
 
         Implementation Details:
-            Executes strictly isolated instantiations bounding internal dependencies safely 
-            behind class encapsulation. Avoids overhead penalties by ensuring heavy 
+            Executes strictly isolated instantiations bounding internal dependencies safely
+            behind class encapsulation. Avoids overhead penalties by ensuring heavy
             vision tools within these nested structures aren't invoked until explicit utilization.
         """
         # Strict encapsulation with protected attributes. Instantiated once; the heavy
@@ -60,23 +60,23 @@ class ScreenshotExtractor:
 
         Args:
             image_bytes: The raw transport bytes comprising the user's targeted visual capture.
-            board_size: The optional structural parameter manually fed into the evaluation to 
+            board_size: The optional structural parameter manually fed into the evaluation to
                 accelerate geometric bounds detection and skip legacy scale estimations.
 
         Returns:
-            The comprehensively assembled metadata structured seamlessly into standard 
+            The comprehensively assembled metadata structured seamlessly into standard
             Python schema dicts.
 
         Raises:
             UnreadableImageError: If the provided mapping byte structure contains zero volume.
-            NoBoardDetectedError: If the extraction pipeline securely detects valid bounds but 
+            NoBoardDetectedError: If the extraction pipeline securely detects valid bounds but
                 no requisite physical puzzle structures.
 
         Implementation Details:
-            Evaluates boundaries immediately asserting input presence. Routes successful matrices 
-            sequentially into specialized sub-components, retaining contextual properties 
-            (like identified theme logic and coordinate arrays) explicitly passing them into 
-            subsequent evaluations. Evaluates final numerical outcomes compiling internal warnings 
+            Evaluates boundaries immediately asserting input presence. Routes successful matrices
+            sequentially into specialized sub-components, retaining contextual properties
+            (like identified theme logic and coordinate arrays) explicitly passing them into
+            subsequent evaluations. Evaluates final numerical outcomes compiling internal warnings
             while forcefully failing layouts reporting invalid marker populations.
         """
         # FAST_FAIL_IF_BYTES_NONE_OR_EMPTY — before any component runs.
@@ -85,7 +85,9 @@ class ScreenshotExtractor:
 
         image = self._image_loader.load_and_preprocess(image_bytes)
         theme = self._palette_detector.detect_theme(image)
-        detected_size, cell_bounds = self._grid_localizer.localize_grid(image, board_size)
+        detected_size, cell_bounds = self._grid_localizer.localize_grid(
+            image, board_size
+        )
 
         # Prefer the globally-detected disc positions the localizer already found (reliable
         # even for discs straddling a cell boundary) over per-cell re-detection.
@@ -131,8 +133,8 @@ class ScreenshotExtractor:
             The finalized JSON string safely matching established payload schemas.
 
         Implementation Details:
-            Delegates raw extraction directly to internal dictionary conversion loops. 
-            Actively strips internal diagnostic metadata bounds (warnings) ensuring the 
+            Delegates raw extraction directly to internal dictionary conversion loops.
+            Actively strips internal diagnostic metadata bounds (warnings) ensuring the
             externalized payload complies absolutely with standard API serialization limits.
         """
         data = dict(self.extract_to_dict(image_bytes))

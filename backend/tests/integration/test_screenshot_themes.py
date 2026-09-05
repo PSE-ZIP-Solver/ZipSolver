@@ -19,7 +19,6 @@ from backend.input_validation.json_interpreter import JsonInterpreter
 from backend.input_validation.screenshot import ScreenshotExtractor
 from backend.solving_process.solver_controller import SolverController
 
-
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "screenshots"
 EXPECTED = json.loads((FIXTURES / "expected_boards.json").read_text())
 
@@ -46,11 +45,13 @@ def _make_client() -> TestClient:
 def assert_board(actual, expected):
     assert actual["boardSize"] == expected["boardSize"]
     assert actual["waypoints"] == expected["waypoints"]
+
     def edges(board):
         return {
             tuple(sorted((tuple(w["neighborA"]), tuple(w["neighborB"]))))
             for w in board["walls"]
         }
+
     assert edges(actual) == edges(expected)
     assert len(actual["walls"]) == len(expected["walls"])
 
@@ -81,7 +82,12 @@ def test_real_screenshot_preserves_number_order_and_every_wall(size, theme, via_
 
 def test_alternating_sizes_and_themes_do_not_reuse_previous_detection():
     extractor = ScreenshotExtractor()
-    for size, theme in [("6x6", "dark"), ("8x8", "light"), ("8x8", "dark"), ("6x6", "light")]:
+    for size, theme in [
+        ("6x6", "dark"),
+        ("8x8", "light"),
+        ("8x8", "dark"),
+        ("6x6", "light"),
+    ]:
         expected = EXPECTED[size]
         actual = extractor.extract_to_dict(
             (FIXTURES / f"{size}-{theme}.png").read_bytes(), expected["boardSize"]
@@ -91,9 +97,12 @@ def test_alternating_sizes_and_themes_do_not_reuse_previous_detection():
 
 
 @pytest.mark.parametrize("name", ["6x6-light", "6x6-dark", "8x8-light", "8x8-dark"])
-def test_templates_work_without_system_fonts_and_outside_repo(name, monkeypatch, tmp_path):
+def test_templates_work_without_system_fonts_and_outside_repo(
+    name, monkeypatch, tmp_path
+):
     def no_fonts(*args, **kwargs):
         raise OSError("System fonts are unavailable")
+
     monkeypatch.setattr(ImageFont, "truetype", no_fonts)
     monkeypatch.chdir(tmp_path)
     expected = EXPECTED[name[:3]]

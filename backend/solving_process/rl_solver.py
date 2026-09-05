@@ -13,7 +13,6 @@ from backend.puzzle_logic.board import Board
 from backend.rl_components.rl_agent import RLAgent
 from backend.rl_components.rl_environment import RLEnvironment
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -25,14 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 MODEL_PATHS: dict[int, Path] = {
-    6: (
-        PROJECT_ROOT
-        / "offline_training"
-        / "trained_models"
-        / "6x6"
-        / "6x6-agent.zip"
-    ),
-
+    6: (PROJECT_ROOT / "offline_training" / "trained_models" / "6x6" / "6x6-agent.zip"),
     # Later:
     # 7: (
     #     PROJECT_ROOT
@@ -42,13 +34,7 @@ MODEL_PATHS: dict[int, Path] = {
     #     / "7x7-agent.zip"
     # ),
     #
-     8: (
-        PROJECT_ROOT
-        / "offline_training"
-        / "trained_models"
-        / "8x8"
-        / "8x8-agent.zip"
-     ),
+    8: (PROJECT_ROOT / "offline_training" / "trained_models" / "8x8" / "8x8-agent.zip"),
 }
 
 
@@ -57,14 +43,14 @@ class RLSolver(Solver):
     Solver using pre-trained reinforcement-learning agents.
 
     Responsibility:
-        Bridges the gap between the application's domain objects and the underlying Stable-Baselines3 
-        predictive networks. It manages model caching, maps dimensional constraints to appropriate weights, 
+        Bridges the gap between the application's domain objects and the underlying Stable-Baselines3
+        predictive networks. It manages model caching, maps dimensional constraints to appropriate weights,
         and orchestrates the deterministic step-by-step inference lifecycle to output a compliant trajectory.
 
     Implementation Details:
         The correct model is selected according to the board size.
-        Maintains an internal dictionary cache mapping grid sizes to instantiated neural models 
-        to prevent catastrophic I/O bottlenecks during repeated requests. 
+        Maintains an internal dictionary cache mapping grid sizes to instantiated neural models
+        to prevent catastrophic I/O bottlenecks during repeated requests.
 
         Inference follows the same procedure as AgentTrainer evaluation:
             RLEnvironment(board)
@@ -80,7 +66,7 @@ class RLSolver(Solver):
         Initializes the ML orchestration wrapper and its associated memory caches.
 
         Implementation Details:
-            Sets up empty dictionaries to hold dynamically loaded agents. Environment and active 
+            Sets up empty dictionaries to hold dynamically loaded agents. Environment and active
             agent trackers are explicitly initialized to null states awaiting an execution command.
             The model therefore only has to be loaded from disk once.
         """
@@ -104,7 +90,7 @@ class RLSolver(Solver):
 
         Implementation Details:
             Return board size.
-            Works whether getSize is implemented as a property or a method. Uses native `callable()` 
+            Works whether getSize is implemented as a property or a method. Uses native `callable()`
             checks to securely adapt to shifting architectural patterns inside the board object.
         """
         size = board.getSize
@@ -130,21 +116,18 @@ class RLSolver(Solver):
 
         Implementation Details:
             Return the trained model for the given board size.
-            Queries the global configuration dictionary and explicitly interrogates the OS file 
+            Queries the global configuration dictionary and explicitly interrogates the OS file
             system to guarantee the payload physically exists before attempting network ingestion.
         """
         if board_size not in MODEL_PATHS:
             raise ValueError(
-                f"No RL model available for "
-                f"{board_size}x{board_size} boards."
+                f"No RL model available for " f"{board_size}x{board_size} boards."
             )
 
         model_path = MODEL_PATHS[board_size]
 
         if not model_path.exists():
-            raise FileNotFoundError(
-                f"RL model not found: {model_path}"
-            )
+            raise FileNotFoundError(f"RL model not found: {model_path}")
 
         return model_path
 
@@ -163,14 +146,12 @@ class RLSolver(Solver):
 
         Implementation Details:
             Load the trained agent or reuse an already loaded model.
-            Checks the dictionary cache. If absent, executes expensive file I/O to build the network. 
-            If present, safely mutates the existing model by overriding its bound environment reference, 
+            Checks the dictionary cache. If absent, executes expensive file I/O to build the network.
+            If present, safely mutates the existing model by overriding its bound environment reference,
             circumventing memory leaks.
         """
         if self._environment is None:
-            raise RuntimeError(
-                "Environment must exist before loading the RL agent."
-            )
+            raise RuntimeError("Environment must exist before loading the RL agent.")
 
         # First request for this board size:
         # load model from disk.
@@ -204,8 +185,7 @@ class RLSolver(Solver):
         # only replace the environment.
         else:
             print(
-                f"[RLSolver] Reusing cached "
-                f"{board_size}x{board_size} model.",
+                f"[RLSolver] Reusing cached " f"{board_size}x{board_size} model.",
                 flush=True,
             )
 
@@ -225,9 +205,9 @@ class RLSolver(Solver):
 
         Implementation Details:
             Print information useful for comparing API inference with AgentTrainer evaluation.
-            Captures deep terminal representations and generates SHA-256 cryptographic hashes of 
-            the unboxed observation matrices to ensure exact state parity verification against 
-            historical training outputs. Uses broad exception catches to prevent auxiliary logging 
+            Captures deep terminal representations and generates SHA-256 cryptographic hashes of
+            the unboxed observation matrices to ensure exact state parity verification against
+            historical training outputs. Uses broad exception catches to prevent auxiliary logging
             from destroying the primary execution loop.
         """
         if self._environment is None:
@@ -254,19 +234,15 @@ class RLSolver(Solver):
             )
 
         try:
-            observation_hash = hashlib.sha256(
-                observation.tobytes()
-            ).hexdigest()
+            observation_hash = hashlib.sha256(observation.tobytes()).hexdigest()
 
             print(
-                f"[RLSolver] Observation shape: "
-                f"{observation.shape}",
+                f"[RLSolver] Observation shape: " f"{observation.shape}",
                 flush=True,
             )
 
             print(
-                f"[RLSolver] Observation hash: "
-                f"{observation_hash}",
+                f"[RLSolver] Observation hash: " f"{observation_hash}",
                 flush=True,
             )
 
@@ -289,21 +265,17 @@ class RLSolver(Solver):
         Implementation Details:
             Run one deterministic inference episode.
             This intentionally mirrors AgentTrainer._run_board().
-            Locks the network into deterministic mode, eliminating stochastic exploration. Feeds 
-            unboxed observations continually into the network, directly converting output tensors 
-            into pure integers for grid processing. Actively tracks runtime MS and iteration steps. 
-            If terminal success is verified natively by the environment's internal game hook, maps the 
+            Locks the network into deterministic mode, eliminating stochastic exploration. Feeds
+            unboxed observations continually into the network, directly converting output tensors
+            into pure integers for grid processing. Actively tracks runtime MS and iteration steps.
+            If terminal success is verified natively by the environment's internal game hook, maps the
             history array into a structured solution wrapper. Otherwise, parses truncated flags to output failures.
         """
         if self._environment is None:
-            raise RuntimeError(
-                "No RL environment exists."
-            )
+            raise RuntimeError("No RL environment exists.")
 
         if self._agent is None:
-            raise RuntimeError(
-                "No RL agent is loaded."
-            )
+            raise RuntimeError("No RL agent is loaded.")
 
         start_time = time.time()
 
@@ -328,8 +300,7 @@ class RLSolver(Solver):
             action_int = int(action)
 
             print(
-                f"[RLSolver] Step {steps + 1}: "
-                f"predicted action = {action_int}",
+                f"[RLSolver] Step {steps + 1}: " f"predicted action = {action_int}",
                 flush=True,
             )
 
@@ -353,9 +324,7 @@ class RLSolver(Solver):
                 flush=True,
             )
 
-        runtime_ms = int(
-            (time.time() - start_time) * 1000
-        )
+        runtime_ms = int((time.time() - start_time) * 1000)
 
         metrics = SolverMetrics(
             runtimeMs=runtime_ms,
@@ -366,15 +335,11 @@ class RLSolver(Solver):
         game = self._environment.game
 
         # Same success definition as AgentTrainer._run_board().
-        solved = (
-            terminated
-            and game.isFinished()
-        )
+        solved = terminated and game.isFinished()
 
         if solved:
             print(
-                f"[RLSolver] SOLVED after "
-                f"{steps} steps ({runtime_ms} ms).",
+                f"[RLSolver] SOLVED after " f"{steps} steps ({runtime_ms} ms).",
                 flush=True,
             )
 
@@ -404,8 +369,7 @@ class RLSolver(Solver):
             reason = "episode ended without solving the puzzle"
 
         print(
-            f"[RLSolver] FAILED after "
-            f"{steps} steps: {reason}.",
+            f"[RLSolver] FAILED after " f"{steps} steps: {reason}.",
             flush=True,
         )
 
@@ -428,9 +392,9 @@ class RLSolver(Solver):
 
         Implementation Details:
             Select the correct model and perform deterministic inference.
-            Safely tears down lingering virtual environments from prior executions, mounts the new 
-            target layout natively, queries the size cache to inject the correct neural weights, and 
-            delegates execution downward. Aggressively wraps logic to catch model inference exceptions 
+            Safely tears down lingering virtual environments from prior executions, mounts the new
+            target layout natively, queries the size cache to inject the correct neural weights, and
+            delegates execution downward. Aggressively wraps logic to catch model inference exceptions
             and package them as graceful FAILED envelopes to prevent API-level crashes.
         """
         print(
@@ -449,8 +413,7 @@ class RLSolver(Solver):
             board_size = self._get_board_size(board)
 
             print(
-                f"[RLSolver] Board size: "
-                f"{board_size}x{board_size}",
+                f"[RLSolver] Board size: " f"{board_size}x{board_size}",
                 flush=True,
             )
 
@@ -487,18 +450,13 @@ class RLSolver(Solver):
 
         except Exception as exception:
             print(
-                f"[RLSolver] ERROR: "
-                f"{type(exception).__name__}: {exception}",
+                f"[RLSolver] ERROR: " f"{type(exception).__name__}: {exception}",
                 flush=True,
             )
 
-            logger.exception(
-                "RLSolver failed during inference."
-            )
+            logger.exception("RLSolver failed during inference.")
 
-            runtime_ms = int(
-                (time.time() - start_time) * 1000
-            )
+            runtime_ms = int((time.time() - start_time) * 1000)
 
             return SolverResult(
                 status=SolverStatus.FAILED,

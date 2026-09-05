@@ -3,15 +3,16 @@ class SolverMetrics:
     Encapsulates performance and resource utilization statistics for a single solving attempt.
 
     Responsibility:
-        Acts as a standardized telemetry wrapper tracking quantitative operational data, 
-        allowing the orchestration layer to monitor algorithm efficiency, benchmark execution 
+        Acts as a standardized telemetry wrapper tracking quantitative operational data,
+        allowing the orchestration layer to monitor algorithm efficiency, benchmark execution
         speeds, and expose processing complexity to external observers.
 
     Implementation Details:
-        Functions as a read-only Data Transfer Object (DTO). Captures raw analytical parameters 
-        during instantiation, secures them within protected attributes, and exposes them 
+        Functions as a read-only Data Transfer Object (DTO). Captures raw analytical parameters
+        during instantiation, secures them within protected attributes, and exposes them
         strictly via property decorators to prevent mid-flight metric tampering.
     """
+
     def __init__(self, runtimeMs: int, steps: int, attempts: int):
         """
         Initializes the performance telemetry wrapper.
@@ -22,7 +23,7 @@ class SolverMetrics:
             attempts: The cumulative tally of algorithmic backtracks or repeated engine starts.
 
         Implementation Details:
-            Binds the provided statistical parameters directly into protected internal 
+            Binds the provided statistical parameters directly into protected internal
             attributes to secure the telemetry state memory.
         """
         self._runtimeMs = runtimeMs

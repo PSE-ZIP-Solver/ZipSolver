@@ -7,15 +7,16 @@ class ValidationResult:
     Encapsulates the finalized macro-level outcome of a complete solution evaluation pass.
 
     Responsibility:
-        Delivers a unified, structured response payload that definitively declares whether a 
-        trajectory was successful, alongside high-level contextual summaries and any explicit 
+        Delivers a unified, structured response payload that definitively declares whether a
+        trajectory was successful, alongside high-level contextual summaries and any explicit
         granular errors cataloged during the assessment.
 
     Implementation Details:
-        Maintains robust state security by acting as an immutable compound wrapper. It securely 
-        houses a boolean success flag, a string context message, and an iterable collection of 
+        Maintains robust state security by acting as an immutable compound wrapper. It securely
+        houses a boolean success flag, a string context message, and an iterable collection of
         sub-errors, restricting external access entirely to protected property decorators.
     """
+
     def __init__(self, valid: bool, message: str, errors: List[ValidationError]):
         """
         Consolidates the global outcome metrics of a validation lifecycle.
@@ -26,7 +27,7 @@ class ValidationResult:
             errors: A compiled sequence of specific, granular failure records, if any occurred.
 
         Implementation Details:
-            Routes the absolute success state, summary context, and error compilation array directly 
+            Routes the absolute success state, summary context, and error compilation array directly
             into isolated, protected internal object states to lock the resolution in memory.
         """
         self._valid = valid
@@ -42,7 +43,7 @@ class ValidationResult:
             The definitive boolean flag confirming complete success or failure.
 
         Implementation Details:
-            Exposes read-only observation capabilities to the strictly protected validity 
+            Exposes read-only observation capabilities to the strictly protected validity
             flag utilizing standard decorator bindings.
         """
         return self._valid
@@ -56,7 +57,7 @@ class ValidationResult:
             The structured string detailing the generalized completion status.
 
         Implementation Details:
-            Exposes read-only observation capabilities to the strictly protected summary 
+            Exposes read-only observation capabilities to the strictly protected summary
             text utilizing standard decorator bindings.
         """
         return self._message
@@ -70,7 +71,7 @@ class ValidationResult:
             The complete iterable list containing granular violation records.
 
         Implementation Details:
-            Exposes read-only observation capabilities to the strictly protected error array 
+            Exposes read-only observation capabilities to the strictly protected error array
             utilizing standard decorator bindings.
         """
         return self._errors

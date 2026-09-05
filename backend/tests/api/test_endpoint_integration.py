@@ -17,7 +17,6 @@ from backend.api.version import API_VERSION
 
 from backend.tests.api.conftest import (
     IMAGE_UPLOAD,
-    REFERENCE_BOARD,
     VALID_BODY,
     make_path,
     make_solver_result,
@@ -51,7 +50,12 @@ def test_all_four_documented_endpoints_are_registered(make_api):
 
 @pytest.mark.parametrize(
     ("method", "path"),
-    [("GET", "/api/solve"), ("GET", "/api/import"), ("POST", "/api/health"), ("POST", "/api/architecture")],
+    [
+        ("GET", "/api/solve"),
+        ("GET", "/api/import"),
+        ("POST", "/api/health"),
+        ("POST", "/api/architecture"),
+    ],
 )
 def test_wrong_http_verb_is_rejected(client, method, path):
     """Verb/path pairs outside the contract must not be silently accepted."""
@@ -110,7 +114,9 @@ def test_solve_parses_body_into_puzzle_request_dto(client, interpreter):
     assert request_arg.walls[0].neighbor_b == (1, 0)
 
 
-def test_solve_passes_interpreter_board_to_solver(client, interpreter, solver_controller):
+def test_solve_passes_interpreter_board_to_solver(
+    client, interpreter, solver_controller
+):
     """The object handed to the solver must be the one the interpreter produced."""
     client.post("/api/solve", json=VALID_BODY)
 
@@ -184,7 +190,9 @@ def test_solve_accepts_empty_walls_list(client):
 
 def test_solve_accepts_omitted_walls_key(client, interpreter):
     """``walls`` has a ``default_factory`` — the key is optional on the wire (§5.5.1)."""
-    response = client.post("/api/solve", json={"boardSize": 6, "waypoints": [[0, 0], [5, 5]]})
+    response = client.post(
+        "/api/solve", json={"boardSize": 6, "waypoints": [[0, 0], [5, 5]]}
+    )
     assert response.status_code == 200
 
     (request_arg,), _ = interpreter.buildBoard.call_args
@@ -228,7 +236,9 @@ def test_import_feeds_uploaded_bytes_to_the_extractor(client, screenshot_extract
     """The raw uploaded bytes must reach ScreenshotExtractor unmodified — the endpoint is
     a pass-through to the extraction pipeline, not a re-encoder."""
     client.post("/api/import", files=IMAGE_UPLOAD)
-    screenshot_extractor.extract_to_dict.assert_called_once_with(b"fake-png-bytes", None)
+    screenshot_extractor.extract_to_dict.assert_called_once_with(
+        b"fake-png-bytes", None
+    )
 
 
 def test_import_never_invokes_the_solver(client, solver_controller):
@@ -328,7 +338,10 @@ def test_architecture_delegates_to_provider(client, architecture_provider):
 
 
 def test_architecture_reports_both_registered_solvers(client):
-    solvers = {entry["name"]: entry for entry in client.get("/api/architecture").json()["solvers"]}
+    solvers = {
+        entry["name"]: entry
+        for entry in client.get("/api/architecture").json()["solvers"]
+    }
     assert set(solvers) == {"RLSolver", "AlgorithmicSolver"}
     assert solvers["RLSolver"]["default"] is True
     assert solvers["AlgorithmicSolver"]["default"] is False
@@ -338,7 +351,16 @@ def test_architecture_leaks_no_paths_or_secrets(client):
     """§5.5.6 / trust boundary: names and versions only. No file paths, no secrets, no
     environment variables may cross this endpoint."""
     raw = client.get("/api/architecture").text.lower()
-    for forbidden in ("/home/", "c:\\", "password", "secret", "token", "api_key", ".zip", ".pth"):
+    for forbidden in (
+        "/home/",
+        "c:\\",
+        "password",
+        "secret",
+        "token",
+        "api_key",
+        ".zip",
+        ".pth",
+    ):
         assert forbidden not in raw
 
 
@@ -384,11 +406,18 @@ def test_cors_default_origin_is_the_vite_dev_server(client):
     """Default must match the frontend's dev server so local development works with no
     extra configuration."""
     response = client.get("/api/health", headers={"Origin": "http://localhost:5173"})
-    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert (
+        response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    )
 
 
 def test_cors_origin_list_is_overridable(make_api):
     _, client = make_api(allowed_origins=["https://zipsolver.example"])
 
-    response = client.get("/api/health", headers={"Origin": "https://zipsolver.example"})
-    assert response.headers.get("access-control-allow-origin") == "https://zipsolver.example"
+    response = client.get(
+        "/api/health", headers={"Origin": "https://zipsolver.example"}
+    )
+    assert (
+        response.headers.get("access-control-allow-origin")
+        == "https://zipsolver.example"
+    )

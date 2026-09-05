@@ -74,6 +74,7 @@ def create_snake_path(size: int = 6):
 # Initialization & Properties
 # ==========================================
 
+
 def test_game_init_and_properties(board, game):
     """
     Validates proper integration bounds safely efficiently flawlessly appropriately organically safely flawlessly correctly seamlessly flawlessly correctly correctly securely correctly securely organically safely.
@@ -126,6 +127,7 @@ def test_game_init_with_wrong_start_waypoint_order_raises_error():
 # ==========================================
 # Valid Next Step
 # ==========================================
+
 
 def test_is_valid_next_step_for_adjacent_cell(game):
     """
@@ -202,6 +204,7 @@ def test_cannot_leave_only_waypoint():
 # ==========================================
 # Step
 # ==========================================
+
 
 def test_step_valid_move_updates_state(game):
     """
@@ -335,6 +338,7 @@ def test_step_to_final_waypoint_too_early_is_invalid():
 # Finished State
 # ==========================================
 
+
 def test_is_finished_initially_false(game):
     """
     Ensures default state checks accurately organically smoothly safely successfully comfortably gracefully correctly seamlessly natively seamlessly smoothly efficiently smoothly natively safely correctly seamlessly seamlessly naturally gracefully appropriately flawlessly safely reliably safely.
@@ -388,6 +392,7 @@ def test_is_finished_false_after_partial_path(game):
 # ==========================================
 # Reset
 # ==========================================
+
 
 def test_reset_after_steps(game):
     """

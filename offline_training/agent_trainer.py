@@ -113,9 +113,7 @@ class AgentTrainer:
             raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
 
         if not 0 <= self.minNrOfWaypoints <= nrOfWaypoints:
-            raise ValueError(
-                "minNrOfWaypoints must be between 0 and nrOfWaypoints."
-            )
+            raise ValueError("minNrOfWaypoints must be between 0 and nrOfWaypoints.")
 
         if trainingBoards is not None:
             self.trainingBoards = trainingBoards
@@ -158,9 +156,7 @@ class AgentTrainer:
         if evaluationBoards is not None:
             self.evaluationBoards = evaluationBoards
         elif useSavedEvaluationBoards and self.evaluationBoardsPath.exists():
-            self.evaluationBoards = self._load_evaluation_boards(
-                nrEvaluationBoards
-            )
+            self.evaluationBoards = self._load_evaluation_boards(nrEvaluationBoards)
         else:
             self.evaluationBoards = self._generate_random_boards(
                 boardSize,
@@ -321,26 +317,27 @@ class AgentTrainer:
             print("Creating new agent")
             agent = RLAgent(
                 trainEnv,
-                learning_rate=1e-4,              # Controls how strongly the network weights are changed during each gradient/network update.
-                exploration_initial_eps=1.0,     # Initial probability of choosing a random action.
-                exploration_final_eps=0.10,      # Final minimum probability of choosing a random action.
-                exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
-                learning_starts=500,             # Number of steps before the model starts learning.
-                buffer_size=50_000,              # Maximum number of transitions stored in the replay buffer.
-                batch_size=64,                   # Number of samples used for one training update.
-                train_freq=(1, "step"),          # Update neural network (training) after every completed episode.
-                gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
-                target_update_interval=500,      # Copy the learned network weights to the target network every 500 steps.
-                gamma=0.98,                      # Discount factor: controls how much future rewards matter -> makes learning more stable.
-                max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
-                seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
+                learning_rate=1e-4,  # Controls how strongly the network weights are changed during each gradient/network update.
+                exploration_initial_eps=1.0,  # Initial probability of choosing a random action.
+                exploration_final_eps=0.10,  # Final minimum probability of choosing a random action.
+                exploration_fraction=0.8,  # Fraction of training over which exploration is reduced.
+                learning_starts=500,  # Number of steps before the model starts learning.
+                buffer_size=50_000,  # Maximum number of transitions stored in the replay buffer.
+                batch_size=64,  # Number of samples used for one training update.
+                train_freq=(
+                    1,
+                    "step",
+                ),  # Update neural network (training) after every completed episode.
+                gradient_steps=1,  # For each training trigger, do ONE weight update using one sampled batch.
+                target_update_interval=500,  # Copy the learned network weights to the target network every 500 steps.
+                gamma=0.98,  # Discount factor: controls how much future rewards matter -> makes learning more stable.
+                max_grad_norm=10,  # Limits very large gradient updates to avoid unstable training.
+                seed=42,  # Sets a random seed to make training behavior more reproducible (e.g.).
                 tensorboard_log="./logs/zip_dqn/6x6/",
             )
 
         totalTimesteps = (
-            self._totalTimesteps
-            if self._totalTimesteps is not None
-            else 100_000
+            self._totalTimesteps if self._totalTimesteps is not None else 100_000
         )
         print(f"Training on {len(self.trainingBoards)} boards.")
         print(f"Total timesteps: {totalTimesteps}")
@@ -520,10 +517,14 @@ if __name__ == "__main__":
     NR_OF_WAYPOINTS = 34
 
     USE_SAVED_TRAINING_BOARDS = True
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = ("offline_training/training_boards/6x6-generalization-4000boards-0to25walls-0to34wp.pkl")
+    LOAD_REPLAY_BUFFER = (
+        False  # only True for several runs on same training set (continue session)
+    )
+    TRAINING_BOARDS_PATH = "offline_training/training_boards/6x6-generalization-4000boards-0to25walls-0to34wp.pkl"
 
-    USE_SAVED_EVALUATION_BOARDS = True # Also needs to be true for saving new created ones
+    USE_SAVED_EVALUATION_BOARDS = (
+        True  # Also needs to be true for saving new created ones
+    )
     EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-0to25walls-0to34wp-1000boards.pkl"
 
     TRAIN_MODEL = False
@@ -540,16 +541,12 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/6x6/6x6-agent.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-
         # number of training boards in the training pool
         nrTrainingBoards=4000,
-
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=1000, 
-
+        nrEvaluationBoards=1000,
         # Total time steps
-        timestepsPerBoard= 1_000_000,
-
+        timestepsPerBoard=1_000_000,
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,

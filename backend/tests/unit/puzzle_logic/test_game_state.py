@@ -13,7 +13,7 @@ def start_position():
         A fundamental node establishing baseline tracking.
 
     Implementation Details:
-        Provides a default starting position for each test to assert structural integrity 
+        Provides a default starting position for each test to assert structural integrity
         of sequential mappings.
     """
     return Position(0, 0)
@@ -54,6 +54,7 @@ def board():
 # Initialization & Properties
 # ==========================================
 
+
 def test_game_state_init_and_properties(game_state, start_position):
     """
     Validates structural bounds appropriately map initial baseline tracking matrices accurately.
@@ -63,7 +64,7 @@ def test_game_state_init_and_properties(game_state, start_position):
         start_position: The base origin structurally initializing arrays.
 
     Implementation Details:
-        Test that a new GameState is initialized with the correct default values correctly syncing the internal 
+        Test that a new GameState is initialized with the correct default values correctly syncing the internal
         position tracking list alongside the visited set natively.
     """
     assert game_state.getCurrentPosition == start_position
@@ -76,6 +77,7 @@ def test_game_state_init_and_properties(game_state, start_position):
 # Adding Steps
 # ==========================================
 
+
 def test_add_single_step(game_state):
     """
     Asserts distinct positional variables structurally transition core active properties organically.
@@ -84,7 +86,7 @@ def test_add_single_step(game_state):
         game_state: The historical tracking instance natively recording limits.
 
     Implementation Details:
-        Test adding one step updates current position, path, and visited cells seamlessly applying data changes 
+        Test adding one step updates current position, path, and visited cells seamlessly applying data changes
         across lists and unordered sets concurrently.
     """
     next_position = Position(1, 0)
@@ -105,7 +107,7 @@ def test_add_multiple_steps(game_state):
         game_state: The operational sequence executing structural loops natively.
 
     Implementation Details:
-        Test adding multiple steps keeps the path in the correct order seamlessly ensuring the list effectively 
+        Test adding multiple steps keeps the path in the correct order seamlessly ensuring the list effectively
         preserves chronology while sets capture absolute volumes correctly.
     """
     p1 = Position(1, 0)
@@ -130,7 +132,7 @@ def test_add_duplicate_step_edge_case(game_state):
 
     Implementation Details:
         Edge case: Adding the same position twice should add it twice to the path,
-        but only once to the visited set because visitedCells is a Set. Ensures distinct algorithmic bounds evaluate 
+        but only once to the visited set because visitedCells is a Set. Ensures distinct algorithmic bounds evaluate
         internal parameters appropriately.
     """
     duplicate_position = Position(1, 0)
@@ -139,7 +141,11 @@ def test_add_duplicate_step_edge_case(game_state):
     game_state.addStep(duplicate_position)
 
     assert game_state.getCurrentPosition == duplicate_position
-    assert game_state.getPath == [Position(0, 0), duplicate_position, duplicate_position]
+    assert game_state.getPath == [
+        Position(0, 0),
+        duplicate_position,
+        duplicate_position,
+    ]
     assert game_state.getVisitedCells == {Position(0, 0), duplicate_position}
     assert len(game_state.getVisitedCells) == 2
 
@@ -147,6 +153,7 @@ def test_add_duplicate_step_edge_case(game_state):
 # ==========================================
 # Visited Cells
 # ==========================================
+
 
 def test_is_visited(game_state):
     """
@@ -177,7 +184,7 @@ def test_get_unvisited_cells(board, game_state):
         game_state: The current operational snapshot accurately filtering vectors.
 
     Implementation Details:
-        Test that getUnvisitedCells returns all board positions not yet visited by organically executing subtractive 
+        Test that getUnvisitedCells returns all board positions not yet visited by organically executing subtractive
         analysis natively against structural base sets.
     """
     p1 = Position(1, 0)
@@ -199,6 +206,7 @@ def test_get_unvisited_cells(board, game_state):
 # Waypoint Order
 # ==========================================
 
+
 def test_increment_next_waypoint_order(game_state):
     """
     Asserts localized internal index markers structurally shift numerically dynamically natively.
@@ -207,7 +215,7 @@ def test_increment_next_waypoint_order(game_state):
         game_state: The current sequence registry efficiently holding state natively.
 
     Implementation Details:
-        Test increasing the next waypoint order once correctly ensuring variables appropriately increment 
+        Test increasing the next waypoint order once correctly ensuring variables appropriately increment
         by absolute scalar intervals safely.
     """
     assert game_state.getNextWaypointOrder == 2
@@ -238,6 +246,7 @@ def test_increment_next_waypoint_order_multiple_times(game_state):
 # Reset
 # ==========================================
 
+
 def test_reset_after_steps_and_increment(game_state):
     """
     Validates structural clearing flawlessly reinstates variable arrays completely efficiently.
@@ -246,7 +255,7 @@ def test_reset_after_steps_and_increment(game_state):
         game_state: The active tracking layer organically processing flush directives cleanly.
 
     Implementation Details:
-        Test that reset clears path, visited cells, and resets waypoint order cleanly stripping dynamic arrays 
+        Test that reset clears path, visited cells, and resets waypoint order cleanly stripping dynamic arrays
         while preserving underlying objects efficiently safely.
     """
     game_state.addStep(Position(1, 0))

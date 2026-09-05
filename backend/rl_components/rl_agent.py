@@ -12,15 +12,15 @@ class ZipCNN(BaseFeaturesExtractor):
     Small CNN feature extractor for multi-channel grid observations.
 
     Responsibility:
-        Serves as the foundational vision extraction architecture, analyzing the 8-channel 
-        spatial tensor matrices to identify localized physical walls, boundaries, and chronological 
+        Serves as the foundational vision extraction architecture, analyzing the 8-channel
+        spatial tensor matrices to identify localized physical walls, boundaries, and chronological
         markers for the overarching reinforcement network.
 
     Implementation Details:
-        Inherits dynamically from Stable-Baselines3's BaseFeaturesExtractor. Implements a 
-        multi-stage 2D Convolutional Neural Network layered via `nn.Sequential` using `ReLU` activations. 
-        Crucially, uses a detached dummy tensor pass directly during instantiation to dynamically 
-        calculate the exact flattened dimensional mapping, allowing the network architecture to scale 
+        Inherits dynamically from Stable-Baselines3's BaseFeaturesExtractor. Implements a
+        multi-stage 2D Convolutional Neural Network layered via `nn.Sequential` using `ReLU` activations.
+        Crucially, uses a detached dummy tensor pass directly during instantiation to dynamically
+        calculate the exact flattened dimensional mapping, allowing the network architecture to scale
         automatically regardless of whether it evaluates 6x6, 7x7, or 8x8 matrices.
     """
 
@@ -33,9 +33,9 @@ class ZipCNN(BaseFeaturesExtractor):
             features_dim: The scalar parameter driving the concluding dense output layer size.
 
         Implementation Details:
-            Extracts strict input channel limits explicitly defining deep padding loops to preserve 
-            architectural shapes across sequential strides. Forces a `torch.no_grad()` execution 
-            pass pushing zeroed inputs across the convolutions to seamlessly infer the exact flattened 
+            Extracts strict input channel limits explicitly defining deep padding loops to preserve
+            architectural shapes across sequential strides. Forces a `torch.no_grad()` execution
+            pass pushing zeroed inputs across the convolutions to seamlessly infer the exact flattened
             dimension size before permanently cementing the concluding linear classifier blocks.
         """
         super().__init__(observation_space, features_dim)
@@ -73,7 +73,7 @@ class ZipCNN(BaseFeaturesExtractor):
             The purely dense flattened feature tensor directly utilized by subsequent DQN pipelines.
 
         Implementation Details:
-            Passes input mappings sequentially via raw PyTorch invocation blocks connecting 
+            Passes input mappings sequentially via raw PyTorch invocation blocks connecting
             spatial convolutions explicitly into final rectified linear layers.
         """
         return self.linear(self.cnn(observations))
@@ -84,15 +84,15 @@ class RLAgent:
     Wraps a Stable-Baselines3 DQN model for training and inference.
 
     Responsibility:
-        Functions as the high-level orchestration interface governing the complete lifecycle 
-        of the neural predictive agent. Secures network configurations, executes exploration 
+        Functions as the high-level orchestration interface governing the complete lifecycle
+        of the neural predictive agent. Secures network configurations, executes exploration
         schedules, and translates raw environmental states into active policy predictions.
 
     Implementation Details:
-        Acts as a facade directly shielding the application from raw SB3 logic limits. Injects 
-        the customized `ZipCNN` extractor actively overriding default SB3 image normalization 
-        (since the grid tensor arrays natively reside between 0-1, bypassing standard 0-255 pixel 
-        adjustments). Safely encapsulates load/save capabilities mapping directly back into 
+        Acts as a facade directly shielding the application from raw SB3 logic limits. Injects
+        the customized `ZipCNN` extractor actively overriding default SB3 image normalization
+        (since the grid tensor arrays natively reside between 0-1, bypassing standard 0-255 pixel
+        adjustments). Safely encapsulates load/save capabilities mapping directly back into
         underlying device allocations.
     """
 
@@ -106,9 +106,9 @@ class RLAgent:
             **dqn_kwargs: The expansive dict structure forwarding native hyperparameters to SB3.
 
         Implementation Details:
-            Reserves explicit policy keyword rules immediately preventing normalized conversions. 
-            Branch logic executes directly against path presence: safely mapping saved structures 
-            back into memory, or initiating baseline random Deep Q-Network distributions configured 
+            Reserves explicit policy keyword rules immediately preventing normalized conversions.
+            Branch logic executes directly against path presence: safely mapping saved structures
+            back into memory, or initiating baseline random Deep Q-Network distributions configured
             against static fractional exploration baselines.
         """
         self._env = env
@@ -151,7 +151,7 @@ class RLAgent:
             fraction: The scaling constraint defining exactly when EPS hits the minimal threshold.
 
         Implementation Details:
-            Mutates the internal protected object states forcefully overriding built-in static schedules 
+            Mutates the internal protected object states forcefully overriding built-in static schedules
             with explicitly calculated linear progression models dictating stochastic decay.
         """
         self._model.exploration_initial_eps = initial_eps
@@ -176,7 +176,7 @@ class RLAgent:
             The pure mathematical integer directly representing the resultant cardinal action.
 
         Implementation Details:
-            Extracts predictions actively delegating execution onto the configured SB3 model, safely 
+            Extracts predictions actively delegating execution onto the configured SB3 model, safely
             unpacking tuples to permanently strip out the secondary state sequence vectors entirely.
         """
         action, _state = self._model.predict(
@@ -197,7 +197,7 @@ class RLAgent:
             The structural self-reference allowing fluent method chaining architectures.
 
         Implementation Details:
-            Invokes core underlying DQN backpropagation routines passing constraints forward, returning 
+            Invokes core underlying DQN backpropagation routines passing constraints forward, returning
             the wrapped instance mapping to support native fluent object bindings.
         """
         self._model.learn(
@@ -214,7 +214,7 @@ class RLAgent:
             env: The subsequent active spatial layout replacing underlying validation configurations.
 
         Implementation Details:
-            Updates dual memory states securely mapping the wrapper's encapsulated object reference 
+            Updates dual memory states securely mapping the wrapper's encapsulated object reference
             and actively mutating the SB3 network's binding variables natively.
         """
         self._env = env
@@ -228,7 +228,7 @@ class RLAgent:
             path: The strictly mapped spatial OS directory allocating exact archival structures.
 
         Implementation Details:
-            Delegates execution natively into the SB3 compression utility exporting compiled tensor 
+            Delegates execution natively into the SB3 compression utility exporting compiled tensor
             architectures mapping exactly into `.zip` structured frameworks.
         """
         self._model.save(path)
@@ -245,8 +245,8 @@ class RLAgent:
             The definitively mapped neural network natively bounding extracted values.
 
         Implementation Details:
-            Injects explicit internal objects binding `policy_kwargs` aggressively bridging local 
-            custom `ZipCNN` extractors directly back into SB3 evaluation sequences utilizing 
+            Injects explicit internal objects binding `policy_kwargs` aggressively bridging local
+            custom `ZipCNN` extractors directly back into SB3 evaluation sequences utilizing
             dynamic hardware auto-allocations mapping against CUDA processors when available.
         """
         custom_objects = {
@@ -282,9 +282,9 @@ class RLAgent:
             ValueError: If execution caps fail standard zero-bound math checks.
 
         Implementation Details:
-            Instantiates unbroken iterative execution matrices trapping predictions securely. Feeds structural 
-            cardinal integer vectors continuously back into the active environment collecting reward scalars natively. 
-            Safely queries nested internal structural bounds checking exact completion flags circumventing 
+            Instantiates unbroken iterative execution matrices trapping predictions securely. Feeds structural
+            cardinal integer vectors continuously back into the active environment collecting reward scalars natively.
+            Safely queries nested internal structural bounds checking exact completion flags circumventing
             standard gym truncation constraints directly before formatting final compiled state outputs.
         """
         observation, info = self._env.reset()
@@ -306,7 +306,9 @@ class RLAgent:
             action_int = int(action)
             actions.append(action_int)
 
-            observation, reward, terminated, truncated, info = self._env.step(action_int)
+            observation, reward, terminated, truncated, info = self._env.step(
+                action_int
+            )
             total_reward += float(reward)
 
             if terminated or truncated:
@@ -334,8 +336,8 @@ class RLAgent:
             The boolean matrix dictating explicitly absolute structural puzzle completions.
 
         Implementation Details:
-            Bypasses the `gymnasium` wrapper facade dynamically querying raw internal `Game` properties 
-            utilizing recursive introspection loops to securely accommodate variations arising natively 
+            Bypasses the `gymnasium` wrapper facade dynamically querying raw internal `Game` properties
+            utilizing recursive introspection loops to securely accommodate variations arising natively
             from environments nested heavily within vectorized Gym structural tools.
         """
         if hasattr(self._env, "game"):

@@ -7,15 +7,16 @@ class Board:
     Manages the physical topological blueprint of the puzzle area.
 
     Responsibility:
-        Serves as the structural baseline defining the strict 2D dimensions, specific waypoint 
+        Serves as the structural baseline defining the strict 2D dimensions, specific waypoint
         sequencing targets, and static wall placements that make up a playable puzzle stage.
 
     Implementation Details:
-        Utilizes strict internal encapsulation to track states. Walls are persisted in a hashed 
-        set to enable extremely fast O(1) membership lookups for movement validations. Waypoints 
-        are managed continuously within a list to preserve insertion or extraction ordering. 
+        Utilizes strict internal encapsulation to track states. Walls are persisted in a hashed
+        set to enable extremely fast O(1) membership lookups for movement validations. Waypoints
+        are managed continuously within a list to preserve insertion or extraction ordering.
         It provides core geometric checking capabilities but strictly abstains from gameplay tracking.
     """
+
     def __init__(self, size: int):
         """
         Initializes an empty puzzle stage of the specified cubic dimension.
@@ -24,7 +25,7 @@ class Board:
             size: The uniform numerical span (width and height) defining the grid.
 
         Implementation Details:
-            Saves the scalar dimension value into a protected property, sets up an empty sequential 
+            Saves the scalar dimension value into a protected property, sets up an empty sequential
             list to accrue upcoming waypoints, and prepares an empty optimized set to track wall barriers.
         """
         self._size = size
@@ -40,7 +41,7 @@ class Board:
             order: The required chronological sequencing number.
 
         Implementation Details:
-            Dynamically initializes a new `Waypoint` instance from the supplied metrics 
+            Dynamically initializes a new `Waypoint` instance from the supplied metrics
             and appends it strictly to the protected sequential tracking list.
         """
         waypoint = Waypoint(position, order)
@@ -55,7 +56,7 @@ class Board:
             cellB: The contiguous coordinate mapping the remaining boundary.
 
         Implementation Details:
-            Instantiates a new uniform `Wall` object. Incorporates it directly into the 
+            Instantiates a new uniform `Wall` object. Incorporates it directly into the
             protected hash set, naturally avoiding duplicate boundary entries.
         """
         wall = Wall(cellA, cellB)
@@ -72,8 +73,8 @@ class Board:
             True if both coordinate axes fit within the stage dimensions, False otherwise.
 
         Implementation Details:
-            Evaluates the underlying top-left origin grid by verifying the target's horizontal 
-            and vertical axes are identically greater than or equal to 0 while remaining strictly 
+            Evaluates the underlying top-left origin grid by verifying the target's horizontal
+            and vertical axes are identically greater than or equal to 0 while remaining strictly
             inferior to the protected size boundary.
         """
         return 0 <= position.getX < self._size and 0 <= position.getY < self._size
@@ -90,8 +91,8 @@ class Board:
             True if the locations share an adjoining cardinal edge, False otherwise.
 
         Implementation Details:
-            Extracts property bounds and calculates the absolute Manhattan distance between 
-            both positions. A direct sum exactly equal to 1 guarantees pure cardinal adjacency 
+            Extracts property bounds and calculates the absolute Manhattan distance between
+            both positions. A direct sum exactly equal to 1 guarantees pure cardinal adjacency
             while actively filtering diagonal or distant attempts.
         """
         return abs(a.getX - b.getX) + abs(a.getY - b.getY) == 1
@@ -108,7 +109,7 @@ class Board:
             True if an impassable blockage resides directly across the adjoining space.
 
         Implementation Details:
-            Iterates fully over the protected hashed wall compilation, triggering the intrinsic 
+            Iterates fully over the protected hashed wall compilation, triggering the intrinsic
             direction-agnostic `connects` query on each barrier to hunt for absolute matches.
         """
         for wall in self._walls:
@@ -127,14 +128,14 @@ class Board:
             The located waypoint entity, or None if the designated cell is barren.
 
         Implementation Details:
-            Performs a continuous linear sweep over the protected sequential waypoint collection. 
+            Performs a continuous linear sweep over the protected sequential waypoint collection.
             Cross-references physical location properties, instantly terminating and yielding upon discovery.
         """
         for wp in self._waypoints:
             if wp.getPosition == position:
                 return wp
         return None
-    
+
     def getWaypointByOrder(self, order: int) -> Optional[Waypoint]:
         """
         Extracts a specific milestone requirement based on its numerical sequence sequence.
@@ -146,7 +147,7 @@ class Board:
             The associated milestone enforcing the target sequence, or None if omitted.
 
         Implementation Details:
-            Engages in a linear scan across the protected internal lists, inspecting chronological 
+            Engages in a linear scan across the protected internal lists, inspecting chronological
             requirements via property decorators and returning upon the first rigid correlation.
         """
         for wp in self._waypoints:
@@ -162,8 +163,8 @@ class Board:
             A populated hash set containing coordinate instances scaling across the entire area.
 
         Implementation Details:
-            Executes nested iterations over the bounding uniform grid size to procedurally 
-            instantiate fresh position components. Collects and yields these elements encapsulated 
+            Executes nested iterations over the bounding uniform grid size to procedurally
+            instantiate fresh position components. Collects and yields these elements encapsulated
             within a natively hashed set structure to facilitate O(1) validations.
         """
         positions = set()
@@ -180,11 +181,11 @@ class Board:
             The mathematically total quantity of usable grid coordinates.
 
         Implementation Details:
-            Multiplies the rigidly protected size boundaries symmetrically (n * n) to quickly 
+            Multiplies the rigidly protected size boundaries symmetrically (n * n) to quickly
             quantify full Hamiltonian pathway lengths.
         """
         return self._size * self._size
-    
+
     @property
     def getSize(self) -> int:
         """
@@ -197,7 +198,7 @@ class Board:
             Provides immutable exterior access to the rigidly encapsulated size boundary value.
         """
         return self._size
-    
+
     @property
     def getWaypoints(self) -> List[Waypoint]:
         """
@@ -210,7 +211,7 @@ class Board:
             Unlocks superficial access to the protected internal list managing rigid constraints.
         """
         return self._waypoints
-    
+
     @property
     def getWalls(self) -> Set[Wall]:
         """

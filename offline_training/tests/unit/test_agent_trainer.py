@@ -10,19 +10,21 @@ def test_init_generates_training_and_evaluation_boards(monkeypatch):
     Verifies the initialization sequence for the agent trainer correctly dispatches board generation requests.
 
     Args:
-        monkeypatch: The active test environment fixture responsible for safely intercepting 
+        monkeypatch: The active test environment fixture responsible for safely intercepting
             and overriding system-level namespaces or dependencies.
 
     Implementation Details:
-        Hijacks the primary generator method to passively track invocation sequences and structural 
-        parameters without executing the computationally heavy combinatorial pathfinding logic natively. 
-        Suppresses the localized disk-writing mechanism via a lambda attachment to ensure the underlying 
-        file system remains untouched. Asserts that the requested architectural layouts are successfully 
+        Hijacks the primary generator method to passively track invocation sequences and structural
+        parameters without executing the computationally heavy combinatorial pathfinding logic natively.
+        Suppresses the localized disk-writing mechanism via a lambda attachment to ensure the underlying
+        file system remains untouched. Asserts that the requested architectural layouts are successfully
         partitioned into distinct arrays for training and evaluation.
     """
     calls = []
 
-    def fake_generate(boardSize: int, intermediateWaypoints: int, walls: int, numberBoards: int = 1):
+    def fake_generate(
+        boardSize: int, intermediateWaypoints: int, walls: int, numberBoards: int = 1
+    ):
         """
         Acts as an artificial endpoint capturing requested topological parameters.
 
@@ -36,15 +38,20 @@ def test_init_generates_training_and_evaluation_boards(monkeypatch):
             A sequence containing artificially mapped identifier tags.
 
         Implementation Details:
-            Intercepts the functional arguments, appends the structural configuration to an external 
+            Intercepts the functional arguments, appends the structural configuration to an external
             tracking array to verify sequence integrity, and securely bubbles up a synthetic placeholder array.
         """
         calls.append((boardSize, intermediateWaypoints, walls, numberBoards))
         return [f"board-{len(calls)}"]
 
-    monkeypatch.setattr("offline_training.agent_trainer.BoardGenerator.generate", fake_generate)
+    monkeypatch.setattr(
+        "offline_training.agent_trainer.BoardGenerator.generate", fake_generate
+    )
     # Avoid writing a pickle file to disk when boards are freshly generated.
-    monkeypatch.setattr("offline_training.agent_trainer.AgentTrainer._save_training_boards", lambda self: None)
+    monkeypatch.setattr(
+        "offline_training.agent_trainer.AgentTrainer._save_training_boards",
+        lambda self: None,
+    )
 
     trainer = AgentTrainer(
         boardSize=6,
@@ -71,9 +78,9 @@ def test_train_creates_new_agent_and_learns_once(monkeypatch, tmp_path):
         tmp_path: The localized session fixture providing ephemeral directory bindings for safe file emulation.
 
     Implementation Details:
-        Aggressively replaces the entire reinforcement learning stack with localized mock objects 
-        to circumvent actual tensor allocations and heavy mathematical dependencies. Tracks the execution 
-        of the core learning hook and strictly verifies that the system trains across the entirety of the 
+        Aggressively replaces the entire reinforcement learning stack with localized mock objects
+        to circumvent actual tensor allocations and heavy mathematical dependencies. Tracks the execution
+        of the core learning hook and strictly verifies that the system trains across the entirety of the
         pooled topological environment seamlessly rather than erroneously looping sequentially per-board.
     """
     training_boards = ["train-a", "train-b", "train-c"]
@@ -85,13 +92,14 @@ def test_train_creates_new_agent_and_learns_once(monkeypatch, tmp_path):
         A localized surrogate representing the pooled training environment wrapper.
 
         Responsibility:
-            Safely bypasses heavy domain instantiation logic, holding basic layout arrays in active 
+            Safely bypasses heavy domain instantiation logic, holding basic layout arrays in active
             memory to facilitate structural continuity checks during mock training.
 
         Implementation Details:
-            Accepts and preserves the targeted topological sequences natively upon initialization, 
+            Accepts and preserves the targeted topological sequences natively upon initialization,
             preventing recursive environment allocations.
         """
+
         def __init__(self, boards):
             """
             Initializes the mock sampling pool.
@@ -109,13 +117,14 @@ def test_train_creates_new_agent_and_learns_once(monkeypatch, tmp_path):
         A structural stand-in mirroring third-party telemetry wrappers.
 
         Responsibility:
-            Acts as a safe pass-through layer, shielding the localized pipeline from requesting 
+            Acts as a safe pass-through layer, shielding the localized pipeline from requesting
             external statistical operations that could crash headless testing loops.
 
         Implementation Details:
-            Receives the foundational mock environment and strictly maps it natively to bypass 
+            Receives the foundational mock environment and strictly maps it natively to bypass
             the heavy initialization sequences associated with actual metric monitoring.
         """
+
         def __init__(self, env):
             """
             Initializes the artificial telemetry wrapper.
@@ -133,13 +142,14 @@ def test_train_creates_new_agent_and_learns_once(monkeypatch, tmp_path):
         A heavily simplified proxy for the primary neural network resolution engine.
 
         Responsibility:
-            Secures parameterized validation loops by artificially tracking simulation steps natively 
+            Secures parameterized validation loops by artificially tracking simulation steps natively
             without initializing actual mathematical weights or memory buffers.
 
         Implementation Details:
-            Logs its own instantiation globally to ensure strict memory allocation limits are respected. 
+            Logs its own instantiation globally to ensure strict memory allocation limits are respected.
             Overrides the fundamental learning hooks to record algorithmic loop execution requests natively.
         """
+
         def __init__(self, env, **kwargs):
             """
             Initializes the artificial neural proxy.
@@ -149,7 +159,7 @@ def test_train_creates_new_agent_and_learns_once(monkeypatch, tmp_path):
                 **kwargs: Any additional configuration parameters injected by the orchestrator.
 
             Implementation Details:
-                Preserves all execution arguments and appends itself to an external tracking array 
+                Preserves all execution arguments and appends itself to an external tracking array
                 to definitively verify instantiation frequency.
             """
             self.env = env
@@ -168,13 +178,15 @@ def test_train_creates_new_agent_and_learns_once(monkeypatch, tmp_path):
                 The active proxy instance, structurally mirroring a chainable learning method.
 
             Implementation Details:
-                Intercepts the operational limits and writes them directly to an external global 
+                Intercepts the operational limits and writes them directly to an external global
                 array, securely bypassing heavy combinatorial evaluations.
             """
             learn_calls.append((total_timesteps, reset_num_timesteps))
             return self
 
-    monkeypatch.setattr("offline_training.agent_trainer.BoardSamplingEnv", FakeSamplingEnv)
+    monkeypatch.setattr(
+        "offline_training.agent_trainer.BoardSamplingEnv", FakeSamplingEnv
+    )
     monkeypatch.setattr("offline_training.agent_trainer.Monitor", FakeMonitor)
     monkeypatch.setattr("offline_training.agent_trainer.RLAgent", FakeAgent)
 
@@ -211,24 +223,26 @@ def test_evaluate_builds_training_result(monkeypatch):
         monkeypatch: The active test environment fixture responsible for securely mocking system dependencies.
 
     Implementation Details:
-        Injects a lightweight mock environment to act as the spatial step-engine and a localized proxy 
-        agent to serve as the action-predictor. Feeds predefined structural success and failure states 
-        into the pipeline to strictly force exact mathematical reward distributions. Asserts that the resulting 
-        telemetry wrapper properly natively calculates absolute completion counts, average rewards, and overall 
+        Injects a lightweight mock environment to act as the spatial step-engine and a localized proxy
+        agent to serve as the action-predictor. Feeds predefined structural success and failure states
+        into the pipeline to strictly force exact mathematical reward distributions. Asserts that the resulting
+        telemetry wrapper properly natively calculates absolute completion counts, average rewards, and overall
         success ratios without triggering actual graph traversal logic.
     """
+
     class FakeAgent:
         """
         A proxy engine mimicking prediction responses for an isolated evaluation loop.
 
         Responsibility:
-            Provides purely synthetic navigational outputs to structurally bypass external inference layers 
+            Provides purely synthetic navigational outputs to structurally bypass external inference layers
             during performance evaluations.
 
         Implementation Details:
-            Maintains localized bindings for external environments and safely maps all prediction queries 
+            Maintains localized bindings for external environments and safely maps all prediction queries
             to a constant scalar, securely short-circuiting heavy algorithmic processing natively.
         """
+
         def set_env(self, env):
             """
             Binds the targeted domain configuration to the proxy model.
@@ -253,7 +267,7 @@ def test_evaluate_builds_training_result(monkeypatch):
                 An absolute scalar value mirroring a static navigational decision.
 
             Implementation Details:
-                Actively ignores all temporal or spatial arguments and rigidly returns a locked integer 
+                Actively ignores all temporal or spatial arguments and rigidly returns a locked integer
                 to maintain perfect execution continuity.
             """
             return 1
@@ -263,14 +277,15 @@ def test_evaluate_builds_training_result(monkeypatch):
         A completely synthetic simulation environment mapping internal completion states.
 
         Responsibility:
-            Emulates the entire mechanical progression layer, seamlessly transitioning between layout 
+            Emulates the entire mechanical progression layer, seamlessly transitioning between layout
             origins and structural conclusions natively to feed accurate metric streams into the evaluator.
 
         Implementation Details:
-            Relies entirely on injected configuration flags. It artificially mimics successful or failed 
-            state progressions by overriding standard telemetry tuples directly, ensuring the orchestration 
+            Relies entirely on injected configuration flags. It artificially mimics successful or failed
+            state progressions by overriding standard telemetry tuples directly, ensuring the orchestration
             engine interprets pure success and failure mathematics without graph computation.
         """
+
         def __init__(self, board):
             """
             Initializes the artificial progression framework.
@@ -279,7 +294,7 @@ def test_evaluate_builds_training_result(monkeypatch):
                 board: The raw structural data proxy containing specific predetermined success flags.
 
             Implementation Details:
-                Secures the layout configuration natively and initializes a simplistic namespace 
+                Secures the layout configuration natively and initializes a simplistic namespace
                 acting as the overarching game orchestrator loop.
             """
             self.board = board
@@ -305,12 +320,12 @@ def test_evaluate_builds_training_result(monkeypatch):
                 action: The synthetic action command proposed by the mocked predictor.
 
             Returns:
-                A comprehensive tuple resolving the state transition, including the observational snapshot, 
+                A comprehensive tuple resolving the state transition, including the observational snapshot,
                 the accumulated mathematical reward, and absolute completion states.
 
             Implementation Details:
-                Defensively evaluates the internalized board status proxy. Hardcodes absolute mathematical 
-                success structures if the active configuration is defined as solved, or securely returns 
+                Defensively evaluates the internalized board status proxy. Hardcodes absolute mathematical
+                success structures if the active configuration is defined as solved, or securely returns
                 negative metric punishments otherwise to verify accurate telemetry aggregations natively.
             """
             if self.board["solved"]:
@@ -322,7 +337,7 @@ def test_evaluate_builds_training_result(monkeypatch):
             Formally terminates the synthetic execution loop.
 
             Implementation Details:
-                Acts as a strictly inert endpoint, safely catching and swallowing resource teardown 
+                Acts as a strictly inert endpoint, safely catching and swallowing resource teardown
                 requests to prevent execution crashes.
             """
             pass
@@ -354,9 +369,9 @@ def test_save_delegates_to_agent_and_saves_replay_buffer(tmp_path):
         tmp_path: The localized session fixture providing ephemeral directory bindings for safe file emulation.
 
     Implementation Details:
-        Instruments a fake internal sub-model structure natively that logs save paths and replay buffer 
-        extraction calls. Triggers the serialization workflow utilizing a custom destination string and 
-        definitively asserts that both the primary architecture wrapper and the associated secondary telemetry 
+        Instruments a fake internal sub-model structure natively that logs save paths and replay buffer
+        extraction calls. Triggers the serialization workflow utilizing a custom destination string and
+        definitively asserts that both the primary architecture wrapper and the associated secondary telemetry
         buffer accurately track the correct physical destination hooks.
     """
     saved_paths = []
@@ -370,9 +385,10 @@ def test_save_delegates_to_agent_and_saves_replay_buffer(tmp_path):
             Safely bypasses deep tensor serialization logic during structural teardown verifications.
 
         Implementation Details:
-            Actively intercepts calls directed at deep structural checkpoints and logs the requested 
+            Actively intercepts calls directed at deep structural checkpoints and logs the requested
             destination paths securely without engaging system I/O bounds natively.
         """
+
         def save_replay_buffer(self, path):
             """
             Intercepts localized buffer memory persistence requests.
@@ -390,13 +406,14 @@ def test_save_delegates_to_agent_and_saves_replay_buffer(tmp_path):
         An artificial primary neural entity coordinating secondary model storage commands.
 
         Responsibility:
-            Interacts precisely with localized orchestrators to structurally map internal 
+            Interacts precisely with localized orchestrators to structurally map internal
             serialization directives down to nested mathematical subsystems natively.
 
         Implementation Details:
-            Bootstraps an artificial internal model directly. Employs a mocked persistence hook to 
+            Bootstraps an artificial internal model directly. Employs a mocked persistence hook to
             passively catalog routing trajectories requested by the overarching test orchestrator.
         """
+
         def __init__(self):
             """
             Initializes the simplified proxy serialization framework.
@@ -414,7 +431,7 @@ def test_save_delegates_to_agent_and_saves_replay_buffer(tmp_path):
                 path: The targeted baseline destination endpoint.
 
             Implementation Details:
-                Routes the provided structural string strictly into an external observation array 
+                Routes the provided structural string strictly into an external observation array
                 to accurately verify save loop triggering.
             """
             saved_paths.append(path)

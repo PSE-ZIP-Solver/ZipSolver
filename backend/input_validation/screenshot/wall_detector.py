@@ -16,13 +16,13 @@ class WallDetector:
     Delineates physical boundaries separating distinct cell geometries.
 
     Responsibility:
-        Scans calculated logical divisions translating heavy graphical pixel lines into 
+        Scans calculated logical divisions translating heavy graphical pixel lines into
         explicit impassable barrier nodes for the internal evaluation graph.
 
     Implementation Details:
-        Operates without memory allocations mapping purely off pre-calculated cell geometries 
-        and established visual themes. Selectively measures narrow coordinate slices and utilizes 
-        heavy mathematical variance matrices targeting contrast jumps separating standard line 
+        Operates without memory allocations mapping purely off pre-calculated cell geometries
+        and established visual themes. Selectively measures narrow coordinate slices and utilizes
+        heavy mathematical variance matrices targeting contrast jumps separating standard line
         bleed from intentionally rendered obstacles.
     """
 
@@ -48,9 +48,9 @@ class WallDetector:
             ValueError: If coordinate structures are provided inherently blank.
 
         Implementation Details:
-            Iterates exclusively upon lower and right-ward neighbor relationships structurally, 
-            actively bypassing retroactive mapping loops entirely. Identifies matching adjacent 
-            pixel slices querying contrast maps generating natively compliant structures mapped 
+            Iterates exclusively upon lower and right-ward neighbor relationships structurally,
+            actively bypassing retroactive mapping loops entirely. Identifies matching adjacent
+            pixel slices querying contrast maps generating natively compliant structures mapped
             immediately utilizing native pure integer wrappers.
         """
         if image_data is None or image_data.size == 0:
@@ -73,10 +73,12 @@ class WallDetector:
                     image_data, (grid_x, grid_y), neighbour, bbox_a, bbox_b, theme
                 ):
                     # FORMAT_AS_NEIGHBORA_NEIGHBORB_DICTS — pure-int lists for the schema.
-                    walls.append({
-                        "neighborA": [int(grid_x), int(grid_y)],
-                        "neighborB": [int(neighbour[0]), int(neighbour[1])],
-                    })
+                    walls.append(
+                        {
+                            "neighborA": [int(grid_x), int(grid_y)],
+                            "neighborB": [int(neighbour[0]), int(neighbour[1])],
+                        }
+                    )
 
         return walls
 
@@ -106,9 +108,9 @@ class WallDetector:
             A mathematical boolean dictating positive boundary separation.
 
         Implementation Details:
-            Selects narrow slivers bridging coordinate limits strictly calculating ratio variations 
-            against extracted baselines. Employs direct contrast limits against calculated core 
-            cell medians directly bypassing traditional absolute thresholding or Otsu segmentation 
+            Selects narrow slivers bridging coordinate limits strictly calculating ratio variations
+            against extracted baselines. Employs direct contrast limits against calculated core
+            cell medians directly bypassing traditional absolute thresholding or Otsu segmentation
             which uniformly failed during dense testing sequences due to misdetected thematic loops.
         """
         import cv2
@@ -167,17 +169,19 @@ class WallDetector:
         import numpy as np
 
         samples = []
-        for (px, py, w, h) in (bbox_a, bbox_b):
+        for px, py, w, h in (bbox_a, bbox_b):
             # Markers occupy the cell CENTRE. Sample inset corners so neither
             # the marker nor the border becomes the reference background.
             for fx in (0.1, 0.8):
                 for fy in (0.1, 0.8):
                     y0, y1 = int(py + h * fy), int(py + h * (fy + 0.1))
                     x0, x1 = int(px + w * fx), int(px + w * (fx + 0.1))
-                    patch = image_data[max(0, y0):y1, max(0, x0):x1]
+                    patch = image_data[max(0, y0) : y1, max(0, x0) : x1]
                     if patch is None or getattr(patch, "size", 0) == 0:
                         continue
-                    samples.append(float(np.median(cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY))))
+                    samples.append(
+                        float(np.median(cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)))
+                    )
         if not samples:
             return None
         return float(np.median(samples))
@@ -200,8 +204,8 @@ class WallDetector:
             An exact, heavily cropped multidimensional array isolating visual intersections.
 
         Implementation Details:
-            Extracts the precise horizontal or vertical intersection axes programmatically. 
-            Actively calculates division half-steps securely routing slicing maps dynamically 
+            Extracts the precise horizontal or vertical intersection axes programmatically.
+            Actively calculates division half-steps securely routing slicing maps dynamically
             across horizontal axes when rightwards structures spawn, bypassing rigid limits organically.
         """
         ax, ay, aw, ah = bbox_a
@@ -212,11 +216,11 @@ class WallDetector:
             half = max(1, aw // 16)
             x0 = max(border_x - half, 0)
             x1 = border_x + half
-            return image_data[ay:ay + ah, x0:x1]
+            return image_data[ay : ay + ah, x0:x1]
 
         # B is below A -> horizontal shared border at y = ay + ah
         border_y = ay + ah
         half = max(1, ah // 16)
         y0 = max(border_y - half, 0)
         y1 = border_y + half
-        return image_data[y0:y1, ax:ax + aw]
+        return image_data[y0:y1, ax : ax + aw]

@@ -36,7 +36,9 @@ _BACKEND_COMPONENTS = [
 _FRONTEND = FrontendInfo(framework="React", buildTool="Vite", styling="Tailwind CSS")
 
 # backend/api/architecture_provider/ArchitectureProvider.py -> parents[3] == repo root
-_TRAINED_MODELS_DIR = Path(__file__).resolve().parents[3] / "offline_training" / "trained_models"
+_TRAINED_MODELS_DIR = (
+    Path(__file__).resolve().parents[3] / "offline_training" / "trained_models"
+)
 
 
 def available_model_sizes() -> list[int]:
@@ -107,7 +109,9 @@ class ArchitectureProvider:
         build_timestamp: str | None = None,
         model_status_provider: Callable[[], ModelInfo] | None = None,
     ) -> None:
-        self._build_timestamp = build_timestamp or datetime.now(timezone.utc).isoformat()
+        self._build_timestamp = (
+            build_timestamp or datetime.now(timezone.utc).isoformat()
+        )
         self._model_status_provider = model_status_provider
 
     def collect(self) -> ArchitectureInfo:
@@ -137,8 +141,12 @@ class ArchitectureProvider:
     def _rl_stack(self) -> RLStackInfo:
         return RLStackInfo(
             deepLearning=LibraryInfo(name="PyTorch", version=_pkg_version("torch")),
-            rlLibrary=LibraryInfo(name="Stable-Baselines3", version=_pkg_version("stable-baselines3")),
-            environment=LibraryInfo(name="Gymnasium", version=_pkg_version("gymnasium")),
+            rlLibrary=LibraryInfo(
+                name="Stable-Baselines3", version=_pkg_version("stable-baselines3")
+            ),
+            environment=LibraryInfo(
+                name="Gymnasium", version=_pkg_version("gymnasium")
+            ),
             algorithm="DQN",
             model=self._model_status(),
         )

@@ -77,7 +77,7 @@ def create_snake_path(size: int = 6):
 
     Implementation Details:
         Creates a complete snake-like path through a square board.
-        Example for 6x6: Row 0: left to right, Row 1: right to left... 
+        Example for 6x6: Row 0: left to right, Row 1: right to left...
         Algorithmically executes directional alternations organically traversing the layout completely.
     """
     path = []
@@ -96,6 +96,7 @@ def create_snake_path(size: int = 6):
 # ==========================================
 # Valid Move Checks
 # ==========================================
+
 
 def test_valid_move_to_empty_adjacent_cell(board, game_state, rules):
     """
@@ -191,6 +192,7 @@ def test_invalid_move_to_visited_cell(board, game_state, rules):
 # Waypoint Order Checks
 # ==========================================
 
+
 def test_valid_move_to_next_waypoint(board, game_state, rules):
     """
     Asserts logical sequence matching accurately validates checkpoints naturally gracefully.
@@ -271,6 +273,7 @@ def test_valid_move_to_waypoint_after_increment(board, game_state, rules):
 # ==========================================
 # Endpoint Rule Checks
 # ==========================================
+
 
 def test_invalid_move_to_final_waypoint_too_early(
     board,
@@ -377,6 +380,7 @@ def test_invalid_move_when_current_waypoint_is_only_waypoint(board, rules):
 # ==========================================
 # Complete Solution Checks
 # ==========================================
+
 
 def test_complete_solution_valid_snake_path(board, rules):
     """

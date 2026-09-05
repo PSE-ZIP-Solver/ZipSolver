@@ -20,6 +20,8 @@ dependencies = [
     "tensorboard>=2.21.0",
     "torch>=2.12.1",
     "uvicorn[standard]>=0.51.0",
+    "flake8==7.3.0",
+    "black==26.5.1",
 ]
 
 [build-system]

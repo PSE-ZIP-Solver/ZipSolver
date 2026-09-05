@@ -40,7 +40,7 @@ def _board(size: int, waypoints, walls=()):
         The securely populated puzzle board matching given structural arguments.
 
     Implementation Details:
-        Directly wraps underlying domain object instantiation utilizing raw coordinate 
+        Directly wraps underlying domain object instantiation utilizing raw coordinate
         loops to streamline repetitive structural definitions across tests.
     """
     board = Board(size)
@@ -56,13 +56,14 @@ class TestValidBoards:
     Evaluates successful traversal behaviors targeting untainted topologies.
 
     Responsibility:
-        Ensures baseline structural matrices natively pass rigid validations cleanly 
+        Ensures baseline structural matrices natively pass rigid validations cleanly
         without flagging false positive assertions.
 
     Implementation Details:
-        Relies heavily on parametrization passing varying acceptable scales validating 
+        Relies heavily on parametrization passing varying acceptable scales validating
         empty array error returns and positive boolean state confirmations across the layer.
     """
+
     def test_minimal_valid_board(self, validator):
         """
         Confirms absolute baseline matrices safely resolve validation gates natively.
@@ -105,9 +106,10 @@ class TestBoardSize:
         Verifies the overarching architectural scale limit strictly terminates bounding evaluations.
 
     Implementation Details:
-        Constructs purposefully corrupted sizes validating the precise generation of the isolated 
+        Constructs purposefully corrupted sizes validating the precise generation of the isolated
         size violation taxonomy without bleeding into sub-checks.
     """
+
     @pytest.mark.parametrize("size", [5, 9, 10])
     def test_unsupported_size_rejected(self, validator, size):
         """
@@ -142,9 +144,10 @@ class TestWaypoints:
         Asserts the semantic rules managing milestone limits correctly enforce duplication, bounds, and volumes.
 
     Implementation Details:
-        Instantiates structurally illegal layouts targeting specific node constraints to force exact 
+        Instantiates structurally illegal layouts targeting specific node constraints to force exact
         violation code generations mapped to standard definitions.
     """
+
     def test_too_few_waypoints(self, validator):
         """
         Defends the strict rule that traversals must explicitly contain structural beginnings and ends.
@@ -187,9 +190,10 @@ class TestWalls:
         Identifies unresolvable physical mapping conditions violating localized graph topologies.
 
     Implementation Details:
-        Forces identical cell looping and illegal diagonal spacing into the validator matching strict 
+        Forces identical cell looping and illegal diagonal spacing into the validator matching strict
         outputs explicitly.
     """
+
     def test_non_adjacent_wall(self, validator):
         """
         Prevents diagonal or heavily gapped definitions mapping non-contiguous blocks.
@@ -232,13 +236,14 @@ class TestExhaustiveCollection:
     Validates structural error aggregation preventing drip-feed failure debugging.
 
     Responsibility:
-        Assures multiple spatial logic faults are actively grouped and simultaneously returned 
+        Assures multiple spatial logic faults are actively grouped and simultaneously returned
         rather than abruptly short-circuiting at the first encountered warning.
 
     Implementation Details:
-        Purposely builds broken layouts expecting the resulting diagnostic payload 
+        Purposely builds broken layouts expecting the resulting diagnostic payload
         array to accurately reflect the sheer quantity of individual errors detected iteratively.
     """
+
     def test_collects_multiple_errors(self, validator):
         """
         Every problem is reported at once, not one-at-a-time.
@@ -249,7 +254,9 @@ class TestExhaustiveCollection:
         Implementation Details:
             Injects missing volumes, out-of-bounds metrics, and bad walls simultaneously checking error lengths.
         """
-        board = _board(6, [(9, 9)], walls=[((0, 0), (3, 3))])  # too few + oob + bad wall
+        board = _board(
+            6, [(9, 9)], walls=[((0, 0), (3, 3))]
+        )  # too few + oob + bad wall
         result = validator.validate(board)
         assert result.valid is False
         assert len(result.errors) >= 2
