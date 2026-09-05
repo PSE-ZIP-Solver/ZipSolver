@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 
 import type { GridSize } from "../types/board";
 
+/** Modal state and callbacks used to confirm screenshot board dimensions. */
 interface ImportSizeModalProps {
   isOpen: boolean;
   selectedSize: GridSize;
@@ -11,6 +12,7 @@ interface ImportSizeModalProps {
   onConfirm: () => void;
 }
 
+/** Collects the board size required to interpret an imported screenshot. */
 export default function ImportSizeModal({
   isOpen,
   selectedSize,

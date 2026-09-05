@@ -1,3 +1,4 @@
+/** Centralized user-facing copy for builder, solver, play, and import workflows. */
 export const dialogMessages = {
     welcome: "Welcome to ZipSolver! Build a puzzle or try some of our examples!",
 

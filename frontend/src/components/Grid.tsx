@@ -19,6 +19,7 @@ import {
 	type EditMode
 } from "../types/grid";
 
+/** Rendering and interaction contract for the canvas-backed puzzle grid. */
 interface GridProps {
 	board: BoardConfig;
 	solution: SolutionPath | null;
@@ -26,7 +27,6 @@ interface GridProps {
 	playerPath: Position[];
 	activePosition: Position | null;
 	nextWaypoint: Position | null;
-	hintPosition: Position | null;
 	hintPath: SolutionPath | null;
 	hintPathVersion?: number;
 	isPlayMode: boolean;
@@ -78,6 +78,7 @@ function createWall(a: Position, b: Position): Wall {
 	};
 }
 
+/** Renders board cells, walls, waypoint markers, and animated paths. */
 export default function Grid({
 	board,
 	solution,
@@ -85,7 +86,6 @@ export default function Grid({
 	playerPath,
 	activePosition,
 	nextWaypoint,
-	hintPosition,
 	hintPath,
 	hintPathVersion = 0,
 	isPlayMode,
@@ -175,13 +175,19 @@ export default function Grid({
 
 	const activeCellKey = activePosition ? `${activePosition[0]},${activePosition[1]}` : null;
 	const nextWaypointKey = nextWaypoint ? `${nextWaypoint[0]},${nextWaypoint[1]}` : null;
-	const hintCellKey = hintPosition ? `${hintPosition[0]},${hintPosition[1]}` : null;
 	const startPosition = board.waypoints[0] ?? null;
-	const pathToRender = startPosition && playerPath.length > 0
-		? (playerPath[0] && playerPath[0][0] === startPosition[0] && playerPath[0][1] === startPosition[1]
-			? playerPath
-			: [startPosition, ...playerPath])
-		: playerPath;
+	const pathToRender = useMemo(() => {
+		if (!startPosition || playerPath.length === 0) {
+			return playerPath;
+		}
+
+		const [firstPosition] = playerPath;
+		if (firstPosition && firstPosition[0] === startPosition[0] && firstPosition[1] === startPosition[1]) {
+			return playerPath;
+		}
+
+		return [startPosition, ...playerPath];
+	}, [playerPath, startPosition]);
 	const solutionPathToRender = useMemo(() => {
 		if (!solution || solution.length === 0) {
 			return [];
@@ -222,7 +228,7 @@ export default function Grid({
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		ctx.clearRect(0, 0, gridPixels, gridPixels);
 
-		if (!solution || solutionPathToRender.length < 2) {
+		if (solutionPathToRender.length < 2) {
 			return;
 		}
 
@@ -490,7 +496,6 @@ export default function Grid({
 						const isHovered = hoveredCell === index;
 
 						const isActive = activeCellKey === key;
-						const isHint = hintCellKey === key;
 						const rightWallExists =
 							col < board.boardSize - 1
 								? wallSet.has(getWallKey([row, col], [row, col + 1]))
@@ -549,9 +554,6 @@ export default function Grid({
 									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_var(--color-path-highlight-glow)]" />
 								)}
 
-								{isHint && !isActive && (
-									<div className="absolute inset-0 rounded-xl border border-dashed border-hint-border bg-hint-bg" />
-								)}
 
 								{editMode === "WALLS" && col < board.boardSize - 1 && !rightWallExists && (
 									<button
@@ -672,6 +674,7 @@ export default function Grid({
 								<div
 									key={renderKey}
 									role="button"
+									tabIndex={editMode === "WALLS" ? 0 : -1}
 									aria-label={wallLabel}
 									className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity ui-transition"
 									style={{
@@ -684,6 +687,12 @@ export default function Grid({
 									}}
 									onClick={() => {
 										if (editMode === "WALLS") {
+											onWallClick(wall);
+										}
+									}}
+									onKeyDown={(event) => {
+										if (editMode === "WALLS" && (event.key === "Enter" || event.key === " ")) {
+											event.preventDefault();
 											onWallClick(wall);
 										}
 									}}
@@ -704,6 +713,7 @@ export default function Grid({
 							<div
 								key={renderKey}
 								role="button"
+								tabIndex={editMode === "WALLS" ? 0 : -1}
 								aria-label={wallLabel}
 								className="grid-wall absolute rounded-full cursor-pointer hover:opacity-80 transition-opacity ui-transition"
 								style={{
@@ -716,6 +726,12 @@ export default function Grid({
 								}}
 								onClick={() => {
 									if (editMode === "WALLS") {
+										onWallClick(wall);
+									}
+								}}
+								onKeyDown={(event) => {
+									if (editMode === "WALLS" && (event.key === "Enter" || event.key === " ")) {
+										event.preventDefault();
 										onWallClick(wall);
 									}
 								}}

@@ -2,11 +2,13 @@ import { Examples } from "../data/examplesData";
 import { type BoardConfig, type GridSize } from "../types/board";
 import ExampleCard from "./ExamplesCard";
 
+/** Board-size filter and selection callback for the example catalogue. */
 interface ExamplesSectionProps {
     currentBoardSize: GridSize;
     onSelectExample: (board: BoardConfig, name: string) => void;
 }
 
+/** Displays examples matching the currently selected board size. */
 export default function ExamplesSection({
     currentBoardSize,
     onSelectExample

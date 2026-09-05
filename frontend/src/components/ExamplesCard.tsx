@@ -1,5 +1,6 @@
 import { type BoardConfig } from "../types/board";
 
+/** Data and callback needed to render one selectable example board. */
 interface ExampleCardProps {
     title: string;
     config: BoardConfig;
@@ -13,6 +14,7 @@ export default function ExampleCard({
 }: ExampleCardProps) {
     return (
         <button
+            type="button"
             onClick={onSelect}
             className="
                 flex flex-col items-center p-3 w-full

@@ -1,3 +1,4 @@
+/** Renders the application footer and current copyright year. */
 const Footer: React.FC = () => {
   return (
     <footer className="bg-chrome 

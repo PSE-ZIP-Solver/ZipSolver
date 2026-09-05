@@ -3,6 +3,7 @@ import {
 } from "../types/solver";
 
 
+/** Optional solver metrics; an empty state renders zero-valued placeholders. */
 interface MetricsPanelProps {
 	metrics: SolverMetrics | null;
 }
@@ -26,7 +27,7 @@ function formatValue(
 		key.toLowerCase().includes("time") ||
 		key.toLowerCase().includes("runtime")
 	) {
-		return `${value} ms`;
+		return `${String(value)} ms`;
 	}
 
 	return String(value);
@@ -48,6 +49,7 @@ const defaultMetrics: SolverMetrics = {
 };
 
 
+/** Displays the measurable output of the most recent solver request. */
 export default function MetricsPanel({
 	metrics
 }: MetricsPanelProps) {
