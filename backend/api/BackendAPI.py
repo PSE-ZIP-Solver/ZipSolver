@@ -57,7 +57,9 @@ class ArchitectureProviderProtocol(Protocol):
 
 
 class ScreenshotExtractorProtocol(Protocol):
-    def extract_to_dict(self, image_bytes: bytes, board_size: int | None = None) -> dict: ...
+    def extract_to_dict(
+        self, image_bytes: bytes, board_size: int | None = None
+    ) -> dict: ...
 
 
 # ── Domain exception → mapped to a 422 ErrorResponse by the handler below ──
@@ -77,8 +79,13 @@ class ScreenshotImportError(Exception):
     image at all' (400) from 'read a board but its waypoints were inconsistent' (422).
     """
 
-    def __init__(self, message: str, *, http_status: int = 400,
-                 code: ErrorCode = ErrorCode.MALFORMED_REQUEST) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        http_status: int = 400,
+        code: ErrorCode = ErrorCode.MALFORMED_REQUEST,
+    ) -> None:
         self.http_status = http_status
         self.code = code
         super().__init__(message)
@@ -219,7 +226,9 @@ class BackendAPI:
         self.app.post("/api/solve", response_model=SolverResponse)(self.solvePuzzle)
         self.app.post("/api/import", response_model=ImportResult)(self.importPuzzle)
         self.app.get("/api/health", response_model=HealthStatus)(self.healthCheck)
-        self.app.get("/api/architecture", response_model=ArchitectureInfo)(self.getArchitecture)
+        self.app.get("/api/architecture", response_model=ArchitectureInfo)(
+            self.getArchitecture
+        )
 
     def solvePuzzle(self, request: PuzzleRequest) -> SolverResponse:
         """POST /api/solve — validate, then run the solver strategy. Always 200 on a solver
@@ -374,8 +383,12 @@ class BackendAPI:
         answerable even when those collaborators are degraded. `modelLoaded` is reported
         only when the RL layer has supplied a status provider.
         """
-        model_loaded = self._model_loaded_provider() if self._model_loaded_provider else None
-        return HealthStatus(status="ok", apiVersion=API_VERSION, modelLoaded=model_loaded)
+        model_loaded = (
+            self._model_loaded_provider() if self._model_loaded_provider else None
+        )
+        return HealthStatus(
+            status="ok", apiVersion=API_VERSION, modelLoaded=model_loaded
+        )
 
     def getArchitecture(self) -> ArchitectureInfo:
         """GET /api/architecture — read-only runtime technical inventory (§5.5.6).
@@ -436,10 +449,14 @@ class BackendAPI:
                 details=None,
                 timestamp=_now_iso(),
             )
-            return JSONResponse(status_code=400, content=body.model_dump(by_alias=True, mode="json"))
+            return JSONResponse(
+                status_code=400, content=body.model_dump(by_alias=True, mode="json")
+            )
 
         @self.app.exception_handler(SemanticValidationError)
-        async def _on_semantic(_: Request, exc: SemanticValidationError) -> JSONResponse:
+        async def _on_semantic(
+            _: Request, exc: SemanticValidationError
+        ) -> JSONResponse:
             body = ErrorResponse(
                 status=422,
                 code=_code_from_result(exc.result),
@@ -447,7 +464,9 @@ class BackendAPI:
                 details=exc.result.errors or None,
                 timestamp=_now_iso(),
             )
-            return JSONResponse(status_code=422, content=body.model_dump(by_alias=True, mode="json"))
+            return JSONResponse(
+                status_code=422, content=body.model_dump(by_alias=True, mode="json")
+            )
 
         @self.app.exception_handler(ArchitectureUnavailableError)
         async def _on_architecture_unavailable(
@@ -460,10 +479,14 @@ class BackendAPI:
                 details=None,
                 timestamp=_now_iso(),
             )
-            return JSONResponse(status_code=503, content=body.model_dump(by_alias=True, mode="json"))
+            return JSONResponse(
+                status_code=503, content=body.model_dump(by_alias=True, mode="json")
+            )
 
         @self.app.exception_handler(ScreenshotImportError)
-        async def _on_screenshot(_: Request, exc: ScreenshotImportError) -> JSONResponse:
+        async def _on_screenshot(
+            _: Request, exc: ScreenshotImportError
+        ) -> JSONResponse:
             body = ErrorResponse(
                 status=exc.http_status,
                 code=exc.code,
@@ -485,4 +508,6 @@ class BackendAPI:
                 details=None,
                 timestamp=_now_iso(),
             )
-            return JSONResponse(status_code=500, content=body.model_dump(by_alias=True, mode="json"))
+            return JSONResponse(
+                status_code=500, content=body.model_dump(by_alias=True, mode="json")
+            )

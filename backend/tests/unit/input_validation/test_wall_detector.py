@@ -16,9 +16,9 @@ def mock_heavy_dependencies():
 
     Implementation Details:
         Safe Mocking [THE "DANGER ZONE"]:
-        Prevents Pytest from globally polluting sys.modules or attempting to load 
-        heavy CV/Math dependencies during test collection. Defines specific OpenCV 
-        thresholding constants internally prior to dictionary injection to ensure 
+        Prevents Pytest from globally polluting sys.modules or attempting to load
+        heavy CV/Math dependencies during test collection. Defines specific OpenCV
+        thresholding constants internally prior to dictionary injection to ensure
         mock evaluation pipelines execute flawlessly organically natively.
     """
     mock_numpy = MagicMock()
@@ -31,14 +31,8 @@ def mock_heavy_dependencies():
     mock_cv2.countNonZero = MagicMock()
 
     # Safely patch sys.modules
-    with patch.dict(sys.modules, {
-        "numpy": mock_numpy,
-        "cv2": mock_cv2
-    }):
-        yield {
-            "numpy": mock_numpy,
-            "cv2": mock_cv2
-        }
+    with patch.dict(sys.modules, {"numpy": mock_numpy, "cv2": mock_cv2}):
+        yield {"numpy": mock_numpy, "cv2": mock_cv2}
 
 
 class TestWallDetector:
@@ -46,27 +40,27 @@ class TestWallDetector:
     Comprehensive test suite ensuring accurate physical barrier interpretations natively.
 
     Responsibility:
-        Governs the operational verification of physical blockade mappings, ensuring structural 
-        boundaries are seamlessly detected, adjacency paths are successfully validated, 
+        Governs the operational verification of physical blockade mappings, ensuring structural
+        boundaries are seamlessly detected, adjacency paths are successfully validated,
         and false topological positives are appropriately filtered correctly organically perfectly.
 
     Implementation Details:
-        Relies heavily on isolated dimensional mock configurations, utilizing static boundary schemas 
-        across varying thematic backgrounds. Verifies structural output schemas match exact puzzle 
+        Relies heavily on isolated dimensional mock configurations, utilizing static boundary schemas
+        across varying thematic backgrounds. Verifies structural output schemas match exact puzzle
         domain rules seamlessly safely correctly efficiently.
     """
-    
+
     def setup_method(self):
         """
         Instantiates necessary testing boundaries natively prior to individual function execution cycles.
 
         Implementation Details:
-            Generates a pristine WallDetector state cleanly. Attaches a standard mocked dimensional 
-            image array dynamically replicating standard layout capacities securely, alongside an 
+            Generates a pristine WallDetector state cleanly. Attaches a standard mocked dimensional
+            image array dynamically replicating standard layout capacities securely, alongside an
             idealized cellular bounds matrix for immediate evaluation processing organically.
         """
         self.detector = WallDetector()
-        
+
         # Standard mock for a valid input image
         self.valid_image_mock = MagicMock()
         self.valid_image_mock.size = 90000
@@ -77,7 +71,7 @@ class TestWallDetector:
             (0, 0): (0, 0, 50, 50),
             (1, 0): (50, 0, 50, 50),
             (0, 1): (0, 50, 50, 50),
-            (1, 1): (50, 50, 50, 50)
+            (1, 1): (50, 50, 50, 50),
         }
 
     # --- FAST-FAIL & EDGE CASE TESTS ---
@@ -90,17 +84,19 @@ class TestWallDetector:
             ValueError: Escalar condition correctly triggers immediately if input streams are non-existent.
 
         Implementation Details:
-            Edge Case: Defensively short-circuit on None or empty image input. Asserts direct 
-            architectural boundaries flawlessly escalate exceptions properly, preventing cascading 
+            Edge Case: Defensively short-circuit on None or empty image input. Asserts direct
+            architectural boundaries flawlessly escalate exceptions properly, preventing cascading
             computer vision framework faults natively.
         """
         with pytest.raises(ValueError, match="Image data cannot be None or empty"):
             self.detector.detect_walls(None, self.valid_cell_bounds, ThemeMode.LIGHT)
-            
+
         empty_image_mock = MagicMock()
         empty_image_mock.size = 0
         with pytest.raises(ValueError, match="Image data cannot be None or empty"):
-            self.detector.detect_walls(empty_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
+            self.detector.detect_walls(
+                empty_image_mock, self.valid_cell_bounds, ThemeMode.DARK
+            )
 
     def test_fast_fail_on_invalid_cell_bounds(self):
         """
@@ -110,7 +106,7 @@ class TestWallDetector:
             ValueError: Escalar condition correctly triggers immediately if boundary dictionaries are missing.
 
         Implementation Details:
-            Edge Case: Abort if cell_bounds is empty or None. Evaluates the defensive parameter 
+            Edge Case: Abort if cell_bounds is empty or None. Evaluates the defensive parameter
             interception, actively feeding nullified grid context schemas and checking exception routes correctly.
         """
         with pytest.raises(ValueError, match="Cell bounds dictionary cannot be empty"):
@@ -128,20 +124,24 @@ class TestWallDetector:
 
         Implementation Details:
             Edge Case: A 1x1 board (or isolated cell) has no adjacent neighbors.
-            Should safely return an empty list without crashing on adjacency loops. Operates 
+            Should safely return an empty list without crashing on adjacency loops. Operates
             directly against isolated singular node maps ensuring short-circuits trigger properly smoothly.
         """
         single_cell_bounds = {(0, 0): (0, 0, 50, 50)}
-        
-        result = self.detector.detect_walls(self.valid_image_mock, single_cell_bounds, ThemeMode.LIGHT)
-        
+
+        result = self.detector.detect_walls(
+            self.valid_image_mock, single_cell_bounds, ThemeMode.LIGHT
+        )
+
         # Expect an empty list because there are no boundaries to evaluate
         assert result == []
 
     # --- ORCHESTRATION & BEHAVIORAL TESTS ---
 
-    @patch.object(WallDetector, '_is_wall_present')
-    def test_wall_detection_and_schema_formatting(self, mock_is_wall_present, mock_heavy_dependencies):
+    @patch.object(WallDetector, "_is_wall_present")
+    def test_wall_detection_and_schema_formatting(
+        self, mock_is_wall_present, mock_heavy_dependencies
+    ):
         """
         Validates mathematical constraint mapping appropriately produces correct structural boundary nodes safely smoothly.
 
@@ -150,11 +150,12 @@ class TestWallDetector:
             mock_heavy_dependencies: The mock matrix simulating numerical pipelines accurately.
 
         Implementation Details:
-            Orchestration & Behavior: Validates adjacency pairing and strict 
-            JSON schema formatting for the output. Intercepts the private visual checker directly, 
-            forcing explicit boolean boundaries, and meticulously confirms the overarching schema properly natively 
+            Orchestration & Behavior: Validates adjacency pairing and strict
+            JSON schema formatting for the output. Intercepts the private visual checker directly,
+            forcing explicit boolean boundaries, and meticulously confirms the overarching schema properly natively
             structures neighbor arrays successfully perfectly properly seamlessly.
         """
+
         # Mock the internal private method to dictate where walls exist.
         # We will simulate a wall between (0,0) <-> (1,0) AND (0,1) <-> (1,1).
         # We will simulate NO walls for vertical adjacencies (0,0) <-> (0,1), etc.
@@ -176,14 +177,18 @@ class TestWallDetector:
             Implementation Details:
                 Overrides internal edge checks strictly matching specific grid topological coordinates flawlessly perfectly.
             """
-            if (cell_a == (0, 0) and cell_b == (1, 0)) or (cell_a == (0, 1) and cell_b == (1, 1)):
+            if (cell_a == (0, 0) and cell_b == (1, 0)) or (
+                cell_a == (0, 1) and cell_b == (1, 1)
+            ):
                 return True
             return False
-            
+
         mock_is_wall_present.side_effect = wall_logic
 
         # Act
-        result = self.detector.detect_walls(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
+        result = self.detector.detect_walls(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK
+        )
 
         # Assert Schema
         assert isinstance(result, list)
@@ -204,21 +209,18 @@ class TestWallDetector:
         wall_pairs = [
             (tuple(wall["neighborA"]), tuple(wall["neighborB"])) for wall in result
         ]
-        
+
         # Note: Adjacencies might be appended as A->B or B->A depending on loop logic.
         # Normalize the pairs for safe assertion.
-        normalized_pairs = set([
-            tuple(sorted([pair[0], pair[1]])) for pair in wall_pairs
-        ])
+        normalized_pairs = set(
+            [tuple(sorted([pair[0], pair[1]])) for pair in wall_pairs]
+        )
 
-        expected_pairs = {
-            ((0, 0), (1, 0)),
-            ((0, 1), (1, 1))
-        }
+        expected_pairs = {((0, 0), (1, 0)), ((0, 1), (1, 1))}
 
         assert normalized_pairs == expected_pairs
 
-    @patch.object(WallDetector, '_extract_boundary_roi')
+    @patch.object(WallDetector, "_extract_boundary_roi")
     def test_theme_mode_routing(self, mock_extract_roi, mock_heavy_dependencies):
         """
         Validates thematic enumeration branches successfully cascade into diverse processing filters successfully appropriately cleanly.
@@ -228,13 +230,12 @@ class TestWallDetector:
             mock_heavy_dependencies: The functional library injection map context cleanly safely.
 
         Implementation Details:
-            Orchestration Test: Validates that the ThemeMode correctly routes 
-            different OpenCV thresholding constants. Checks the programmatic branches, verifying 
+            Orchestration Test: Validates that the ThemeMode correctly routes
+            different OpenCV thresholding constants. Checks the programmatic branches, verifying
             the exact execution nodes trigger correctly upon alternating Light and Dark mode variations perfectly optimally.
         """
         mock_cv2 = mock_heavy_dependencies["cv2"]
-        mock_numpy = mock_heavy_dependencies["numpy"]
-        
+
         # Setup a dummy ROI slice
         mock_roi = MagicMock()
         mock_extract_roi.return_value = mock_roi
@@ -242,22 +243,26 @@ class TestWallDetector:
         mock_cv2.countNonZero.return_value = 1000  # Arbitrary threshold pass
 
         # Act - Light Mode
-        self.detector.detect_walls(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
-        
+        self.detector.detect_walls(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT
+        )
+
         # Assert OpenCV used standard binary thresholding for Light mode (dark walls)
-        # We assume the implementation uses cv2.THRESH_BINARY_INV for dark walls on light bg, 
+        # We assume the implementation uses cv2.THRESH_BINARY_INV for dark walls on light bg,
         # or cv2.THRESH_BINARY. We just assert that it was called.
         # The detector no longer uses cv2.threshold: Otsu split every blank boundary into
         # two classes and reported all edges as walls. It now compares the boundary against
         # the adjacent cell interiors, so cvtColor (not threshold) is the call that matters.
         mock_cv2.cvtColor.assert_called()
-        
+
         # Reset mocks
         mock_cv2.threshold.reset_mock()
 
         # Act - Dark Mode
-        self.detector.detect_walls(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
-        
+        self.detector.detect_walls(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK
+        )
+
         # Assert thresholding was called again, and it should hypothetically use a different flag
         # (Though we can't assert the exact flag without knowing implementation, we verify it routes).
         # The detector no longer uses cv2.threshold: Otsu split every blank boundary into

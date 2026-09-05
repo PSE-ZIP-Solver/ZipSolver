@@ -9,13 +9,13 @@ class PuzzleRules:
     Validates logical and spatial constraints dictated by the puzzle's domain restrictions.
 
     Responsibility:
-        Functions as a stateless evaluation engine responsible for authenticating granular 
-        cellular transitions against rigid physics parameters (wall avoidance, boundaries) 
+        Functions as a stateless evaluation engine responsible for authenticating granular
+        cellular transitions against rigid physics parameters (wall avoidance, boundaries)
         and assessing macro-level winning conditions (Hamiltonian sequencing checks).
 
     Implementation Details:
-        Operates entirely as a detached processor without altering object state. Strictly employs 
-        a defensive, fast-fail execution methodology by aggressively chaining micro-validation 
+        Operates entirely as a detached processor without altering object state. Strictly employs
+        a defensive, fast-fail execution methodology by aggressively chaining micro-validation
         methods and instantaneously rejecting invalid data via immediate short-circuiting.
     """
 
@@ -32,9 +32,9 @@ class PuzzleRules:
             True if all spatial restrictions align mathematically, False if any constraint triggers.
 
         Implementation Details:
-            Invokes an explicitly sequenced chain of defensive sub-routines. Immediately short-circuits 
-            upon the very first rejection. Routines include boundary containment verifications, 
-            mathematical cardinational adjacencies, barrier blockage scans, visitation intersections, 
+            Invokes an explicitly sequenced chain of defensive sub-routines. Immediately short-circuits
+            upon the very first rejection. Routines include boundary containment verifications,
+            mathematical cardinational adjacencies, barrier blockage scans, visitation intersections,
             sequential order tracking guarantees, and finally overarching endpoint mathematical locks.
         """
         current = state.getCurrentPosition
@@ -72,9 +72,9 @@ class PuzzleRules:
             True if the route acts as a pure chronological Hamiltonian path mapping cleanly between bounds.
 
         Implementation Details:
-            Synchronously evaluates complex success parameters natively: validates initialization 
-            at the absolute lowest numerical constraint, calculates ending bounds on the terminal target, 
-            checks against complete volume metrics for pure coverage without overlaps, and validates 
+            Synchronously evaluates complex success parameters natively: validates initialization
+            at the absolute lowest numerical constraint, calculates ending bounds on the terminal target,
+            checks against complete volume metrics for pure coverage without overlaps, and validates
             ongoing barrier avoidance alongside strict sequenced sequencing checks.
         """
         return (
@@ -85,9 +85,10 @@ class PuzzleRules:
             and self._visitsWaypointsInCorrectOrder(board, path)
         )
 
-
     # PRIVATE METHODS:
-    def _preservesWaypointOrder(self, board: Board, state: GameState, target: Position) -> bool:
+    def _preservesWaypointOrder(
+        self, board: Board, state: GameState, target: Position
+    ) -> bool:
         """
         Assesses if navigating into a proposed coordinate breaches sequencing targets.
 
@@ -100,8 +101,8 @@ class PuzzleRules:
             True if stepping onto the cell validates or remains neutral, False if out of chronological sync.
 
         Implementation Details:
-            Extracts the underlying coordinate via property scans. If sterile, returns successfully. 
-            If occupied, specifically checks if the mathematical configuration rigidly matches the 
+            Extracts the underlying coordinate via property scans. If sterile, returns successfully.
+            If occupied, specifically checks if the mathematical configuration rigidly matches the
             historically awaited target integer.
         """
         waypoint = board.getWaypointAt(target)
@@ -123,10 +124,12 @@ class PuzzleRules:
             True if exact volumetric coverage mapping equates perfectly without duplications.
 
         Implementation Details:
-            Pairs a highly optimized length parity verification against baseline parameters, followed 
+            Pairs a highly optimized length parity verification against baseline parameters, followed
             strictly by enforcing a dynamic set-cast against universally sourced complete grids.
         """
-        return len(path) == board.getCellCount() and set(path) == board.getAllPositions()
+        return (
+            len(path) == board.getCellCount() and set(path) == board.getAllPositions()
+        )
 
     def _containsOnlyValidMoves(self, board: Board, path: List[Position]) -> bool:
         """
@@ -140,34 +143,36 @@ class PuzzleRules:
             True if zero invalid shifts or wall clipping incidents appear across the timeline.
 
         Implementation Details:
-            Short-circuits immediately against empty sequences. Sweeps the complete list iteratively 
-            checking intrinsic grid limits, then iterates pairwise offsets utilizing loop mechanics to 
+            Short-circuits immediately against empty sequences. Sweeps the complete list iteratively
+            checking intrinsic grid limits, then iterates pairwise offsets utilizing loop mechanics to
             determine valid sequential cardinal movements and barrier clearances.
         """
-        #Path empty or None
+        # Path empty or None
         if not path:
             return False
-        
-        #path inside Grid
-        for pos in path: 
+
+        # path inside Grid
+        for pos in path:
             if not board.isInside(pos):
                 return False
-        
-        #path is continuous and has no walls between
+
+        # path is continuous and has no walls between
         for i in range(len(path) - 1):
             current = path[i]
             next_pos = path[i + 1]
 
             if not board.areAdjacent(current, next_pos):
                 return False
-            
+
             if board.hasWallBetween(current, next_pos):
                 return False
 
         return True
 
     # NEW METHODE
-    def _visitsWaypointsInCorrectOrder(self, board: Board, path: List[Position]) -> bool:
+    def _visitsWaypointsInCorrectOrder(
+        self, board: Board, path: List[Position]
+    ) -> bool:
         """
         Validates the strict sequential occurrence of milestones embedded throughout a path sequence.
 
@@ -179,24 +184,26 @@ class PuzzleRules:
             True if the sequential milestones exactly match standard increasing sorted orders.
 
         Implementation Details:
-            Provisions a fresh matrix array, subsequently stepping over every occupied localized path entry. 
-            Whenever constraints arise natively on standard queries, compiles the raw parameter values. 
+            Provisions a fresh matrix array, subsequently stepping over every occupied localized path entry.
+            Whenever constraints arise natively on standard queries, compiles the raw parameter values.
             Finalizes validation securely by generating sorted internal lists matching pure blueprint data.
         """
         waypoint_orders = []
 
         for pos in path:
             waypoint = board.getWaypointAt(pos)
-            
+
             if waypoint is not None:
                 waypoint_orders.append(waypoint.getOrder)
 
         expected_orders = sorted([wp.getOrder for wp in board.getWaypoints])
 
         return expected_orders == waypoint_orders
-    
+
     # NEW METHOD
-    def _preservesEndpointRule(self, board: Board, state: GameState, target: Position) -> bool:
+    def _preservesEndpointRule(
+        self, board: Board, state: GameState, target: Position
+    ) -> bool:
         """
         Ensures the paramount final checkpoint is definitively entered only on the last valid move.
 
@@ -209,8 +216,8 @@ class PuzzleRules:
             True if terminal protocols operate properly, False if moving violates endpoint logic.
 
         Implementation Details:
-            Calculates extreme parameter magnitudes dynamically. Restricts active exit attempts strictly 
-            from peak variables, subsequently preventing any incoming transit queries onto terminal bounds 
+            Calculates extreme parameter magnitudes dynamically. Restricts active exit attempts strictly
+            from peak variables, subsequently preventing any incoming transit queries onto terminal bounds
             unless intrinsic active chronological lengths securely equal optimal coverage mathematics.
         """
         waypoints = board.getWaypoints
@@ -232,7 +239,7 @@ class PuzzleRules:
             return len(state.getPath) + 1 == board.getCellCount()
 
         return True
-    
+
     def _startsAtFirstWaypoint(self, board: Board, path: List[Position]) -> bool:
         """
         Checks if the baseline trajectory mathematically originates upon requirement 1.
@@ -245,8 +252,8 @@ class PuzzleRules:
             True if index zero properly points directly at mathematical target 1.
 
         Implementation Details:
-            Guards rigorously against empty datasets via null traps, invokes standard numerical lookup 
-            mechanisms targeting scalar parameter 1, and matches property references strictly against 
+            Guards rigorously against empty datasets via null traps, invokes standard numerical lookup
+            mechanisms targeting scalar parameter 1, and matches property references strictly against
             index zero.
         """
         if not path:
@@ -257,7 +264,6 @@ class PuzzleRules:
             return False
 
         return path[0] == first_waypoint.getPosition
-
 
     def _endsAtLastWaypoint(self, board: Board, path: List[Position]) -> bool:
         """
@@ -271,8 +277,8 @@ class PuzzleRules:
             True if the terminal index natively overlays the absolute maximum required localized target.
 
         Implementation Details:
-            Safely denies null parameters, computationally extracts peak coordinate magnitudes across 
-            underlying internal sets via functional programming structures, and rigidly binds the matching 
+            Safely denies null parameters, computationally extracts peak coordinate magnitudes across
+            underlying internal sets via functional programming structures, and rigidly binds the matching
             property parameters securely against final chronological arrays natively.
         """
         if not path:

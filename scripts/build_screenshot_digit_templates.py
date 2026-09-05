@@ -31,15 +31,24 @@ def main():
             draw = ImageDraw.Draw(image)
             text = str(digit)
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-            draw.text(((120 - right + left) / 2 - left, (140 - bottom + top) / 2 - top),
-                      text, fill=255, font=font)
+            draw.text(
+                ((120 - right + left) / 2 - left, (140 - bottom + top) / 2 - top),
+                text,
+                fill=255,
+                font=font,
+            )
             pixels = np.array(image)
             ys, xs = np.where(pixels > 0)
-            glyph = pixels[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+            glyph = pixels[ys.min() : ys.max() + 1, xs.min() : xs.max() + 1]
             variants.append(detector._normalise_glyph(glyph))
         templates[str(digit)] = np.stack(variants).astype(np.uint8)
-    destination = (Path(__file__).resolve().parents[1] / "backend" / "input_validation"
-                   / "screenshot" / "digit_templates.npz")
+    destination = (
+        Path(__file__).resolve().parents[1]
+        / "backend"
+        / "input_validation"
+        / "screenshot"
+        / "digit_templates.npz"
+    )
     np.savez_compressed(destination, **templates)
     print(destination)
 

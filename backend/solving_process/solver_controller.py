@@ -9,23 +9,27 @@ from backend.validation_result import ValidationResult
 DFS_TIMEOUT_MS = 10000
 logger = logging.getLogger(__name__)
 
+
 class SolverController:
     """
     Orchestrates the lifecycle and fallback strategies of multiple solving engines.
 
     Responsibility:
-        Acts as the primary traffic controller for incoming puzzle requests. It securely attempts 
-        high-performance Machine Learning resolution first, seamlessly degrades to an exhaustive 
-        algorithmic approach if the ML model fails or is unavailable, and ensures all outputs 
+        Acts as the primary traffic controller for incoming puzzle requests. It securely attempts
+        high-performance Machine Learning resolution first, seamlessly degrades to an exhaustive
+        algorithmic approach if the ML model fails or is unavailable, and ensures all outputs
         are rigorously mathematically validated before dispatching them.
 
     Implementation Details:
-        Employs a defensive, fault-tolerant execution pipeline. It heavily utilizes lazy-loading 
-        for the Reinforcement Learning stack to prevent critical CI/CD or health-check crashes 
-        on systems lacking ML dependencies. Exceptions thrown by engines are swallowed and logged 
+        Employs a defensive, fault-tolerant execution pipeline. It heavily utilizes lazy-loading
+        for the Reinforcement Learning stack to prevent critical CI/CD or health-check crashes
+        on systems lacking ML dependencies. Exceptions thrown by engines are swallowed and logged
         to ensure the fallback sequence remains unbroken.
     """
-    def __init__(self, rl_solver=None, algorithmic_solver=None, solution_validator=None):
+
+    def __init__(
+        self, rl_solver=None, algorithmic_solver=None, solution_validator=None
+    ):
         """
         Initializes the orchestration pipeline and its associated computational dependencies.
 
@@ -35,8 +39,8 @@ class SolverController:
             solution_validator: An optional pre-instantiated mathematical verification gateway.
 
         Implementation Details:
-            Safely delays the importation and instantiation of the RL module. Configures 
-            standalone algorithmic and validation fallback instances natively if they are not 
+            Safely delays the importation and instantiation of the RL module. Configures
+            standalone algorithmic and validation fallback instances natively if they are not
             explicitly provided via constructor injection.
         """
         # The RL solver is resolved on first use, not here. Importing it eagerly pulls in
@@ -49,12 +53,14 @@ class SolverController:
 
         if algorithmic_solver is None:
             from .algorithmic_solver import AlgorithmicSolver
+
             self._algorithmicSolver = AlgorithmicSolver(DFS_TIMEOUT_MS)
         else:
             self._algorithmicSolver = algorithmic_solver
 
         if solution_validator is None:
             from backend.solution_validator import SolutionValidator
+
             self._solutionValidator = SolutionValidator()
         else:
             self._solutionValidator = solution_validator
@@ -69,7 +75,7 @@ class SolverController:
         Implementation Details:
             A missing RL stack is recorded once and never retried, so a torch-less deployment
             pays the import cost a single time and then goes straight to the fallback.
-            Catches deep ImportErrors or registry faults and flips a protected boolean flag 
+            Catches deep ImportErrors or registry faults and flips a protected boolean flag
             to permanently bypass subsequent instantiation attempts.
         """
         if self._rlSolver is not None:
@@ -104,7 +110,7 @@ class SolverController:
             RuntimeError: If execution is requested but the engine failed its resolution check.
 
         Implementation Details:
-            Forces an internal resolution check. If successful, directly invokes the inherited 
+            Forces an internal resolution check. If successful, directly invokes the inherited
             solve interface on the active neural agent.
         """
         solver = self._resolveRlSolver()
@@ -123,12 +129,14 @@ class SolverController:
             The standard outcome envelope containing the algorithmic trajectory.
 
         Implementation Details:
-            Directly invokes the standard solve interface upon the pre-instantiated 
+            Directly invokes the standard solve interface upon the pre-instantiated
             computational fallback module.
         """
         return self._algorithmicSolver.solve(board)
 
-    def _validateCandidate(self, board: Board, result: SolverResult) -> ValidationResult:
+    def _validateCandidate(
+        self, board: Board, result: SolverResult
+    ) -> ValidationResult:
         """
         Submits a computed trajectory against the strict domain rule evaluator.
 
@@ -143,11 +151,11 @@ class SolverController:
             ValueError: If the solver claims success but structurally provides no coordinate array.
 
         Implementation Details:
-            Extracts the heavily protected internal path parameter from the result envelope 
-            and funnels it into the stateless validation module. Ensures short-circuiting 
+            Extracts the heavily protected internal path parameter from the result envelope
+            and funnels it into the stateless validation module. Ensures short-circuiting
             if empty payloads bypass earlier checks.
         """
-        # Rule Enforcement: Strictly passing the protected _path attribute 
+        # Rule Enforcement: Strictly passing the protected _path attribute
         if result._path is None:
             raise ValueError("Cannot validate a result with no path")
         return self._solutionValidator.validate(board, result._path)
@@ -160,53 +168,55 @@ class SolverController:
             board: The structured layout dictating dimensions and topological challenges.
 
         Returns:
-            A comprehensive, externally safe payload defining the ultimate success state, 
+            A comprehensive, externally safe payload defining the ultimate success state,
             which engine completed it, and any derived telemetry.
 
         Implementation Details:
-            Wraps attempts in strict Try/Except blocks to guarantee pipeline continuity. 
-            Evaluates the RL model first; if the status specifically resolves to SOLVED and 
-            subsequent mathematical validation clears, immediately returns the payload. 
-            If it fails, crashes, or produces invalid moves, the controller swallows the error 
-            and seamlessly passes the puzzle to the exhaustive Algorithmic solver. 
-            Finally constructs a formatted response mirroring precise API failure contracts 
+            Wraps attempts in strict Try/Except blocks to guarantee pipeline continuity.
+            Evaluates the RL model first; if the status specifically resolves to SOLVED and
+            subsequent mathematical validation clears, immediately returns the payload.
+            If it fails, crashes, or produces invalid moves, the controller swallows the error
+            and seamlessly passes the puzzle to the exhaustive Algorithmic solver.
+            Finally constructs a formatted response mirroring precise API failure contracts
             (e.g., separating TIMEOUT from UNSOLVABLE).
         """
         # --- Attempt 1: RL Solver ---
         try:
             rl_result = self._runRlSolver(board)
-            
+
             # Rule Enforcement: Checking protected enum `_status` directly
             if rl_result._status == SolverStatus.SOLVED:
                 validation = self._validateCandidate(board, rl_result)
-                
+
                 # Rule Enforcement: property without parentheses
                 if validation.isValid:
                     return SolverResponse(
                         success=True,
-                        path=rl_result._path, # Rule Enforcement: protected attributes
+                        path=rl_result._path,  # Rule Enforcement: protected attributes
                         message="Successfully solved using RL Agent.",
                         solverUsed="RLSolver",
-                        metrics=rl_result._metrics
+                        metrics=rl_result._metrics,
                     )
         except Exception as e:
             # Prevent RL crashes from breaking the fallback sequence
-            logger.warning(f"RL Solver failed with exception: {e}. Attempting fallback.")
+            logger.warning(
+                f"RL Solver failed with exception: {e}. Attempting fallback."
+            )
 
         # --- Attempt 2: Algorithmic Fallback ---
         try:
             algo_result = self._runFallbackSolver(board)
-            
+
             if algo_result._status == SolverStatus.SOLVED:
                 validation = self._validateCandidate(board, algo_result)
-                
+
                 if validation.isValid:
                     return SolverResponse(
                         success=True,
                         path=algo_result._path,
                         message="Successfully solved using Algorithmic Fallback.",
                         solverUsed="AlgorithmicSolver",
-                        metrics=algo_result._metrics
+                        metrics=algo_result._metrics,
                     )
 
             # Both solvers completed, but no path was valid. The algorithmic solver already
@@ -224,9 +234,9 @@ class SolverController:
                 message=self._message_for(algo_status),
                 solverUsed="AlgorithmicSolver",
                 metrics=algo_result._metrics,
-                status=algo_status
+                status=algo_status,
             )
-            
+
         except Exception as e:
             # Fallback crashed, handle gracefully
             logger.error(f"Algorithmic Solver failed with exception: {e}.")
@@ -236,7 +246,7 @@ class SolverController:
                 message="Solving failed due to internal error.",
                 solverUsed="AlgorithmicSolver",
                 metrics=SolverMetrics(runtimeMs=0, steps=0, attempts=1),
-                status=SolverStatus.FAILED
+                status=SolverStatus.FAILED,
             )
 
     @staticmethod
@@ -251,7 +261,7 @@ class SolverController:
             A descriptive contextual string mapped to the provided state.
 
         Implementation Details:
-            Utilizes a standard dictionary lookup pattern coupled with a `.get()` fallback 
+            Utilizes a standard dictionary lookup pattern coupled with a `.get()` fallback
             to ensure default context is applied to unmapped error variants.
         """
         return {

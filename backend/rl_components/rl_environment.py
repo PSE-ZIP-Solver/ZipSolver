@@ -11,14 +11,14 @@ class RLEnvironment(gym.Env):
     Custom Gym environment for the Zip puzzle game.
 
     Responsibility:
-        Translates the internal mathematical puzzle domain into a standardized virtual 
-        learning arena. Enables external neural agents to systematically interact with, 
+        Translates the internal mathematical puzzle domain into a standardized virtual
+        learning arena. Enables external neural agents to systematically interact with,
         observe, and evaluate grid states through normalized action-reward feedback loops.
 
     Implementation Details:
-        Inherits natively from `gymnasium.Env`. Encapsulates a standalone `Game` controller 
-        and defines explicit continuous spatial observation arrays paired against discrete 
-        action spaces. Translates physical obstructions and milestones into distinct 
+        Inherits natively from `gymnasium.Env`. Encapsulates a standalone `Game` controller
+        and defines explicit continuous spatial observation arrays paired against discrete
+        action spaces. Translates physical obstructions and milestones into distinct
         tensor layers to feed directly into the convolutional predictive layers.
     """
 
@@ -32,9 +32,9 @@ class RLEnvironment(gym.Env):
             board: The static layout configuration dictating spatial structures and constraints.
 
         Implementation Details:
-            Generates standardized multidimensional Box matrices utilizing explicit float bounds 
-            to represent an 8-channel depth map. Initializes a discrete mathematical space 
-            restricting inputs strictly to cardinal directions, and safely encapsulates a 
+            Generates standardized multidimensional Box matrices utilizing explicit float bounds
+            to represent an 8-channel depth map. Initializes a discrete mathematical space
+            restricting inputs strictly to cardinal directions, and safely encapsulates a
             fresh internal puzzle state controller.
         """
         super().__init__()
@@ -66,8 +66,8 @@ class RLEnvironment(gym.Env):
             A tuple pairing the active multi-channel observation matrix and a diagnostic info dictionary.
 
         Implementation Details:
-            Delegates standard random seeding to the parent class before aggressively flushing 
-            the internal `Game` state to clear visitation histories and coordinate trackers. 
+            Delegates standard random seeding to the parent class before aggressively flushing
+            the internal `Game` state to clear visitation histories and coordinate trackers.
             Regenerates the baseline tensor layers mapped to the freshly cleared layout.
         """
         super().reset(seed=seed)
@@ -88,15 +88,15 @@ class RLEnvironment(gym.Env):
             action: The discrete cardinal maneuver dictated by the neural agent.
 
         Returns:
-            A composite sequence conveying the ensuing tensor observation, the calculated 
-            floating-point reward, boolean flags denoting natural termination or forced truncation, 
+            A composite sequence conveying the ensuing tensor observation, the calculated
+            floating-point reward, boolean flags denoting natural termination or forced truncation,
             and a supplementary diagnostic dictionary.
 
         Implementation Details:
-            Unboxes the incoming action cleanly and calculates the absolute spatial translation. 
-            Actively intercepts invalid geometric moves (like colliding with walls or boundaries) 
-            prior to evaluating state traversal, punishing the agent and instantly terminating the episode. 
-            Otherwise, executes the step against the internal controller, aggregates dynamic milestone 
+            Unboxes the incoming action cleanly and calculates the absolute spatial translation.
+            Actively intercepts invalid geometric moves (like colliding with walls or boundaries)
+            prior to evaluating state traversal, punishing the agent and instantly terminating the episode.
+            Otherwise, executes the step against the internal controller, aggregates dynamic milestone
             rewards, and truncates evaluation loops if step limits organically expire.
         """
         action = int(action)
@@ -129,10 +129,7 @@ class RLEnvironment(gym.Env):
         )
 
         terminated = self.game.isFinished()
-        truncated = (
-            not terminated
-            and self.current_step_count >= self.config.max_steps
-        )
+        truncated = not terminated and self.current_step_count >= self.config.max_steps
 
         info = {
             "invalid_move": False,
@@ -150,9 +147,9 @@ class RLEnvironment(gym.Env):
             The normalized multidimensional array representing distinct physical and chronological states.
 
         Implementation Details:
-            Constructs a zeroed multidimensional buffer. Actively queries the encapsulated `Board` 
-            and `GameState` layers iterating completely across the layout. Projects distinct data points 
-            (visited matrices, fractional waypoint sequence bounds, specific cardinal barrier nodes) 
+            Constructs a zeroed multidimensional buffer. Actively queries the encapsulated `Board`
+            and `GameState` layers iterating completely across the layout. Projects distinct data points
+            (visited matrices, fractional waypoint sequence bounds, specific cardinal barrier nodes)
             into isolated boolean or normalized float channels to prevent convolution entanglement.
         """
         size = self.config.size
@@ -219,8 +216,8 @@ class RLEnvironment(gym.Env):
             ValueError: If the input directive violates standard discrete limits.
 
         Implementation Details:
-            Extracts native limits directly generating spatial offsets structurally mapping 
-            Standard Gym 0-3 actions against negative/positive geometric jumps strictly matching 
+            Extracts native limits directly generating spatial offsets structurally mapping
+            Standard Gym 0-3 actions against negative/positive geometric jumps strictly matching
             the top-left origin design.
         """
         x = current_position.getX
@@ -240,7 +237,9 @@ class RLEnvironment(gym.Env):
 
         raise ValueError(f"Invalid action: {action}")
 
-    def _calculate_reward(self, waypoint, expected_order: int, was_visited: bool) -> float:
+    def _calculate_reward(
+        self, waypoint, expected_order: int, was_visited: bool
+    ) -> float:
         """
         Calculate the reward for the latest valid move.
 
@@ -253,9 +252,9 @@ class RLEnvironment(gym.Env):
             The raw scalar valuation assigning positive values to successful progressions.
 
         Implementation Details:
-            Evaluates terminal conditions first, injecting massive completion payouts. 
-            Prioritizes valid chronological milestone intersects dynamically over raw spatial 
-            explorations to guide gradient climbs toward structured sequencing instead of 
+            Evaluates terminal conditions first, injecting massive completion payouts.
+            Prioritizes valid chronological milestone intersects dynamically over raw spatial
+            explorations to guide gradient climbs toward structured sequencing instead of
             aimless spatial mapping.
         """
         if self.game.isFinished():
@@ -277,16 +276,16 @@ class RLEnvironment(gym.Env):
             mode: The distinct structural flag driving visual or textual outputs.
 
         Returns:
-            The formatted string output strictly when operating under ANSI configurations, 
+            The formatted string output strictly when operating under ANSI configurations,
             otherwise natively routes into standard output streams.
 
         Raises:
             ValueError: If supplied with a formatting mode unmapped within core limits.
 
         Implementation Details:
-            Aggregates topological constraints traversing grid intersections explicitly. 
-            Calculates line demarcations injecting vertical bars and horizontal hyphens natively 
-            to physically symbolize barriers against distinct spatial nodes. Translates internal 
+            Aggregates topological constraints traversing grid intersections explicitly.
+            Calculates line demarcations injecting vertical bars and horizontal hyphens natively
+            to physically symbolize barriers against distinct spatial nodes. Translates internal
             milestones back to string indices allowing humans to visually debug internal arrays.
         """
         size = self.config.size

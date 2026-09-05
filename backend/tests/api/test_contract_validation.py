@@ -40,12 +40,16 @@ class TestPuzzleRequest:
     def test_accepts_snake_case_via_populate_by_name(self):
         """``populate_by_name=True`` lets backend code construct DTOs with Python-native
         field names without going through aliases."""
-        request = PuzzleRequest.model_validate({"board_size": 6, "waypoints": [(0, 0)], "walls": []})
+        request = PuzzleRequest.model_validate(
+            {"board_size": 6, "waypoints": [(0, 0)], "walls": []}
+        )
         assert request.board_size == 6
 
     def test_coordinates_are_coerced_to_tuples(self):
         """JSON arrays arrive as lists; the DTO normalises them to hashable tuples."""
-        request = PuzzleRequest.model_validate({"boardSize": 6, "waypoints": [[1, 2]], "walls": []})
+        request = PuzzleRequest.model_validate(
+            {"boardSize": 6, "waypoints": [[1, 2]], "walls": []}
+        )
         assert request.waypoints == [(1, 2)]
         assert isinstance(request.waypoints[0], tuple)
 
@@ -57,7 +61,9 @@ class TestPuzzleRequest:
         """§5.2: list index defines visit order. Reordering would silently change the
         puzzle, so sequence stability is part of the contract."""
         ordered = [[0, 0], [3, 1], [1, 4], [5, 5]]
-        request = PuzzleRequest.model_validate({"boardSize": 6, "waypoints": ordered, "walls": []})
+        request = PuzzleRequest.model_validate(
+            {"boardSize": 6, "waypoints": ordered, "walls": []}
+        )
         assert request.waypoints == [tuple(pair) for pair in ordered]
 
     def test_ignores_unknown_fields(self):
@@ -80,12 +86,24 @@ class TestPuzzleRequest:
         [
             pytest.param({"waypoints": [[0, 0]], "walls": []}, id="missing-boardSize"),
             pytest.param({"boardSize": 6, "walls": []}, id="missing-waypoints"),
-            pytest.param({"boardSize": "six", "waypoints": [[0, 0]]}, id="boardSize-not-int"),
-            pytest.param({"boardSize": 6, "waypoints": "nope"}, id="waypoints-not-list"),
-            pytest.param({"boardSize": 6, "waypoints": [[0]]}, id="coordinate-too-short"),
-            pytest.param({"boardSize": 6, "waypoints": [[0, 1, 2]]}, id="coordinate-too-long"),
-            pytest.param({"boardSize": 6, "waypoints": [["a", "b"]]}, id="coordinate-not-int"),
-            pytest.param({"boardSize": None, "waypoints": [[0, 0]]}, id="boardSize-null"),
+            pytest.param(
+                {"boardSize": "six", "waypoints": [[0, 0]]}, id="boardSize-not-int"
+            ),
+            pytest.param(
+                {"boardSize": 6, "waypoints": "nope"}, id="waypoints-not-list"
+            ),
+            pytest.param(
+                {"boardSize": 6, "waypoints": [[0]]}, id="coordinate-too-short"
+            ),
+            pytest.param(
+                {"boardSize": 6, "waypoints": [[0, 1, 2]]}, id="coordinate-too-long"
+            ),
+            pytest.param(
+                {"boardSize": 6, "waypoints": [["a", "b"]]}, id="coordinate-not-int"
+            ),
+            pytest.param(
+                {"boardSize": None, "waypoints": [[0, 0]]}, id="boardSize-null"
+            ),
             pytest.param({"boardSize": 6, "waypoints": None}, id="waypoints-null"),
         ],
     )
@@ -97,11 +115,18 @@ class TestPuzzleRequest:
         """§5.5.1 lists 6|7|8, but the constraint is enforced by ``InputValidator``, not
         the schema — so an out-of-range size yields 422 UNSUPPORTED_BOARD_SIZE rather
         than 400 MALFORMED_REQUEST. This test pins that division of responsibility."""
-        assert PuzzleRequest.model_validate({"boardSize": 99, "waypoints": [[0, 0]]}).board_size == 99
+        assert (
+            PuzzleRequest.model_validate(
+                {"boardSize": 99, "waypoints": [[0, 0]]}
+            ).board_size
+            == 99
+        )
 
     def test_negative_coordinates_pass_shape_validation(self):
         """Bounds are semantic, not structural — same division as board size."""
-        assert PuzzleRequest.model_validate({"boardSize": 6, "waypoints": [[-1, -1]]}).waypoints == [(-1, -1)]
+        assert PuzzleRequest.model_validate(
+            {"boardSize": 6, "waypoints": [[-1, -1]]}
+        ).waypoints == [(-1, -1)]
 
 
 class TestWallDTO:
@@ -119,7 +144,9 @@ class TestWallDTO:
         [
             pytest.param({"neighborA": [0, 0]}, id="missing-neighborB"),
             pytest.param({"neighborB": [0, 0]}, id="missing-neighborA"),
-            pytest.param({"neighborA": [0, 0], "neighborB": "x"}, id="neighbor-not-coordinate"),
+            pytest.param(
+                {"neighborA": [0, 0], "neighborB": "x"}, id="neighbor-not-coordinate"
+            ),
         ],
     )
     def test_rejects_malformed_walls(self, payload):
@@ -129,7 +156,9 @@ class TestWallDTO:
     def test_adjacency_is_not_enforced_at_schema_level(self):
         """Diagonal / non-adjacent walls are semantic errors (422 INVALID_WALLS), not
         shape errors (400)."""
-        assert WallDTO.model_validate({"neighborA": [0, 0], "neighborB": [5, 5]}).neighbor_b == (5, 5)
+        assert WallDTO.model_validate(
+            {"neighborA": [0, 0], "neighborB": [5, 5]}
+        ).neighbor_b == (5, 5)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -158,9 +187,12 @@ class TestSolverResponse:
 
     def test_status_serialises_as_bare_string(self):
         """``SolverStatus`` subclasses ``str`` so it emits ``"SOLVED"``, not
-        ``{"value": "SOLVED"}`` — the frontend's ``SolverStatus`` union depends on it."""
+        ``{"value": "SOLVED"}`` — the frontend's ``SolverStatus`` union depends on it.
+        """
         response = SolverResponse(
-            status=SolverStatus.SOLVED, success=True, metrics=SolverMetrics(runtimeMs=0, steps=0, attempts=1)
+            status=SolverStatus.SOLVED,
+            success=True,
+            metrics=SolverMetrics(runtimeMs=0, steps=0, attempts=1),
         )
         assert response.model_dump(mode="json")["status"] == "SOLVED"
 
@@ -177,7 +209,10 @@ class TestSolverResponse:
     def test_status_and_metrics_are_required(self):
         with pytest.raises(PydanticValidationError):
             SolverResponse.model_validate(
-                {"success": True, "metrics": {"runtimeMs": 0, "steps": 0, "attempts": 1}}
+                {
+                    "success": True,
+                    "metrics": {"runtimeMs": 0, "steps": 0, "attempts": 1},
+                }
             )
         with pytest.raises(PydanticValidationError):
             SolverResponse.model_validate({"status": "SOLVED", "success": True})
@@ -448,7 +483,9 @@ class TestInternalToApiConsistency:
     def test_api_metrics_field_names_match_internal_metrics(self):
         """The internal ``SolverMetrics`` exposes ``getRuntimeMs`` / ``getSteps`` /
         ``getAttempts``; the DTO must offer a field for each."""
-        from backend.solving_process.solver_metrics import SolverMetrics as InternalMetrics
+        from backend.solving_process.solver_metrics import (
+            SolverMetrics as InternalMetrics,
+        )
 
         internal = InternalMetrics(runtimeMs=1, steps=2, attempts=3)
         dto = SolverMetrics(
@@ -456,7 +493,11 @@ class TestInternalToApiConsistency:
             steps=internal.getSteps,
             attempts=internal.getAttempts,
         )
-        assert dto.model_dump(by_alias=True) == {"runtimeMs": 1, "steps": 2, "attempts": 3}
+        assert dto.model_dump(by_alias=True) == {
+            "runtimeMs": 1,
+            "steps": 2,
+            "attempts": 3,
+        }
 
     def test_solution_path_positions_map_onto_coordinate_pairs(self):
         """The wire format is ``[x, y]``; the domain object is ``Position``. This is the

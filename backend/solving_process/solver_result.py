@@ -2,23 +2,31 @@ from typing import Optional
 
 from .solver_status import SolverStatus
 from .solver_metrics import SolverMetrics
-from backend.solution_path import SolutionPath  
+from backend.solution_path import SolutionPath
+
 
 class SolverResult:
     """
     Represents the immediate, localized outcome yielded by a specific solver algorithm.
 
     Responsibility:
-        Consolidates the mathematical solution trajectory, execution telemetry, and terminal 
-        status into a single, cohesive payload. It serves as the standard internal handoff 
+        Consolidates the mathematical solution trajectory, execution telemetry, and terminal
+        status into a single, cohesive payload. It serves as the standard internal handoff
         structure between the raw algorithmic engines and the higher-level orchestration layer.
 
     Implementation Details:
-        Employs strict state encapsulation holding heterogenous domain models. The physical 
-        trajectory attribute is treated as inherently optional to gracefully support failure 
+        Employs strict state encapsulation holding heterogenous domain models. The physical
+        trajectory attribute is treated as inherently optional to gracefully support failure
         states (e.g., timeouts or unsolvable grids) without triggering null-reference exceptions downstream.
     """
-    def __init__(self, status: SolverStatus, path: Optional[SolutionPath], message: str, metrics: SolverMetrics):
+
+    def __init__(
+        self,
+        status: SolverStatus,
+        path: Optional[SolutionPath],
+        message: str,
+        metrics: SolverMetrics,
+    ):
         """
         Constructs the formalized solver output package.
 
@@ -29,7 +37,7 @@ class SolverResult:
             metrics: The compiled performance telemetry object tracking resource utilization.
 
         Implementation Details:
-            Maps the varied execution variables and domain models directly into protected 
+            Maps the varied execution variables and domain models directly into protected
             internal parameters, firmly sealing the output state.
         """
         self._status = status
@@ -97,11 +105,8 @@ class SolverResult:
             True if the process formally completed and structurally contains a non-empty trajectory map.
 
         Implementation Details:
-            Synthesizes a quick binary validation by cross-referencing the explicit success state 
-            enum against the physical presence of the trajectory wrapper object, protecting callers 
+            Synthesizes a quick binary validation by cross-referencing the explicit success state
+            enum against the physical presence of the trajectory wrapper object, protecting callers
             from complex conditional checks.
         """
-        return (
-            self._status == SolverStatus.SOLVED
-            and self._path is not None
-        )
+        return self._status == SolverStatus.SOLVED and self._path is not None

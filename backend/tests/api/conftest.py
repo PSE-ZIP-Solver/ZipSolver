@@ -67,7 +67,9 @@ def make_path(coords: Iterable[tuple[int, int]]) -> SolutionPath:
     return path
 
 
-def make_metrics(runtime_ms: int = 142, steps: int = 36, attempts: int = 1) -> SolverMetrics:
+def make_metrics(
+    runtime_ms: int = 142, steps: int = 36, attempts: int = 1
+) -> SolverMetrics:
     return SolverMetrics(runtimeMs=runtime_ms, steps=steps, attempts=attempts)
 
 
@@ -129,7 +131,9 @@ def input_validator() -> MagicMock:
 def solver_controller() -> MagicMock:
     """SolverController stub — returns a SOLVED 3-cell path by default."""
     stub = MagicMock()
-    stub.solve.return_value = make_solver_result(path=make_path([(0, 0), (0, 1), (0, 2)]))
+    stub.solve.return_value = make_solver_result(
+        path=make_path([(0, 0), (0, 1), (0, 2)])
+    )
     return stub
 
 
@@ -155,7 +159,9 @@ def screenshot_extractor() -> MagicMock:
 def architecture_provider() -> MagicMock:
     """ArchitectureProvider stub — returns a real ArchitectureInfo built by the
     production provider, so the response shape under test is the genuine one."""
-    from backend.api.architecture_provider.ArchitectureProvider import ArchitectureProvider
+    from backend.api.architecture_provider.ArchitectureProvider import (
+        ArchitectureProvider,
+    )
 
     stub = MagicMock()
     stub.collect.return_value = ArchitectureProvider(
@@ -170,7 +176,13 @@ def architecture_provider() -> MagicMock:
 
 
 @pytest.fixture
-def make_api(interpreter, input_validator, solver_controller, architecture_provider, screenshot_extractor):
+def make_api(
+    interpreter,
+    input_validator,
+    solver_controller,
+    architecture_provider,
+    screenshot_extractor,
+):
     """Factory building a ``BackendAPI`` with any subset of collaborators overridden.
 
     Usage::

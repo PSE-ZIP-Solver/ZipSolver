@@ -52,9 +52,7 @@ class DoubleDQN(DQN):
                 nextActions = nextOnlineQValues.argmax(dim=1, keepdim=True)
 
                 # 2. The target network evaluates exactly that selected action.
-                nextTargetQValues = self.q_net_target(
-                    replay_data.next_observations
-                )
+                nextTargetQValues = self.q_net_target(replay_data.next_observations)
                 nextQValues = th.gather(
                     nextTargetQValues,
                     dim=1,
@@ -203,9 +201,7 @@ class AgentTrainer:
             raise ValueError("minNrOfWalls must be between 0 and nrOfWalls.")
 
         if not 0 <= self.minNrOfWaypoints <= nrOfWaypoints:
-            raise ValueError(
-                "minNrOfWaypoints must be between 0 and nrOfWaypoints."
-            )
+            raise ValueError("minNrOfWaypoints must be between 0 and nrOfWaypoints.")
 
         if trainingBoards is not None:
             self.trainingBoards = trainingBoards
@@ -419,9 +415,7 @@ class AgentTrainer:
         }
 
         # Preserve any custom replay-buffer options stored by SB3.
-        constructorArguments.update(
-            getattr(model, "replay_buffer_kwargs", None) or {}
-        )
+        constructorArguments.update(getattr(model, "replay_buffer_kwargs", None) or {})
 
         # Newer SB3 versions support n-step replay buffers.
         if getattr(model, "n_steps", 1) > 1:
@@ -523,19 +517,22 @@ class AgentTrainer:
             print("Creating new agent")
             agent = RLAgent(
                 trainEnv,
-                learning_rate=5e-5,              # Controls how strongly the network weights are changed during each gradient/network update.
-                exploration_initial_eps=1.0,     # Initial probability of choosing a random action.
-                exploration_final_eps=0.10,      # Final minimum probability of choosing a random action.
-                exploration_fraction=0.8,        # Fraction of training over which exploration is reduced.
-                learning_starts=5_000,           # Number of steps before the model starts learning.
-                buffer_size=200_000,             # Maximum number of transitions stored in the replay buffer.
-                batch_size=64,                   # Number of samples used for one training update.
-                train_freq=(1, "step"),          # Trigger one training update after every environment step.
-                gradient_steps=1,                # For each training trigger, do ONE weight update using one sampled batch.
-                target_update_interval=5_000,    # Copy the learned network weights to the target network every 5000 steps.
-                gamma=0.99,                      # Discount factor: controls how much future rewards matter.
-                max_grad_norm=10,                # Limits very large gradient updates to avoid unstable training.
-                seed=42,                         # Sets a random seed to make training behavior more reproducible (e.g.).
+                learning_rate=5e-5,  # Controls how strongly the network weights are changed during each gradient/network update.
+                exploration_initial_eps=1.0,  # Initial probability of choosing a random action.
+                exploration_final_eps=0.10,  # Final minimum probability of choosing a random action.
+                exploration_fraction=0.8,  # Fraction of training over which exploration is reduced.
+                learning_starts=5_000,  # Number of steps before the model starts learning.
+                buffer_size=200_000,  # Maximum number of transitions stored in the replay buffer.
+                batch_size=64,  # Number of samples used for one training update.
+                train_freq=(
+                    1,
+                    "step",
+                ),  # Trigger one training update after every environment step.
+                gradient_steps=1,  # For each training trigger, do ONE weight update using one sampled batch.
+                target_update_interval=5_000,  # Copy the learned network weights to the target network every 5000 steps.
+                gamma=0.99,  # Discount factor: controls how much future rewards matter.
+                max_grad_norm=10,  # Limits very large gradient updates to avoid unstable training.
+                seed=42,  # Sets a random seed to make training behavior more reproducible (e.g.).
                 tensorboard_log="./logs/zip_dqn/6x6/",
             )
 
@@ -545,9 +542,7 @@ class AgentTrainer:
             print("Normal DQN target calculation enabled.")
 
         totalTimesteps = (
-            self._totalTimesteps
-            if self._totalTimesteps is not None
-            else 100_000
+            self._totalTimesteps if self._totalTimesteps is not None else 100_000
         )
         print(f"Training on {len(self.trainingBoards)} boards.")
         print(f"Total timesteps: {totalTimesteps}")
@@ -727,11 +722,17 @@ if __name__ == "__main__":
     NR_OF_WAYPOINTS = 25
 
     USE_SAVED_TRAINING_BOARDS = False
-    LOAD_REPLAY_BUFFER = False # only True for several runs on same training set (continue session)
-    TRAINING_BOARDS_PATH = "offline_training/training_boards/6x6-generalization-500boards.pkl"
+    LOAD_REPLAY_BUFFER = (
+        False  # only True for several runs on same training set (continue session)
+    )
+    TRAINING_BOARDS_PATH = (
+        "offline_training/training_boards/6x6-generalization-500boards.pkl"
+    )
 
     USE_SAVED_EVALUATION_BOARDS = True
-    EVALUATION_BOARDS_PATH = "offline_training/evaluation_boards/6x6-evaluation-100boards.pkl"
+    EVALUATION_BOARDS_PATH = (
+        "offline_training/evaluation_boards/6x6-evaluation-100boards.pkl"
+    )
 
     USE_DOUBLE_DQN = True
 
@@ -749,16 +750,12 @@ if __name__ == "__main__":
         modelPath="offline_training/trained_models/trained-model.zip",
         minNrOfWalls=MIN_NR_OF_WALLS,
         minNrOfWaypoints=MIN_NR_OF_WAYPOINTS,
-
         # number of training boards in the training pool
         nrTrainingBoards=500,
-
         # Evaluation boards for testing the saved model.
-        nrEvaluationBoards=100, 
-
+        nrEvaluationBoards=100,
         # Total time steps
         timestepsPerBoard=1_000_000,
-
         loadExistingModel=True,
         resetModel=False,
         randomizeBoardComplexity=RANDOMIZE_BOARD_COMPLEXITY,

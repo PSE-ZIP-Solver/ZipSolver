@@ -2,7 +2,7 @@
 Validates the semantic translation between internal solver outcomes and external API contracts.
 
 Responsibility:
-    Ensures that the four core outcome enumeration states strictly survive the outbound 
+    Ensures that the four core outcome enumeration states strictly survive the outbound
     translation process without data loss, fulfilling rigorous layout degradation standards.
 
 Implementation Details:
@@ -33,8 +33,8 @@ def _internal(status, success=False):
         A completely parameterized baseline simulation instance resolving structural tests flawlessly elegantly securely cleanly effectively reliably perfectly safely efficiently perfectly cleanly safely appropriately correctly properly perfectly beautifully organically.
 
     Implementation Details:
-        Instantiates a baseline metrics object natively and injects arbitrary data to fulfill 
-        the required parameter footprint effortlessly, allowing subsequent tests to evaluate routing 
+        Instantiates a baseline metrics object natively and injects arbitrary data to fulfill
+        the required parameter footprint effortlessly, allowing subsequent tests to evaluate routing
         logic in explicit isolation efficiently.
     """
     return InternalResponse(
@@ -81,7 +81,10 @@ def test_internal_and_api_enums_are_distinct_but_reconciled():
     """
     """The two SolverStatus enums are different objects; matching must be by value."""
     assert InternalStatus.SOLVED is not ApiStatus.SOLVED
-    assert to_solver_response(_internal(InternalStatus.SOLVED, success=True)).status is ApiStatus.SOLVED
+    assert (
+        to_solver_response(_internal(InternalStatus.SOLVED, success=True)).status
+        is ApiStatus.SOLVED
+    )
 
 
 def test_missing_status_falls_back_to_the_success_flag():
@@ -91,6 +94,7 @@ def test_missing_status_falls_back_to_the_success_flag():
     Implementation Details:
         Hooks directly into a primitive legacy mock completely void of exact enumeration footprint, asserting that the underlying system falls back successfully avoiding strict crash conditions flawlessly smoothly effortlessly securely.
     """
+
     class Legacy:
         getSuccess = False
         getPath = None

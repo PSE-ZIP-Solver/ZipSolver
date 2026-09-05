@@ -4,9 +4,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from backend.puzzle_logic.board import Board
-from backend.solution_path import SolutionPath
 from backend.solving_process.solver_status import SolverStatus
-from backend.solving_process.solver_result import SolverResult
 from backend.solving_process.rl_solver import RLSolver
 
 # --- FIXTURES & ISOLATED MOCKING ---
@@ -21,7 +19,7 @@ def mock_board():
         A securely mocked object presenting dimensional access thresholds.
 
     Implementation Details:
-        Supplies predefined scalar layouts mapped natively to structural rules logic without 
+        Supplies predefined scalar layouts mapped natively to structural rules logic without
         initiating deeper architectural allocations within the test suite.
     """
     board = MagicMock(spec=Board)
@@ -38,8 +36,8 @@ def mock_env():
         The simulated trajectory testing matrix.
 
     Implementation Details:
-        Aggressively intercepts and stubs standard iteration boundaries (e.g., reset, step) 
-        and specifically configures property access patterns to map seamlessly without 
+        Aggressively intercepts and stubs standard iteration boundaries (e.g., reset, step)
+        and specifically configures property access patterns to map seamlessly without
         employing explicit function invocations, mirroring the architectural encapsulation.
     """
     env = MagicMock()
@@ -64,7 +62,7 @@ def mock_agent():
         The simulated decision processing module.
 
     Implementation Details:
-        Simulates high-performance prediction unboxing by natively returning a pure Python 
+        Simulates high-performance prediction unboxing by natively returning a pure Python
         integer instead of generating cumbersome Machine Learning tuple variants.
     """
     agent = MagicMock()
@@ -89,9 +87,9 @@ def patch_rl_classes(monkeypatch, mock_env, mock_agent):
         A tuple containing the dynamically injected mock class definitions.
 
     Implementation Details:
-        Directly intercepts the module-level namespace imports within the active solver file. 
-        By patching the `sys.modules` registry directly at the Pytest fixture level, this 
-        prevents heavy dependencies (like PyTorch or OpenCV) from crashing CI/CD collection loops 
+        Directly intercepts the module-level namespace imports within the active solver file.
+        By patching the `sys.modules` registry directly at the Pytest fixture level, this
+        prevents heavy dependencies (like PyTorch or OpenCV) from crashing CI/CD collection loops
         on testing machines lacking proper hardware acceleration stacks.
     """
     mock_agent_cls = MagicMock(return_value=mock_agent)
@@ -112,8 +110,8 @@ def patch_model_existence(monkeypatch):
         monkeypatch: The Pytest utility manipulating the base memory execution thread.
 
     Implementation Details:
-        Forces `Path.exists()` resolutions inherently to True. Prevents the suite from actively 
-        seeking physical compiled binary models traversing deep directory trees on disk, decoupling 
+        Forces `Path.exists()` resolutions inherently to True. Prevents the suite from actively
+        seeking physical compiled binary models traversing deep directory trees on disk, decoupling
         operational testing logic from structural file requirements.
     """
     monkeypatch.setattr(Path, "exists", lambda self: True)
@@ -124,12 +122,12 @@ class IntLike:
     A structural simulation of external scalar outputs mimicking numerical casting interfaces.
 
     Responsibility:
-        Serves as a mock container representing obscure tensor or scalar objects output by 
+        Serves as a mock container representing obscure tensor or scalar objects output by
         Machine Learning inferences, validating the architecture's defensive unboxing mechanics.
 
     Implementation Details:
-        Implements the native `__int__` magic method. This safely replicates how the system 
-        forces unboxing, casting arbitrary predictive variants down to pure native scalars to maintain strict 
+        Implements the native `__int__` magic method. This safely replicates how the system
+        forces unboxing, casting arbitrary predictive variants down to pure native scalars to maintain strict
         serialization schemas across execution boundaries.
     """
 
@@ -141,7 +139,7 @@ class IntLike:
             value: The internal numerical state to be wrapped.
 
         Implementation Details:
-            Captures the provided mathematical baseline into a protected internal attribute, 
+            Captures the provided mathematical baseline into a protected internal attribute,
             preparing it for subsequent unboxing requests.
         """
         self._value = value
@@ -154,7 +152,7 @@ class IntLike:
             The pure native numerical representation of the wrapped state.
 
         Implementation Details:
-            Provides the explicit magic method hook intercepted by native Python casting, 
+            Provides the explicit magic method hook intercepted by native Python casting,
             directly mapping to the defensive `.item()` unboxing patterns used within the pipeline.
         """
         return self._value
@@ -165,13 +163,14 @@ class IntLike:
 # the underlying error propagate up and gets caught by solve()'s broad
 # except block, which always reports SolverStatus.FAILED.
 
+
 def test_solve_returns_failed_result_for_none_board():
     """
     Ascertains structural rejection when supplied null topological grids.
 
     Implementation Details:
-        Funnels a direct None reference through the execution node. Verifies the broad 
-        orchestration block successfully intercepts missing mathematical requirements, bypassing 
+        Funnels a direct None reference through the execution node. Verifies the broad
+        orchestration block successfully intercepts missing mathematical requirements, bypassing
         critical crash states and translating the failure securely into standard enum returns.
     """
     solver = RLSolver()
@@ -188,8 +187,8 @@ def test_solve_returns_failed_result_for_unsupported_board_size():
     Validates structural rejection natively halting execution for untrained grid dimensions.
 
     Implementation Details:
-        Provides an empty spatial bound constraint specifically stripped of available model files. 
-        Asserts the system inherently rejects operation, correctly translating missing dependencies 
+        Provides an empty spatial bound constraint specifically stripped of available model files.
+        Asserts the system inherently rejects operation, correctly translating missing dependencies
         into standard failure payloads containing zero analytical progression steps.
     """
     board = MagicMock(spec=Board)
@@ -205,7 +204,10 @@ def test_solve_returns_failed_result_for_unsupported_board_size():
 
 # --- BEHAVIOR TESTS ---
 
-def test_solve_success_complete_solution(patch_rl_classes, mock_board, mock_env, mock_agent):
+
+def test_solve_success_complete_solution(
+    patch_rl_classes, mock_board, mock_env, mock_agent
+):
     """
     Evaluates unbroken predictive resolution correctly formulating comprehensive trajectories.
 
@@ -216,8 +218,8 @@ def test_solve_success_complete_solution(patch_rl_classes, mock_board, mock_env,
         mock_agent: The simulated neural evaluation network.
 
     Implementation Details:
-        Iterates predictive decision sequences sequentially simulating navigation completion flags. 
-        Directly checks resultant outcome states securely pack final solution vectors and exactly match 
+        Iterates predictive decision sequences sequentially simulating navigation completion flags.
+        Directly checks resultant outcome states securely pack final solution vectors and exactly match
         the simulated analytical steps counted during nested inference evaluations.
     """
     mock_env.step.side_effect = [
@@ -235,7 +237,9 @@ def test_solve_success_complete_solution(patch_rl_classes, mock_board, mock_env,
     mock_env.reset.assert_called_once()
 
 
-def test_load_agent_caching_avoids_reloading_weights(patch_rl_classes, mock_board, mock_env, mock_agent):
+def test_load_agent_caching_avoids_reloading_weights(
+    patch_rl_classes, mock_board, mock_env, mock_agent
+):
     """
     Secures strict architectural singleton patterns avoiding recursive hardware re-initializations.
 
@@ -246,8 +250,8 @@ def test_load_agent_caching_avoids_reloading_weights(patch_rl_classes, mock_boar
         mock_agent: The simulated neural evaluation network.
 
     Implementation Details:
-        Executes sequential solve commands spanning distinctly simulated environments. Asserts 
-        active neural processing architectures strictly swap internal sandbox trackers via method injection 
+        Executes sequential solve commands spanning distinctly simulated environments. Asserts
+        active neural processing architectures strictly swap internal sandbox trackers via method injection
         instead of redundantly parsing gigabytes of binary weight schemas from persistent drives.
     """
     mock_agent_cls, mock_env_cls = patch_rl_classes
@@ -280,7 +284,12 @@ def test_load_agent_caching_avoids_reloading_weights(patch_rl_classes, mock_boar
     ],
 )
 def test_run_episode_converts_predicted_action_to_int(
-    patch_rl_classes, mock_board, mock_env, mock_agent, agent_action, expected_action_int
+    patch_rl_classes,
+    mock_board,
+    mock_env,
+    mock_agent,
+    agent_action,
+    expected_action_int,
 ):
     """
     Evaluates defensive numerical casting boundaries against multi-format mathematical predictive arrays.
@@ -294,8 +303,8 @@ def test_run_episode_converts_predicted_action_to_int(
         expected_action_int: The standardized unboxed outcome expected after casting processing.
 
     Implementation Details:
-        Utilizes `pytest.mark.parametrize` mapped with customized `IntLike` wrapping variants to 
-        safely project obscured dimensional elements against the system unboxing algorithm. Asserts 
+        Utilizes `pytest.mark.parametrize` mapped with customized `IntLike` wrapping variants to
+        safely project obscured dimensional elements against the system unboxing algorithm. Asserts
         predictive modules successfully cast deep learning types securely back into standardized formats.
     """
     mock_agent.predict.return_value = agent_action
@@ -307,7 +316,9 @@ def test_run_episode_converts_predicted_action_to_int(
     mock_env.step.assert_called_with(expected_action_int)
 
 
-def test_solve_reports_failed_when_environment_truncates(patch_rl_classes, mock_board, mock_env, mock_agent):
+def test_solve_reports_failed_when_environment_truncates(
+    patch_rl_classes, mock_board, mock_env, mock_agent
+):
     """
     Observes appropriate system degradation logic when neural execution loops hit recursive iteration limits.
 
@@ -318,8 +329,8 @@ def test_solve_reports_failed_when_environment_truncates(patch_rl_classes, mock_
         mock_agent: The simulated neural evaluation network.
 
     Implementation Details:
-        Simulates sequential loop iterations eventually resolving the third simulation argument matrix 
-        parameter as heavily truncated. Observes the internal extraction engine detects bounded truncation 
+        Simulates sequential loop iterations eventually resolving the third simulation argument matrix
+        parameter as heavily truncated. Observes the internal extraction engine detects bounded truncation
         arrays, actively breaking internal processing threads and accurately propagating the resultant standard failure string.
     """
     # RLSolver has no step-count guard of its own; it relies on the
@@ -347,8 +358,8 @@ def test_solve_handles_crashes_gracefully(patch_rl_classes, mock_board):
         mock_board: The simulated structural boundary matrix.
 
     Implementation Details:
-        Actively forces dynamic instability vectors (like deep GPU CUDA Out-Of-Memory cascades) against 
-        internal operational classes. Guarantees pipeline layers gracefully intercept hard execution terminates 
+        Actively forces dynamic instability vectors (like deep GPU CUDA Out-Of-Memory cascades) against
+        internal operational classes. Guarantees pipeline layers gracefully intercept hard execution terminates
         and formulate seamless external string structures tracking identical enum responses.
     """
     mock_agent_cls, mock_env_cls = patch_rl_classes

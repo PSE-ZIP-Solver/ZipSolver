@@ -9,7 +9,7 @@ class SolverStatus(str, Enum):
     JSON string ("SOLVED") and compares directly against string literals.
     """
 
-    SOLVED = "SOLVED"          # a valid, re-validated path was found
+    SOLVED = "SOLVED"  # a valid, re-validated path was found
     UNSOLVABLE = "UNSOLVABLE"  # the DFS fallback proved no solution exists
-    TIMEOUT = "TIMEOUT"        # a solver reached its fixed time limit
-    FAILED = "FAILED"          # no valid path found / other solver failure
+    TIMEOUT = "TIMEOUT"  # a solver reached its fixed time limit
+    FAILED = "FAILED"  # no valid path found / other solver failure

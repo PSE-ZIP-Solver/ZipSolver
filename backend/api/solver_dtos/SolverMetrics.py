@@ -2,8 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class SolverMetrics(BaseModel):
-    """Per-attempt performance figures returned inside a SolverResponse (§5.5.3).
-    """
+    """Per-attempt performance figures returned inside a SolverResponse (§5.5.3)."""
 
     model_config = ConfigDict(populate_by_name=True)
 
