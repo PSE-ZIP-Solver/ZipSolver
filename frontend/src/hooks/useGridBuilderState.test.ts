@@ -228,4 +228,39 @@ describe("useGridBuilderState workflows", () => {
         expect(result.current.playModeState.visitedCells).toEqual([[0, 0]]);
         expect(result.current.message.message).toContain("Play mode");
     });
+
+    it("locks Play actions after the player completes the board", async () => {
+        mockedSolvePuzzle.mockResolvedValue(solvedResponse);
+        const { result } = renderHook(() => useGridBuilderState());
+        const path: [number, number][] = [];
+
+        for (let row = 0; row < 6; row += 1) {
+            const columns = row % 2 === 0 ? [0, 1, 2, 3, 4, 5] : [5, 4, 3, 2, 1, 0];
+            for (const column of columns) {
+                path.push([row, column]);
+            }
+        }
+
+        act(() => result.current.handleSelectExample(board, "Test board"));
+        await waitFor(() => expect(result.current.board).toEqual(board));
+        await act(async () => {
+            await result.current.handleViewModeChange("PLAY");
+        });
+
+        for (const position of path.slice(1)) {
+            act(() => result.current.handleCellClick(position));
+        }
+
+        expect(result.current.isPlayCompleted).toBe(true);
+        const completedPath = result.current.playModeState.visitedCells;
+        act(() => result.current.handleCellClick(path[path.length - 2]));
+        expect(result.current.playModeState.visitedCells).toEqual(completedPath);
+
+        await act(async () => {
+            await result.current.handleHint();
+            await result.current.handleSolveClick();
+        });
+        expect(mockedSolvePuzzle).toHaveBeenCalledOnce();
+        expect(result.current.playModeState.visitedCells).toEqual(completedPath);
+    });
 });

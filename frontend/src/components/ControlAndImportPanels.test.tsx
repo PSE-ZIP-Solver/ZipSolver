@@ -17,6 +17,7 @@ describe("ControlPanel", () => {
                 editMode="NUMBERS"
                 viewMode="BUILD"
                 isSolving={false}
+                isPlayCompleted={false}
                 onGridSizeChange={onGridSizeChange}
                 onEditModeChange={onEditModeChange}
                 onHint={vi.fn()}
@@ -43,6 +44,7 @@ describe("ControlPanel", () => {
                 editMode="NUMBERS"
                 viewMode="PLAY"
                 isSolving
+                isPlayCompleted={false}
                 onGridSizeChange={vi.fn()}
                 onEditModeChange={vi.fn()}
                 onHint={onHint}
@@ -120,6 +122,7 @@ describe("ActionPanel", () => {
                 canSolve
                 canPlay
                 isSolving={false}
+                isPlayCompleted={false}
                 isImporting={false}
                 viewMode="BUILD"
                 onSolve={vi.fn()}

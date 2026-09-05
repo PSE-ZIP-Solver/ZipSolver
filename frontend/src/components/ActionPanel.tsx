@@ -10,6 +10,7 @@ interface ActionPanelProps {
   canSolve: boolean;
   canPlay: boolean;
   isSolving: boolean;
+  isPlayCompleted: boolean;
   isImporting: boolean;
   viewMode: ViewMode;
 
@@ -25,6 +26,7 @@ export default function ActionPanel({
   canSolve,
   canPlay,
   isSolving,
+  isPlayCompleted,
   isImporting,
   viewMode,
   onSolve,
@@ -102,7 +104,7 @@ export default function ActionPanel({
         <button
           type="button"
           onClick={onSolve}
-          disabled={!canSolve || isSolving}
+          disabled={!canSolve || isSolving || (viewMode === "PLAY" && isPlayCompleted)}
           className="
             flex
             min-h-14
