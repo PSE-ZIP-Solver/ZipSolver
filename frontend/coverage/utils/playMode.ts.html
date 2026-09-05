@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">70.27% </span>
+                <span class="strong">75.67% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>52/74</span>
+                <span class='fraction'>56/74</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">59.37% </span>
+                <span class="strong">68.57% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>19/32</span>
+                <span class='fraction'>24/35</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.77% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>7/9</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">70.27% </span>
+                <span class="strong">75.67% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>52/74</span>
+                <span class='fraction'>56/74</span>
             </div>
         
             
@@ -183,15 +183,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -220,8 +220,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -248,13 +248,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">216x</span>
+<span class="cline-any cline-yes">216x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-yes">216x</span>
+<span class="cline-any cline-yes">216x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -295,14 +295,14 @@ export interface PlayModeState {
 /** Creates the immutable player path, optionally beginning at the first waypoint. */
 export function createPlayModeState(startCell: Position | null = null): PlayModeState {
     return {
-        visitedCells: startCell ? [startCell<span class="branch-0 cbranch-no" title="branch not covered" >] : [],</span>
+        visitedCells: startCell ? [startCell] : [],
     };
 }
 &nbsp;
 /** Resets the player path while preserving the play-mode state shape. */
-export <span class="fstat-no" title="function not covered" >function resetPlayModeState(startCell: Position | null = null): PlayModeState {</span>
-<span class="cstat-no" title="statement not covered" >    return createPlayModeState(startCell);</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+export function resetPlayModeState(startCell: Position | null = null): PlayModeState {
+    return createPlayModeState(startCell);
+}
 &nbsp;
 /** Appends a valid player move without mutating the previous state. */
 export function appendVisitedCell(state: PlayModeState, cell: Position): PlayModeState {
@@ -330,9 +330,9 @@ export function isCellAlreadyVisited(state: PlayModeState, cell: Position) {
 }
 &nbsp;
 /** Returns the current player cell, falling back to the board's starting waypoint. */
-export <span class="fstat-no" title="function not covered" >function getActivePosition(state: PlayModeState, startCell: Position | null) {</span>
-<span class="cstat-no" title="statement not covered" >    return state.visitedCells[state.visitedCells.length - 1] ?? startCell ?? null;</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+export function getActivePosition(state: PlayModeState, startCell: Position | null) {
+    return state.visitedCells[state.visitedCells.length - 1] ?? startCell ?? null;
+}
 &nbsp;
 /** Returns the next waypoint required by the ordered waypoint rules. */
 export function getExpectedNextWaypoint(state: PlayModeState, board: BoardConfig) {
@@ -349,7 +349,7 @@ export function getExpectedNextWaypoint(state: PlayModeState, board: BoardConfig
 &nbsp;
     for (let index = 1; index &lt; board.waypoints.length; index += 1) {
         const waypoint = board.waypoints[index];
-        const isVisited = visitedWaypoints.some((position) =&gt; position[0] === waypoint[0<span class="branch-0 cbranch-no" title="branch not covered" >] &amp;&amp; position[1] === waypoint[1])</span>;
+        const isVisited = visitedWaypoints.some((position) =&gt; position[0] === waypoint[0] &amp;&amp; position[1] === waypoint[1]);
 &nbsp;
         if (!isVisited) {
             return waypoint;
@@ -403,7 +403,7 @@ export function hasCompletedAllWaypoints(state: PlayModeState, board: BoardConfi
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-09-05T07:57:28.058Z
+                at 2026-09-05T08:44:04.010Z
             </div>
         <script src="../prettify.js"></script>
         <script>
