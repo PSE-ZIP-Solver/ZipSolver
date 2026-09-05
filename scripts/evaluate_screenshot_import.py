@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+from importlib.metadata import version
 import json
 import platform
 import statistics
@@ -21,7 +23,7 @@ from time import perf_counter_ns
 from typing import Any
 
 from fastapi.testclient import TestClient
-from PIL import Image
+from PIL import Image, ImageFilter, ImageOps
 
 from backend.api.BackendAPI import BackendAPI
 from backend.input_validation.input_validator import InputValidator
@@ -58,10 +60,72 @@ def _make_client() -> TestClient:
     return TestClient(api.app, raise_server_exceptions=False)
 
 
-def _payload(case: dict[str, Any], dataset_dir: Path) -> tuple[str, bytes]:
+def _encode_image(image: Image.Image, image_format: str, **options: Any) -> bytes:
+    output = BytesIO()
+    image.save(output, format=image_format, **options)
+    return output.getvalue()
+
+
+def _transformed_payload(
+    source: bytes, transformation: dict[str, Any]
+) -> tuple[bytes, str, str]:
+    """Apply one deterministic robustness transformation to a source screenshot."""
+
+    with Image.open(BytesIO(source)) as opened:
+        image = opened.convert("RGB")
+
+    kind = transformation["type"]
+    if kind == "scale":
+        factor = float(transformation["factor"])
+        if factor <= 0:
+            raise ValueError("scale factor must be greater than zero")
+        image = image.resize(
+            (
+                max(1, round(image.width * factor)),
+                max(1, round(image.height * factor)),
+            ),
+            Image.Resampling.LANCZOS,
+        )
+        return _encode_image(image, "PNG"), "image/png", "png"
+    if kind == "jpeg":
+        quality = int(transformation["quality"])
+        return (
+            _encode_image(image, "JPEG", quality=quality, optimize=True),
+            "image/jpeg",
+            "jpg",
+        )
+    if kind == "gaussianBlur":
+        radius = float(transformation["radius"])
+        image = image.filter(ImageFilter.GaussianBlur(radius))
+        return _encode_image(image, "PNG"), "image/png", "png"
+    if kind == "pad":
+        pixels = int(transformation["pixels"])
+        colour = tuple(int(channel) for channel in transformation["rgb"])
+        image = ImageOps.expand(image, border=pixels, fill=colour)
+        return _encode_image(image, "PNG"), "image/png", "png"
+    if kind == "crop":
+        pixels = int(transformation["pixels"])
+        if pixels < 0 or pixels * 2 >= min(image.size):
+            raise ValueError("crop pixels must leave a non-empty image")
+        image = image.crop(
+            (pixels, pixels, image.width - pixels, image.height - pixels)
+        )
+        return _encode_image(image, "PNG"), "image/png", "png"
+    raise ValueError(f"Unsupported screenshot transformation: {kind!r}")
+
+
+def _payload(case: dict[str, Any], dataset_dir: Path) -> tuple[str, bytes, str]:
     if "image" in case:
         path = dataset_dir / case["image"]
-        return path.name, path.read_bytes()
+        source = path.read_bytes()
+        transformation = case.get("transformation")
+        if transformation:
+            payload, content_type, extension = _transformed_payload(
+                source, transformation
+            )
+            return f"{case['id']}.{extension}", payload, content_type
+        content_type = "image/jpeg" if path.suffix.lower() in {".jpg", ".jpeg"} else "image/png"
+        return path.name, source, content_type
     if "syntheticSolidRgb" in case:
         output = BytesIO()
         Image.new("RGB", (600, 600), tuple(case["syntheticSolidRgb"])).save(
@@ -71,6 +135,45 @@ def _payload(case: dict[str, Any], dataset_dir: Path) -> tuple[str, bytes]:
     raise ValueError(
         f"Case {case.get('id')!r} defines neither image nor syntheticSolidRgb"
     )
+
+
+def _expanded_cases(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    """Expand compact base-case/variant manifests while retaining v1 compatibility."""
+
+    if "cases" in manifest:
+        return list(manifest["cases"])
+
+    expanded: list[dict[str, Any]] = []
+    for base in manifest["baseCases"]:
+        for variant in manifest["variants"]:
+            variant_id = variant["id"]
+            case = {
+                **base,
+                "id": (
+                    base["id"]
+                    if variant_id == "original"
+                    else f"{base['id']}--{variant_id}"
+                ),
+                "condition": variant_id,
+                "sourceKind": variant.get("sourceKind", "derived_robustness"),
+            }
+            if "transformation" in variant:
+                transformation = dict(variant["transformation"])
+                if transformation["type"] == "pad":
+                    transformation["rgb"] = base["backgroundRgb"]
+                case["transformation"] = transformation
+            case.pop("backgroundRgb", None)
+            expanded.append(case)
+
+    for negative in manifest.get("negativeCases", []):
+        expanded.append(
+            {
+                **negative,
+                "condition": negative.get("condition", "negative"),
+                "sourceKind": negative.get("sourceKind", "synthetic_negative"),
+            }
+        )
+    return expanded
 
 
 def _point(value: Any) -> tuple[int, int]:
@@ -136,10 +239,7 @@ def _ratio(numerator: int, denominator: int) -> float | None:
 def _prf(counts: dict[str, int]) -> dict[str, float | int | None]:
     precision = _ratio(counts["tp"], counts["tp"] + counts["fp"])
     recall = _ratio(counts["tp"], counts["tp"] + counts["fn"])
-    if precision is None or recall is None or precision + recall == 0:
-        f1 = None
-    else:
-        f1 = round(2 * precision * recall / (precision + recall), 6)
+    f1 = _ratio(2 * counts["tp"], 2 * counts["tp"] + counts["fp"] + counts["fn"])
     return {**counts, "precision": precision, "recall": recall, "f1": f1}
 
 
@@ -209,18 +309,27 @@ def evaluate(manifest_path: Path, repetitions: int) -> dict[str, Any]:
     ground_truth = json.loads(
         (dataset_dir / manifest["groundTruth"]).read_text(encoding="utf-8")
     )
+    cases = _expanded_cases(manifest)
+    ids = [case["id"] for case in cases]
+    if not cases or len(ids) != len(set(ids)):
+        raise ValueError("Manifest must contain non-empty, uniquely named cases")
+    for case in cases:
+        if ("expectedBoardKey" in case) == ("expectedError" in case):
+            raise ValueError(f"Case {case['id']} must define exactly one expected outcome")
+        if "expectedBoardKey" in case:
+            ground_truth[case["expectedBoardKey"]]
     rows: list[dict[str, Any]] = []
 
     with _make_client() as client:
-        for case in manifest["cases"]:
-            filename, payload = _payload(case, dataset_dir)
+        for case in cases:
+            filename, payload, content_type = _payload(case, dataset_dir)
             responses: list[tuple[int, dict[str, Any]]] = []
             elapsed_ms: list[float] = []
             for _ in range(repetitions):
                 started = perf_counter_ns()
                 response = client.post(
                     "/api/import",
-                    files={"file": (filename, payload, "image/png")},
+                    files={"file": (filename, payload, content_type)},
                     data={"board_size": str(case["boardSize"])},
                 )
                 elapsed_ms.append((perf_counter_ns() - started) / 1_000_000)
@@ -230,15 +339,19 @@ def evaluate(manifest_path: Path, repetitions: int) -> dict[str, Any]:
             baseline = _stable_response(responses[0])
             stable = all(_stable_response(item) == baseline for item in responses[1:])
             expected_key = case.get("expectedBoardKey")
-            expected = ground_truth.get(expected_key) if expected_key else None
+            expected = ground_truth[expected_key] if expected_key else None
             actual = body.get("board") if isinstance(body, dict) else None
             expected_error = case.get("expectedError")
             row: dict[str, Any] = {
                 "id": case["id"],
                 "theme": case["theme"],
                 "boardSize": case["boardSize"],
+                "condition": case.get("condition", "original"),
+                "sourceKind": case.get("sourceKind", "real_original"),
                 "expectedOutcome": "success" if expected is not None else "error",
                 "httpStatus": status,
+                "payloadSha256": hashlib.sha256(payload).hexdigest(),
+                "actualResponse": body,
                 "responseStable": stable,
                 "latencyMs": [round(value, 3) for value in elapsed_ms],
                 "latency": _latency(elapsed_ms),
@@ -276,7 +389,7 @@ def evaluate(manifest_path: Path, repetitions: int) -> dict[str, Any]:
 
     summary = _group_summary(rows)
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "dataset": {
             "name": manifest["name"],
@@ -289,6 +402,8 @@ def evaluate(manifest_path: Path, repetitions: int) -> dict[str, Any]:
             "repetitionsPerCase": repetitions,
             "python": platform.python_version(),
             "platform": platform.platform(),
+            "packages": {name: version(name) for name in ("fastapi", "starlette", "numpy", "opencv-python-headless", "pillow", "httpx")},
+            "timingPolicy": "All repetitions including first use; image transformations excluded",
         },
         "summary": summary,
         "byTheme": {
@@ -298,6 +413,18 @@ def evaluate(manifest_path: Path, repetitions: int) -> dict[str, Any]:
         "byBoardSize": {
             str(size): _group_summary([row for row in rows if row["boardSize"] == size])
             for size in sorted({row["boardSize"] for row in rows})
+        },
+        "byCondition": {
+            condition: _group_summary(
+                [row for row in rows if row["condition"] == condition]
+            )
+            for condition in sorted({row["condition"] for row in rows})
+        },
+        "bySourceKind": {
+            source: _group_summary(
+                [row for row in rows if row["sourceKind"] == source]
+            )
+            for source in sorted({row["sourceKind"] for row in rows})
         },
         "cases": rows,
     }
@@ -317,9 +444,9 @@ def _markdown(result: dict[str, Any]) -> str:
         f"Execution: {result['execution']['mode']}  ",
         f"Repetitions per case: {result['execution']['repetitionsPerCase']}",
         "",
-        "> This is a development regression set. Its real screenshots were used while",
-        "> correcting the importer, so these results must not be presented as an",
-        "> independent or general screenshot-import accuracy estimate.",
+        "> The original screenshots were used while correcting the importer, and all",
+        "> robustness cases are deterministic derivatives of those sources. These results",
+        "> measure regression and controlled robustness, not independent real-world accuracy.",
         "",
         "## Aggregate results",
         "",
@@ -338,8 +465,8 @@ def _markdown(result: dict[str, Any]) -> str:
         "",
         "## Per-case results",
         "",
-        "| Case | Theme | Size | Expected | HTTP | Exact/error match | Median ms | Stable |",
-        "| --- | --- | ---: | --- | ---: | --- | ---: | --- |",
+        "| Case | Condition | Theme | Size | Expected | HTTP | Exact/error match | Median ms | Stable |",
+        "| --- | --- | --- | ---: | --- | ---: | --- | ---: | --- |",
     ]
     for row in result["cases"]:
         matched = (
@@ -348,7 +475,7 @@ def _markdown(result: dict[str, Any]) -> str:
             else row["expectedErrorMatched"]
         )
         lines.append(
-            f"| {row['id']} | {row['theme']} | {row['boardSize']} | "
+            f"| {row['id']} | {row['condition']} | {row['theme']} | {row['boardSize']} | "
             f"{row['expectedOutcome']} | {row['httpStatus']} | "
             f"{'Pass' if matched else 'Fail'} | {row['latency']['medianMs']} | "
             f"{'Yes' if row['responseStable'] else 'No'} |"
@@ -388,19 +515,59 @@ def _markdown(result: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Original and robustness subsets",
+            "",
+            "| Source subset | Valid | Negative | Exact-board | Waypoint order | Wall F1 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for name, group in result["bySourceKind"].items():
+        lines.append(
+            f"| {name} | {group['validCases']} | {group['negativeCases']} | "
+            f"{_display_ratio(group['exactBoardAccuracy'])} | "
+            f"{_display_ratio(group['waypointOrderAccuracy'])} | "
+            f"{_display_ratio(group['walls']['f1'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Results by image condition",
+            "",
+            "| Condition | Cases | Exact-board | Expected-error | Median / p95 ms |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for name, group in result["byCondition"].items():
+        lines.append(
+            f"| {name} | {group['cases']} | "
+            f"{_display_ratio(group['exactBoardAccuracy'])} | "
+            f"{_display_ratio(group['expectedErrorAccuracy'])} | "
+            f"{group['latency']['medianMs']} / {group['latency']['p95Ms']} |"
+        )
+    lines.extend(
+        [
+            "",
             "## Interpretation and limitations",
+            "",
+            "Accuracy uses one observation per case; repetitions measure timing and response",
+            "stability, and do not increase the number of independent screenshots. The 28",
+            "positive cases come from four screenshots of just two boards. Conditions were",
+            "piloted before this repeated run. Failed conditions remain in the denominator.",
+            "Timing includes first-use requests and excludes image-transformation time.",
+            "Full responses and payload SHA-256 hashes are retained in metrics.json.",
+            "Exit code 1 means evaluation mismatches were recorded; results are still saved.",
             "",
             "The strict exact-board metric passes only when board size, ordered waypoint",
             "positions, and the complete undirected wall set all match. Position and wall",
             "precision/recall show partial extraction errors that exact accuracy alone would",
             "hide. Error accuracy requires both the expected HTTP status and error code.",
             "",
-            "The set currently covers matching 6x6 and 8x8 light/dark screenshots plus",
-            "synthetic blank-image rejection. It contains no 7x7 board, phone photograph,",
-            "LinkedIn screenshot, crop variation, scaling/compression variation, or held-out",
-            "real failure. Board size is supplied, matching the frontend workflow; automatic",
-            "size inference is not evaluated. Latency is in-process and must not be described",
-            "as deployed-network or load-test performance.",
+            "The set covers four original 6x6 and 8x8 light/dark screenshots, controlled",
+            "scale, JPEG-compression, blur, padding, and crop variants, plus two synthetic",
+            "blank-image rejection cases. It contains no 7x7 board, phone photograph,",
+            "LinkedIn screenshot, or held-out real failure. Board size is supplied, matching",
+            "the frontend workflow; automatic size inference is not evaluated. Latency is",
+            "in-process and must not be described as deployed-network or load-test performance.",
             "",
         ]
     )
@@ -473,7 +640,7 @@ def main() -> int:
         if not row["responseStable"]
         or (
             row["expectedOutcome"] == "success"
-            and (not row["exactBoard"] or not row["warningFree"])
+            and (not row["importSucceeded"] or not row["exactBoard"] or not row["warningFree"])
         )
         or (row["expectedOutcome"] == "error" and not row["expectedErrorMatched"])
     ]
