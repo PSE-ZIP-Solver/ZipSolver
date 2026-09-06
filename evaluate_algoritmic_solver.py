@@ -17,12 +17,12 @@ from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position, Waypoint
 
 # Daily 247
-RELATIVE_FILE_PATH = "offline_training/evaluation_boards/6x6-daily-evaluation-240boards.pkl"
+# RELATIVE_FILE_PATH = "offline_training/evaluation_boards/6x6-daily-evaluation-240boards.pkl"
 
 # 6x6 10k
-# RELATIVE_FILE_PATH = ""
+RELATIVE_FILE_PATH = "offline_training/evaluation_boards/unsolvable/8x8_unsolvable_10000boards.pkl"
 
-# 7x7 10k  
+# 7x7 10k  evaluate_algoritmic_solver.py
 # RELATIVE_FILE_PATH = ""
 
 # 8x8 10k  
