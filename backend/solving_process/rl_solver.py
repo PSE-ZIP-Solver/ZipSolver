@@ -24,17 +24,29 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 MODEL_PATHS: dict[int, Path] = {
-    6: (PROJECT_ROOT / "offline_training" / "trained_models" / "6x6" / "6x6-agent.zip"),
-    # Later:
-    # 7: (
-    #     PROJECT_ROOT
-    #     / "offline_training"
-    #     / "trained_models"
-    #     / "7x7"
-    #     / "7x7-agent.zip"
-    # ),
-    #
-    8: (PROJECT_ROOT / "offline_training" / "trained_models" / "8x8" / "8x8-agent.zip"),
+    6: (
+        PROJECT_ROOT
+        / "offline_training"
+        / "trained_models"
+        / "6x6"
+        / "6x6-agent.zip"
+    ),
+
+    7: (
+        PROJECT_ROOT
+        / "offline_training"
+        / "trained_models"
+        / "7x7"
+        / "7x7-agent.zip"
+    ),
+
+    8: (
+        PROJECT_ROOT
+        / "offline_training"
+        / "trained_models"
+        / "8x8"
+        / "8x8-agent.zip"
+    ),
 }
 
 
