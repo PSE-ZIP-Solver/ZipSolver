@@ -1,23 +1,24 @@
 # Solvable
+## 6x6
 
-## 6x6-daily-evaluation-240boards  
+### 6x6-official-dailies-evaluation-296boards  
 ```result
 =================================================================
                         FINAL REPORT                        
 =================================================================
-Total Boards Tested   : 240
-Total Evaluation Time : 00m 00s (405.5 boards/s)
+Total Boards Tested   : 296
+Total Evaluation Time : 00m 01s (291.2 boards/s)
 -----------------------------------------------------------------
-✅ Solved & Verified   : 240 (100.00%)
+✅ Solved & Verified   : 296 (100.00%)
 ⏱️  Timed Out          : 0 (0.00%)
 ❌ Declared Unsolvable: 0 (0.00%)
 -----------------------------------------------------------------
-Average Runtime       : 14.53 ms/board
-Average Search Steps  : 46.7 steps/board
+Average Runtime       : 20.64 ms/board
+Average Search Steps  : 60.8 steps/board
 =================================================================
 ```
 
-## 6x6-final-eval-set1-fullrange-0to25walls-0to34wp-10000boards  
+### 6x6-final-eval-set1-fullrange-0to25walls-0to34wp-10000boards  
 ```result
 =================================================================
                         FINAL REPORT                        
@@ -33,7 +34,7 @@ Average Runtime       : 9.88 ms/board
 Average Search Steps  : 42.6 steps/board
 =================================================================
 ```
-## 6x6-final-eval-set2-sparse-0to8walls-0to11wp-10000boards 
+### 6x6-final-eval-set2-sparse-0to8walls-0to11wp-10000boards 
 ```result
 =================================================================
                         FINAL REPORT                        
@@ -50,7 +51,7 @@ Average Search Steps  : 83.8 steps/board
 =================================================================
 ```
 
-## 6x6-final-eval-set3-dense-17to25walls-23to34wp-10000boards
+### 6x6-final-eval-set3-dense-17to25walls-23to34wp-10000boards
 ```result
 =================================================================
                         FINAL REPORT                        
@@ -67,83 +68,104 @@ Average Search Steps  : 36.0 steps/board
 =================================================================
 ```
 
-## 7x7-final-eval-7x7-final-eval-set1-fullrange-0to34walls-0to34wp-10000boards  set1-fullrange-0to34walls-0to34wp-10000boards  
+## 7x7
+
+### 7x7-official-dailies-evaluation-178boards 
 ```result
 =================================================================
                         FINAL REPORT                        
 =================================================================
-Total Boards Tested   : 10,000
-Total Evaluation Time : 01m 12s (138.0 boards/s)
+Total Boards Tested   : 178
+Total Evaluation Time : 00m 01s (112.4 boards/s)
 -----------------------------------------------------------------
-✅ Solved & Verified   : 9,994 (99.94%)
-⏱️  Timed Out          : 6 (0.06%)
+✅ Solved & Verified   : 178 (100.00%)
+⏱️  Timed Out          : 0 (0.00%)
 ❌ Declared Unsolvable: 0 (0.00%)
 -----------------------------------------------------------------
-Average Runtime       : 50.65 ms/board
-Average Search Steps  : 108.2 steps/board
+Average Runtime       : 58.38 ms/board
+Average Search Steps  : 144.3 steps/board
 =================================================================
 ```
 
-## 7x7-final-eval-set2-sparse-0to11walls-0to11wp-10000boards  
+### 7x7-final-eval-set1-fullrange-0to36walls-0to47wp-10000boards
 ```result
 =================================================================
                         FINAL REPORT                        
 =================================================================
 Total Boards Tested   : 10,000
-Total Evaluation Time : 05m 31s (30.2 boards/s)
+Total Evaluation Time : 00m 50s (198.0 boards/s)
 -----------------------------------------------------------------
-✅ Solved & Verified   : 9,901 (99.01%)
-⏱️  Timed Out          : 99 (0.99%)
+✅ Solved & Verified   : 9,998 (99.98%)
+⏱️  Timed Out          : 2 (0.02%)
 ❌ Declared Unsolvable: 0 (0.00%)
 -----------------------------------------------------------------
-Average Runtime       : 256.96 ms/board
-Average Search Steps  : 481.5 steps/board
+Average Runtime       : 33.08 ms/board
+Average Search Steps  : 91.1 steps/board
+=================================================================
+```
+
+### 7x7-final-eval-set2-sparse-0to11walls-0to15wp-10000boards  
+```result
+=================================================================
+                        FINAL REPORT                        
+=================================================================
+Total Boards Tested   : 10,000
+Total Evaluation Time : 03m 13s (51.6 boards/s)
+-----------------------------------------------------------------
+✅ Solved & Verified   : 9,961 (99.61%)
+⏱️  Timed Out          : 39 (0.39%)
+❌ Declared Unsolvable: 0 (0.00%)
+-----------------------------------------------------------------
+Average Runtime       : 149.48 ms/board
+Average Search Steps  : 408.7 steps/board
 =================================================================
 ```  
 
-## 7x7-final-eval-set3-dense-23to34walls-23to34wp-10000boards
+### 7x7-final-eval-set3-dense-23to34walls-23to34wp-10000boards
 ```result
 =================================================================
-                        FINAL REPORT                        
+                        FINAL REPORT
 =================================================================
 Total Boards Tested   : 10,000
-Total Evaluation Time : 00m 45s (222.0 boards/s)
+Total Evaluation Time : 00m 34s (291.3 boards/s)
 -----------------------------------------------------------------
 ✅ Solved & Verified   : 10,000 (100.00%)
 ⏱️  Timed Out          : 0 (0.00%)
 ❌ Declared Unsolvable: 0 (0.00%)
 -----------------------------------------------------------------
-Average Runtime       : 25.97 ms/board
-Average Search Steps  : 49.1 steps/board
+Average Runtime       : 19.02 ms/board
+Average Search Steps  : 49.0 steps/board
 =================================================================
 ```  
 
-## 6x6-daily-evaluation-240boards  
+## 8x8
+
+### 8x8-official-dailies-evaluation-64boards
 ```result
 =================================================================
                         FINAL REPORT                        
 =================================================================
-Total Boards Tested   : 240
-Total Evaluation Time : 00m 00s (405.5 boards/s)
+Total Boards Tested   : 64
+Total Evaluation Time : 00m 02s (24.5 boards/s)
 -----------------------------------------------------------------
-✅ Solved & Verified   : 240 (100.00%)
+✅ Solved & Verified   : 64 (100.00%)
 ⏱️  Timed Out          : 0 (0.00%)
 ❌ Declared Unsolvable: 0 (0.00%)
 -----------------------------------------------------------------
-Average Runtime       : 14.53 ms/board
-Average Search Steps  : 46.7 steps/board
+Average Runtime       : 209.44 ms/board
+Average Search Steps  : 492.8 steps/board
 =================================================================
 ```
 
-## 8x8
+### 8x8
 ```result
 ```
 
-## 8x8
+### 8x8
 ```result
 ```
 
-## 8x8
+### 8x8
 ```result
 ```
 
