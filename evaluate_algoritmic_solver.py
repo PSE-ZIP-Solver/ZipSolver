@@ -17,7 +17,7 @@ from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position, Waypoint
 
 # Daily 247
-# RELATIVE_FILE_PATH = ""
+RELATIVE_FILE_PATH = "offline_training/evaluation_boards/6x6-daily-evaluation-240boards.pkl"
 
 # 6x6 10k
 # RELATIVE_FILE_PATH = ""
@@ -258,7 +258,7 @@ def _evaluate_single_board(args: Tuple[int, Board, int]) -> BoardEvaluationResul
 # 3. Evaluation Runner
 # ----------------------------------------------------------------------
 class EvaluationHarness:
-    def __init__(self, evaluation_boards_path: Path, timeout_ms: int = 10000000, milestone_interval: int = 1000):
+    def __init__(self, evaluation_boards_path: Path, timeout_ms: int = 10000, milestone_interval: int = 1000):
         self.evaluation_boards_path = evaluation_boards_path
         self.timeout_ms = timeout_ms
         self.milestone_interval = milestone_interval
