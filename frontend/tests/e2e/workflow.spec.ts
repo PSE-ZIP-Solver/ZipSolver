@@ -57,8 +57,11 @@ test.describe("ZipSolver play workflow", () => {
 
         await page.goto("/");
         const cells = page.locator(".grid-cell");
-        await cells.nth(0).click();
-        await cells.nth(1).click();
+        await cells.nth(0).dispatchEvent("pointerdown");
+        await cells.nth(0).dispatchEvent("pointerup");
+        await cells.nth(30).dispatchEvent("pointerdown");
+        await cells.nth(30).dispatchEvent("pointerup");
+        await expect(page.locator(".grid-board .grid-waypoint")).toHaveCount(2);
 
         const playResponse = page.waitForResponse(
             (response) => response.url().endsWith("/api/solve") && response.request().method() === "POST",
@@ -84,6 +87,12 @@ test.describe("ZipSolver play workflow", () => {
 
         await expect(page.getByText("Puzzle solved! You visited every cell and all waypoints in order")).toBeVisible();
         await expect(page.getByRole("button", { name: "Take Hint" })).toBeDisabled();
+        await expect(page.getByRole("button", { name: "Clear Solution" })).toBeEnabled();
+        await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
+
+        await page.keyboard.press("Control+z");
+        await page.getByRole("button", { name: "Clear Solution" }).click();
+        await expect(page.getByRole("button", { name: "Take Hint" })).toBeEnabled();
     });
 });
 
@@ -138,5 +147,45 @@ test.describe("ZipSolver import and solver feedback", () => {
 
         await expect(page.getByText("No solution exists")).toBeVisible();
         await expect(page.getByText("Solver Metrics")).toBeVisible();
+    });
+
+    for (const [status, message] of [
+        ["TIMEOUT", "Solver timed out"],
+        ["FAILED", "Solver failed"],
+    ] as const) {
+        test(`shows the ${status} solver result in the UI`, async ({ page }) => {
+            await page.route("**/api/solve", async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: "application/json",
+                    body: JSON.stringify({
+                        status,
+                        success: false,
+                        solutionPath: null,
+                        solverUsed: "AlgorithmicSolver",
+                        message,
+                        metrics: { runtimeMs: 3, steps: 0, attempts: 1 },
+                    }),
+                });
+            });
+
+            await page.goto("/");
+            await page.getByRole("button", { name: /Vincent's Loop 6×6/i }).click();
+            await page.getByRole("button", { name: "Show Solution" }).click();
+
+            await expect(page.getByText(message)).toBeVisible();
+        });
+    }
+
+    test("shows a user-facing message when solving fails at the network boundary", async ({ page }) => {
+        await page.route("**/api/solve", async (route) => {
+            await route.abort("failed");
+        });
+
+        await page.goto("/");
+        await page.getByRole("button", { name: /Vincent's Loop 6×6/i }).click();
+        await page.getByRole("button", { name: "Show Solution" }).click();
+
+        await expect(page.getByText("Solver request failed")).toBeVisible();
     });
 });
