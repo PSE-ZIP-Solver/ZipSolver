@@ -182,11 +182,20 @@ describe("Grid interactions", () => {
     it("reports the clicked cell in number editing mode", () => {
         const { onCellClick } = renderInteractiveGrid("NUMBERS");
 
-        const firstCell = document.querySelector(".grid-cell");
-        expect(firstCell).not.toBeNull();
-        fireEvent.pointerDown(firstCell as HTMLElement);
+        const gridBoard = document.querySelector(".grid-board") as HTMLElement;
+        vi.spyOn(gridBoard, "getBoundingClientRect").mockReturnValue({
+            left: 0, top: 0, right: 600, bottom: 600, width: 600, height: 600,
+            x: 0, y: 0, toJSON: () => ({}),
+        });
+        Object.assign(gridBoard, {
+            setPointerCapture: vi.fn(),
+            hasPointerCapture: vi.fn().mockReturnValue(true),
+            releasePointerCapture: vi.fn(),
+        });
+
+        gridBoard.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, clientX: 10, clientY: 10 }));
         expect(onCellClick).not.toHaveBeenCalled();
-        fireEvent.pointerUp(firstCell as HTMLElement);
+        gridBoard.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, clientX: 10, clientY: 10 }));
 
         expect(onCellClick).toHaveBeenCalledWith([0, 0]);
     });
@@ -204,16 +213,22 @@ describe("Grid interactions", () => {
 
     it("handles Play-mode pointer swipes across adjacent cells", () => {
         const { onCellClick } = renderPlayGrid();
-        const cells = document.querySelectorAll(".grid-cell");
-        const firstCell = cells[0] as HTMLElement;
-        const secondCell = cells[1] as HTMLElement;
-        const thirdCell = cells[2] as HTMLElement;
+        const gridBoard = document.querySelector(".grid-board") as HTMLElement;
+        vi.spyOn(gridBoard, "getBoundingClientRect").mockReturnValue({
+            left: 0, top: 0, right: 600, bottom: 600, width: 600, height: 600,
+            x: 0, y: 0, toJSON: () => ({}),
+        });
+        Object.assign(gridBoard, {
+            setPointerCapture: vi.fn(),
+            hasPointerCapture: vi.fn().mockReturnValue(true),
+            releasePointerCapture: vi.fn(),
+        });
 
-        fireEvent.pointerDown(firstCell);
+        gridBoard.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, clientX: 10, clientY: 10 }));
         expect(onCellClick).not.toHaveBeenCalled();
-        fireEvent.pointerMove(secondCell);
-        fireEvent.pointerMove(thirdCell);
-        fireEvent.pointerUp(thirdCell);
+        gridBoard.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 110, clientY: 10 }));
+        gridBoard.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 210, clientY: 10 }));
+        gridBoard.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, clientX: 210, clientY: 10 }));
 
         expect(onCellClick).toHaveBeenCalledWith([0, 1]);
         expect(onCellClick).toHaveBeenCalledWith([0, 2]);

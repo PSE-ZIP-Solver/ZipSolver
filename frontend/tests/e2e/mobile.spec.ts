@@ -26,23 +26,34 @@ test.describe("ZipSolver mobile touch workflow", () => {
         await page.getByRole("button", { name: "Play" }).click();
         await expect(page.getByText(/Play mode:/)).toBeVisible();
 
-        await cells.nth(0).dispatchEvent("pointerdown", {
+        const board = page.locator(".grid-board");
+        const box = await board.boundingBox();
+        expect(box).not.toBeNull();
+        const cellSize = (box?.width ?? 0) / 6;
+
+        await board.dispatchEvent("pointerdown", {
             bubbles: true,
             pointerId: 1,
             pointerType: "touch",
             isPrimary: true,
+            clientX: (box?.x ?? 0) + cellSize / 2,
+            clientY: (box?.y ?? 0) + cellSize / 2,
         });
-        await cells.nth(1).dispatchEvent("pointermove", {
+        await board.dispatchEvent("pointermove", {
             bubbles: true,
             pointerId: 1,
             pointerType: "touch",
             isPrimary: true,
+            clientX: (box?.x ?? 0) + cellSize + cellSize / 2,
+            clientY: (box?.y ?? 0) + cellSize / 2,
         });
-        await cells.nth(1).dispatchEvent("pointerup", {
+        await board.dispatchEvent("pointerup", {
             bubbles: true,
             pointerId: 1,
             pointerType: "touch",
             isPrimary: true,
+            clientX: (box?.x ?? 0) + cellSize + cellSize / 2,
+            clientY: (box?.y ?? 0) + cellSize / 2,
         });
 
         await expect(cells.nth(1).locator("div.border-primary")).toBeVisible();

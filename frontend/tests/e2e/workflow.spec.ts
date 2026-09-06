@@ -56,11 +56,23 @@ test.describe("ZipSolver play workflow", () => {
         });
 
         await page.goto("/");
-        const cells = page.locator(".grid-cell");
-        await cells.nth(0).dispatchEvent("pointerdown");
-        await cells.nth(0).dispatchEvent("pointerup");
-        await cells.nth(30).dispatchEvent("pointerdown");
-        await cells.nth(30).dispatchEvent("pointerup");
+        const board = page.locator(".grid-board");
+        const boardBox = await board.boundingBox();
+        expect(boardBox).not.toBeNull();
+        const boardCellSize = (boardBox?.width ?? 0) / 6;
+        const dispatchBoardPointer = async (type: "pointerdown" | "pointerup", index: number) => {
+            const row = Math.floor(index / 6);
+            const column = index % 6;
+            await board.dispatchEvent(type, {
+                bubbles: true,
+                clientX: (boardBox?.x ?? 0) + column * boardCellSize + boardCellSize / 2,
+                clientY: (boardBox?.y ?? 0) + row * boardCellSize + boardCellSize / 2,
+            });
+        };
+        await dispatchBoardPointer("pointerdown", 0);
+        await dispatchBoardPointer("pointerup", 0);
+        await dispatchBoardPointer("pointerdown", 30);
+        await dispatchBoardPointer("pointerup", 30);
         await expect(page.locator(".grid-board .grid-waypoint")).toHaveCount(2);
 
         const playResponse = page.waitForResponse(
