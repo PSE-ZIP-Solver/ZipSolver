@@ -16,6 +16,18 @@ from backend.solution_path import SolutionPath
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position, Waypoint
 
+# Daily 247
+# RELATIVE_FILE_PATH = ""
+
+# 6x6 10k
+# RELATIVE_FILE_PATH = ""
+
+# 7x7 10k  
+# RELATIVE_FILE_PATH = ""
+
+# 8x8 10k  
+# RELATIVE_FILE_PATH = "offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl"
+
 
 # ----------------------------------------------------------------------
 # 0. Robust Attribute Extractor & Status Matcher
@@ -426,7 +438,7 @@ class EvaluationHarness:
 # 4. Entrypoint
 # ----------------------------------------------------------------------
 if __name__ == "__main__":
-    pickle_path = Path("offline_training/evaluation_boards/8x8-evaluation-1000boards.pkl")
+    pickle_path = Path(RELATIVE_FILE_PATH)
 
     
     # Increased timeout to 5000ms (5 seconds) to allow 8x8 boards sufficient search budget
