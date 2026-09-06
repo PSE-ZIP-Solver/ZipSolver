@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiFetch, ApiError } from "./apiClient";
+import { apiFetch, ApiError } from "../../../src/api/apiClient";
 
 describe("apiFetch error contract", () => {
     afterEach(() => vi.restoreAllMocks());

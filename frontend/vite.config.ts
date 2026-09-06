@@ -13,18 +13,15 @@ const config = {
   ],
   test: {
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./tests/setup.ts'],
+    include: ['tests/unit/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.d.ts',
-        'src/**/*.test.{ts,tsx}',
-        'src/**/*.spec.{ts,tsx}',
         'src/main.tsx',
-        'src/test/**',
       ],
     },
   },

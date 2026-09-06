@@ -4,8 +4,8 @@ import {
     decodeBoardFromShareToken,
     encodeBoardToShareToken,
     loadBoardFromSearch,
-} from "./boardShareService";
-import type { BoardConfig } from "../types/board";
+} from "../../../src/utils/boardShareService";
+import type { BoardConfig } from "../../../src/types/board";
 
 const board: BoardConfig = {
     boardSize: 7,

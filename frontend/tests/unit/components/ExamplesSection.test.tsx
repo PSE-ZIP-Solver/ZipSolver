@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import ExamplesSection from "./ExamplesSection";
+import ExamplesSection from "../../../src/components/ExamplesSection";
 
 afterEach(cleanup);
 

@@ -1,13 +1,13 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { importPuzzle, solvePuzzle } from "../api/apiCalls";
-import { ApiError } from "../api/apiClient";
-import type { BoardConfig } from "../types/board";
-import type { ImportResult } from "../types/validation";
-import type { SolverResponse } from "../types/solver";
-import useGridBuilderState from "./useGridBuilderState";
+import { importPuzzle, solvePuzzle } from "../../../src/api/apiCalls";
+import { ApiError } from "../../../src/api/apiClient";
+import type { BoardConfig } from "../../../src/types/board";
+import type { ImportResult } from "../../../src/types/validation";
+import type { SolverResponse } from "../../../src/types/solver";
+import useGridBuilderState from "../../../src/hooks/useGridBuilderState";
 
-vi.mock("../api/apiCalls", () => ({
+vi.mock("../../../src/api/apiCalls", () => ({
     importPuzzle: vi.fn(),
     solvePuzzle: vi.fn(),
 }));

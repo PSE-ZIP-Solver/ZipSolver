@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_IMAGE_SIZE_BYTES, validateImageFile } from "./fileValidation";
+import { MAX_IMAGE_SIZE_BYTES, validateImageFile } from "../../../src/utils/fileValidation";
 
 describe("screenshot file validation", () => {
     it("accepts supported non-empty image files", () => {

@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import Grid from "./Grid";
-import type { BoardConfig, Wall } from "../types/board";
+import Grid from "../../../src/components/Grid";
+import type { BoardConfig, Wall } from "../../../src/types/board";
 
 afterEach(cleanup);
 
