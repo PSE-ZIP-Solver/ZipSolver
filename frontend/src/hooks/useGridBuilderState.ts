@@ -601,7 +601,7 @@ export default function useGridBuilderState() {
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [board.boardSize, board.waypoints, playModeState, viewMode]);
+    }, [board, playModeState, viewMode]);
 
     const nextWaypoint = viewMode === "PLAY" ? getExpectedNextWaypoint(playModeState, board) : null;
     const isPlayCompleted = viewMode === "PLAY" && hasCompletedAllWaypoints(playModeState, board);
