@@ -9,7 +9,7 @@ from offline_training.training_result import TrainingResult
 
 
 class AgentTrainer:
-    """Evaluation-only helper for the final 6x6 benchmark."""
+    """Evaluation-only helper for the final 7x7 benchmark."""
 
     def __init__(
         self,
@@ -47,7 +47,9 @@ class AgentTrainer:
                 boards = pickle.load(file)
 
             if not isinstance(boards, list) or not boards:
-                raise ValueError("Saved evaluation board file is empty or invalid.")
+                raise ValueError(
+                    "Saved evaluation board file is empty or invalid."
+                )
 
             if len(boards) != self.nrEvaluationBoards:
                 raise ValueError(
@@ -55,7 +57,11 @@ class AgentTrainer:
                     f"but {self.nrEvaluationBoards} were expected."
                 )
 
-            print(f"Loaded evaluation boards from {self.evaluationBoardsPath}")
+            print(
+                f"Loaded evaluation boards from "
+                f"{self.evaluationBoardsPath}"
+            )
+
             return boards
 
         print(
@@ -102,21 +108,31 @@ class AgentTrainer:
         )
 
         with self.evaluationBoardsPath.open("wb") as file:
-            pickle.dump(boards, file)
+            pickle.dump(
+                boards,
+                file,
+            )
 
-        print(f"Saved evaluation boards to {self.evaluationBoardsPath}")
+        print(
+            f"Saved evaluation boards to "
+            f"{self.evaluationBoardsPath}"
+        )
+
         return boards
 
     def load_saved_agent(self) -> RLAgent:
-        """Load the final 6x6 model without further training."""
+        """Load the final 7x7 model without further training."""
 
         if not Path(self.modelPath).exists():
             raise FileNotFoundError(
-                f"Model file not found: {self.modelPath}"
+                f"Model file not found: "
+                f"{self.modelPath}"
             )
 
         return RLAgent(
-            RLEnvironment(self.evaluationBoards[0]),
+            RLEnvironment(
+                self.evaluationBoards[0]
+            ),
             model_path=self.modelPath,
         )
 
@@ -134,17 +150,32 @@ class AgentTrainer:
         )
 
         if not boards:
-            return TrainingResult(0, 0, 0.0, 0.0)
+            return TrainingResult(
+                0,
+                0,
+                0.0,
+                0.0,
+            )
 
         solveCount = 0
         rewardSum = 0.0
 
-        for index, board in enumerate(boards, start=1):
-            solved, boardReward = self._run_board(agent, board)
+        for index, board in enumerate(
+            boards,
+            start=1,
+        ):
+            solved, boardReward = self._run_board(
+                agent,
+                board,
+            )
+
             solveCount += int(solved)
             rewardSum += boardReward
 
-            if index % 500 == 0 or index == len(boards):
+            if (
+                index % 500 == 0
+                or index == len(boards)
+            ):
                 print(
                     f"Evaluated {index}/{len(boards)} boards "
                     f"- solved so far: {solveCount}"
@@ -170,6 +201,7 @@ class AgentTrainer:
         agent.set_env(env)
 
         observation, _ = env.reset()
+
         terminated = False
         truncated = False
         rewardSum = 0.0
@@ -180,13 +212,19 @@ class AgentTrainer:
                 deterministic=True,
             )
 
-            observation, reward, terminated, truncated, _ = env.step(
-                int(action)
+            observation, reward, terminated, truncated, _ = (
+                env.step(
+                    int(action)
+                )
             )
 
             rewardSum += float(reward)
 
-        solved = terminated and env.game.isFinished()
+        solved = (
+            terminated
+            and env.game.isFinished()
+        )
+
         env.close()
 
         return solved, rewardSum
@@ -199,35 +237,50 @@ class AgentTrainer:
         """Print final evaluation result."""
 
         print(f"\n{title}:")
-        print("Solved:", result.getSolveCount)
-        print("Total Boards:", result.getTotalBoards)
-        print("Average reward:", result.getAverageReward)
-        print("Success rate:", result.getSuccessRate)
-        print("Success rate (%):", result.getSuccessRate * 100.0)
+        print(
+            "Solved:",
+            result.getSolveCount,
+        )
+        print(
+            "Total Boards:",
+            result.getTotalBoards,
+        )
+        print(
+            "Average reward:",
+            result.getAverageReward,
+        )
+        print(
+            "Success rate:",
+            result.getSuccessRate,
+        )
+        print(
+            "Success rate (%):",
+            result.getSuccessRate * 100.0,
+        )
 
 
 if __name__ == "__main__":
 
-    # FINAL 6x6 EVALUATION - SET 3 / 3: DENSE
+    # FINAL 7x7 EVALUATION - SET 3 / 3: DENSE
 
-    BOARD_SIZE = 6
+    BOARD_SIZE = 7
     NR_EVALUATION_BOARDS = 10_000
 
-    MIN_NR_OF_WALLS = 17
-    MAX_NR_OF_WALLS = 25
+    MIN_NR_OF_WALLS = 23
+    MAX_NR_OF_WALLS = 34
 
     MIN_NR_OF_WAYPOINTS = 23
     MAX_NR_OF_WAYPOINTS = 34
 
     MODEL_PATH = (
-        "offline_training/trained_models/6x6/"
-        "6x6-agent.zip"
+        "offline_training/trained_models/7x7/"
+        "7x7-agent.zip"
     )
 
     EVALUATION_BOARDS_PATH = (
-        "offline_training/evaluation_boards/6x6(final_sets)/"
-        "6x6-final-eval-set3-dense-"
-        "17to25walls-23to34wp-10000boards.pkl"
+        "offline_training/evaluation_boards/7x7(final_sets)/"
+        "7x7-final-eval-set3-dense-"
+        "23to34walls-23to34wp-10000boards.pkl"
     )
 
     trainer = AgentTrainer(
@@ -249,6 +302,6 @@ if __name__ == "__main__":
     )
 
     trainer.print_result(
-        "FINAL 6x6 evaluation - Set 3 / Dense",
+        "FINAL 7x7 evaluation - Set 3 / Dense",
         result,
     )
