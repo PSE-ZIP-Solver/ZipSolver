@@ -70,6 +70,28 @@ function renderInteractiveGrid(editMode: "NUMBERS" | "WALLS") {
     return { onCellClick, onWallClick };
 }
 
+function renderPlayGrid() {
+    const onCellClick = vi.fn();
+    const onWallClick = vi.fn<(wall: Wall) => void>();
+
+    render(
+        <Grid
+            board={board}
+            solution={null}
+            editMode="NUMBERS"
+            playerPath={[]}
+            activePosition={null}
+            nextWaypoint={null}
+            hintPath={null}
+            isPlayMode
+            onCellClick={onCellClick}
+            onWallClick={onWallClick}
+        />,
+    );
+
+    return { onCellClick };
+}
+
 describe("Grid path animation lifecycle", () => {
     let contexts: ReturnType<typeof createContext>[];
     let frameCallbacks: Map<number, FrameRequestCallback>;
@@ -162,7 +184,9 @@ describe("Grid interactions", () => {
 
         const firstCell = document.querySelector(".grid-cell");
         expect(firstCell).not.toBeNull();
-        firstCell?.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        fireEvent.pointerDown(firstCell as HTMLElement);
+        expect(onCellClick).not.toHaveBeenCalled();
+        fireEvent.pointerUp(firstCell as HTMLElement);
 
         expect(onCellClick).toHaveBeenCalledWith([0, 0]);
     });
@@ -176,5 +200,22 @@ describe("Grid interactions", () => {
             neighborA: [0, 0],
             neighborB: [0, 1],
         });
+    });
+
+    it("handles Play-mode pointer swipes across adjacent cells", () => {
+        const { onCellClick } = renderPlayGrid();
+        const cells = document.querySelectorAll(".grid-cell");
+        const firstCell = cells[0] as HTMLElement;
+        const secondCell = cells[1] as HTMLElement;
+        const thirdCell = cells[2] as HTMLElement;
+
+        fireEvent.pointerDown(firstCell);
+        expect(onCellClick).not.toHaveBeenCalled();
+        fireEvent.pointerMove(secondCell);
+        fireEvent.pointerMove(thirdCell);
+        fireEvent.pointerUp(thirdCell);
+
+        expect(onCellClick).toHaveBeenCalledWith([0, 1]);
+        expect(onCellClick).toHaveBeenCalledWith([0, 2]);
     });
 });
