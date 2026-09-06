@@ -10,6 +10,8 @@ order and never crossing a wall.
 Developed as a PSE project at the Chair of Dependable Nano Computing (CDNC), Karlsruhe
 Institute of Technology.
 
+![Zip Image](https://github.com/PSE-ZIP-Solver/ZipSolver/blob/dev/ZipImage.png?raw=true)
+
 ---
 
 ## Table of contents
