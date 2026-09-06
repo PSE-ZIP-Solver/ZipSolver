@@ -1,7 +1,9 @@
-import { act, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Grid from "./Grid";
 import type { BoardConfig, Wall } from "../types/board";
+
+afterEach(cleanup);
 
 const board: BoardConfig = {
     boardSize: 6,
@@ -44,6 +46,28 @@ function renderGrid(solution: [number, number][] | null) {
             onWallClick={onWallClick}
         />,
     );
+}
+
+function renderInteractiveGrid(editMode: "NUMBERS" | "WALLS") {
+    const onCellClick = vi.fn();
+    const onWallClick = vi.fn<(wall: Wall) => void>();
+
+    render(
+        <Grid
+            board={board}
+            solution={null}
+            editMode={editMode}
+            playerPath={[]}
+            activePosition={null}
+            nextWaypoint={null}
+            hintPath={null}
+            isPlayMode={false}
+            onCellClick={onCellClick}
+            onWallClick={onWallClick}
+        />,
+    );
+
+    return { onCellClick, onWallClick };
 }
 
 describe("Grid path animation lifecycle", () => {
@@ -129,5 +153,28 @@ describe("Grid path animation lifecycle", () => {
 
         const solutionContext = contexts[0];
         expect(solutionContext?.lineTo).not.toHaveBeenCalled();
+    });
+});
+
+describe("Grid interactions", () => {
+    it("reports the clicked cell in number editing mode", () => {
+        const { onCellClick } = renderInteractiveGrid("NUMBERS");
+
+        const firstCell = document.querySelector(".grid-cell");
+        expect(firstCell).not.toBeNull();
+        firstCell?.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+
+        expect(onCellClick).toHaveBeenCalledWith([0, 0]);
+    });
+
+    it("reports wall additions in wall editing mode", () => {
+        const { onWallClick } = renderInteractiveGrid("WALLS");
+
+        fireEvent.click(screen.getByRole("button", { name: "Add a wall to the right of cell 1, 1" }));
+
+        expect(onWallClick).toHaveBeenCalledWith({
+            neighborA: [0, 0],
+            neighborB: [0, 1],
+        });
     });
 });

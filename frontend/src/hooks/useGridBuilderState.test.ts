@@ -154,6 +154,27 @@ describe("useGridBuilderState workflows", () => {
         expect(result.current.message.message).toBe("Share link copied to clipboard");
     });
 
+    it("falls back to a prompt when clipboard access is denied", async () => {
+        const writeText = vi.fn().mockRejectedValue(new Error("clipboard denied"));
+        const prompt = vi.spyOn(window, "prompt").mockImplementation(() => null);
+        Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: { writeText },
+        });
+        const { result } = renderHook(() => useGridBuilderState());
+
+        act(() => {
+            result.current.handleSelectExample(board, "Test board");
+        });
+        await waitFor(() => expect(result.current.board).toEqual(board));
+        await act(async () => {
+            await result.current.handleShare();
+        });
+
+        expect(prompt).toHaveBeenCalledOnce();
+        expect(result.current.message.message).toBe("Clipboard access denied. Share link opened manually");
+    });
+
     it("shows a warning instead of calling the solver for an incomplete board", async () => {
         const { result } = renderHook(() => useGridBuilderState());
 
