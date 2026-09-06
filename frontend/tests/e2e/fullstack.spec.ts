@@ -29,6 +29,12 @@ test.describe("ZipSolver full-stack workflow", () => {
         expect(payload.solutionPath).toEqual(expect.any(Array));
         expect(["RLSolver", "AlgorithmicSolver"]).toContain(payload.solverUsed);
         await expect(page.getByText("Solver Metrics")).toBeVisible();
+        expect(payload.metrics).toEqual(expect.objectContaining({
+            runtimeMs: expect.any(Number),
+            steps: expect.any(Number),
+        }));
+        await expect(page.getByText(`${payload.metrics.runtimeMs} ms`, { exact: true })).toBeVisible();
+        await expect(page.getByText(String(payload.metrics.steps), { exact: true })).toBeVisible();
         await expect(page.getByText(payload.message)).toBeVisible();
     });
 
