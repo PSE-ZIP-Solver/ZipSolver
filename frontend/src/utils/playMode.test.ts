@@ -33,12 +33,15 @@ describe("play mode", () => {
             || (row === 0 && column === 1)
             || (row === 0 && column === 2)
         ));
-        const orderedPath = [[0, 0], [0, 2], [0, 1], ...remainingCells] as [number, number][];
+        const orderedPath = [[0, 0], [0, 2], ...remainingCells, [0, 1]] as [number, number][];
         const state = { visitedCells: orderedPath };
-        const wrongWaypointOrder = [...orderedPath];
-        [wrongWaypointOrder[1], wrongWaypointOrder[2]] = [wrongWaypointOrder[2], wrongWaypointOrder[1]];
+        const wrongEndpoint = [...orderedPath];
+        [wrongEndpoint[wrongEndpoint.length - 2], wrongEndpoint[wrongEndpoint.length - 1]] = [
+            wrongEndpoint[wrongEndpoint.length - 1],
+            wrongEndpoint[wrongEndpoint.length - 2],
+        ];
 
         expect(hasCompletedAllWaypoints(state, board)).toBe(true);
-        expect(hasCompletedAllWaypoints({ visitedCells: wrongWaypointOrder }, board)).toBe(false);
+        expect(hasCompletedAllWaypoints({ visitedCells: wrongEndpoint }, board)).toBe(false);
     });
 });

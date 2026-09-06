@@ -62,6 +62,27 @@ describe("ControlPanel", () => {
         expect(onHint).not.toHaveBeenCalled();
         expect(onUndo).not.toHaveBeenCalled();
     });
+
+        it("keeps Clear Solution available but locks Undo after completion", () => {
+            render(
+                <ControlPanel
+                    boardSize={6}
+                    editMode="NUMBERS"
+                    viewMode="PLAY"
+                    isSolving={false}
+                    isPlayCompleted
+                    onGridSizeChange={vi.fn()}
+                    onEditModeChange={vi.fn()}
+                    onHint={vi.fn()}
+                    onClearSolution={vi.fn()}
+                    onUndo={vi.fn()}
+                />,
+            );
+
+            expect(screen.getByRole("button", { name: "Clear Solution" })).toBeEnabled();
+            expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+            expect(screen.getByRole("button", { name: "Take Hint" })).toBeDisabled();
+        });
 });
 
 describe("ImportSizeModal", () => {

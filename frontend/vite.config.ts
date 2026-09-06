@@ -18,8 +18,14 @@ const config = {
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/utils/**/*.ts', 'src/api/**/*.ts', 'src/hooks/**/*.ts'],
-      exclude: ['src/**/*.d.ts'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.spec.{ts,tsx}',
+        'src/main.tsx',
+        'src/test/**',
+      ],
     },
   },
 };

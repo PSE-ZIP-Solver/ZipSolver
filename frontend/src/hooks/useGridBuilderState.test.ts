@@ -154,6 +154,27 @@ describe("useGridBuilderState workflows", () => {
         expect(result.current.message.message).toBe("Share link copied to clipboard");
     });
 
+    it("falls back to a prompt when clipboard access is denied", async () => {
+        const writeText = vi.fn().mockRejectedValue(new Error("clipboard denied"));
+        const prompt = vi.spyOn(window, "prompt").mockImplementation(() => null);
+        Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: { writeText },
+        });
+        const { result } = renderHook(() => useGridBuilderState());
+
+        act(() => {
+            result.current.handleSelectExample(board, "Test board");
+        });
+        await waitFor(() => expect(result.current.board).toEqual(board));
+        await act(async () => {
+            await result.current.handleShare();
+        });
+
+        expect(prompt).toHaveBeenCalledOnce();
+        expect(result.current.message.message).toBe("Clipboard access denied. Share link opened manually");
+    });
+
     it("shows a warning instead of calling the solver for an incomplete board", async () => {
         const { result } = renderHook(() => useGridBuilderState());
 
@@ -232,6 +253,10 @@ describe("useGridBuilderState workflows", () => {
     it("locks Play actions after the player completes the board", async () => {
         mockedSolvePuzzle.mockResolvedValue(solvedResponse);
         const { result } = renderHook(() => useGridBuilderState());
+        const completionBoard: BoardConfig = {
+            ...board,
+            waypoints: [[0, 0], [5, 0]],
+        };
         const path: [number, number][] = [];
 
         for (let row = 0; row < 6; row += 1) {
@@ -241,8 +266,8 @@ describe("useGridBuilderState workflows", () => {
             }
         }
 
-        act(() => result.current.handleSelectExample(board, "Test board"));
-        await waitFor(() => expect(result.current.board).toEqual(board));
+        act(() => result.current.handleSelectExample(completionBoard, "Test board"));
+        await waitFor(() => expect(result.current.board).toEqual(completionBoard));
         await act(async () => {
             await result.current.handleViewModeChange("PLAY");
         });
@@ -262,5 +287,44 @@ describe("useGridBuilderState workflows", () => {
         });
         expect(mockedSolvePuzzle).toHaveBeenCalledOnce();
         expect(result.current.playModeState.visitedCells).toEqual(completedPath);
+
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true }));
+        });
+        expect(result.current.playModeState.visitedCells).toEqual(completedPath);
+
+        act(() => {
+            result.current.handleClearPlayPath();
+        });
+        expect(result.current.isPlayCompleted).toBe(false);
+        expect(result.current.playModeState.visitedCells).toEqual([[0, 0]]);
+    });
+
+    it("does not complete Play mode when the final cell is not the last waypoint", async () => {
+        mockedSolvePuzzle.mockResolvedValue(solvedResponse);
+        const { result } = renderHook(() => useGridBuilderState());
+        const path: [number, number][] = [];
+
+        for (let row = 0; row < 6; row += 1) {
+            const columns = row % 2 === 0 ? [0, 1, 2, 3, 4, 5] : [5, 4, 3, 2, 1, 0];
+            for (const column of columns) {
+                path.push([row, column]);
+            }
+        }
+
+        act(() => result.current.handleSelectExample(board, "Test board"));
+        await waitFor(() => expect(result.current.board).toEqual(board));
+        await act(async () => {
+            await result.current.handleViewModeChange("PLAY");
+        });
+
+        for (const position of path.slice(1)) {
+            act(() => result.current.handleCellClick(position));
+        }
+
+        expect(result.current.playModeState.visitedCells).toHaveLength(36);
+        expect(result.current.playModeState.visitedCells.at(-1)).toEqual([5, 0]);
+        expect(result.current.isPlayCompleted).toBe(false);
+        expect(result.current.message.message).not.toBe("Puzzle solved! You visited every cell and all waypoints in order");
     });
 });
