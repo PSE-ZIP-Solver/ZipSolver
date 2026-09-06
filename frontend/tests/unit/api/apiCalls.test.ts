@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { importPuzzle, solvePuzzle } from "./apiCalls";
-import type { BoardConfig } from "../types/board";
+import { importPuzzle, solvePuzzle } from "../../../src/api/apiCalls";
+import type { BoardConfig } from "../../../src/types/board";
 
 const board: BoardConfig = {
     boardSize: 6,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getHintPathToNextWaypoint, normalizeSolutionPath } from "./solutionPath";
-import type { BoardConfig } from "../types/board";
+import { getHintPathToNextWaypoint, normalizeSolutionPath } from "../../../src/utils/solutionPath";
+import type { BoardConfig } from "../../../src/types/board";
 
 const board: BoardConfig = {
     boardSize: 6,

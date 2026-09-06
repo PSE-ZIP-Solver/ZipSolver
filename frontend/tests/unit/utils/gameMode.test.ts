@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hasWallBetween, isValidGameMove } from "./gameMode";
-import type { BoardConfig } from "../types/board";
+import { hasWallBetween, isValidGameMove } from "../../../src/utils/gameMode";
+import type { BoardConfig } from "../../../src/types/board";
 
 const board: BoardConfig = {
     boardSize: 6,

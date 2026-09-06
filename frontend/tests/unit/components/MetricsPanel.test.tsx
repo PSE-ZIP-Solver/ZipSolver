@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import MetricsPanel from "./MetricsPanel";
+import MetricsPanel from "../../../src/components/MetricsPanel";
 
 describe("MetricsPanel", () => {
     it("renders default metrics without attempts when no result exists", () => {

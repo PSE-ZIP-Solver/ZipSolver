@@ -112,6 +112,106 @@ export default function Grid({
 	const [isVictoryAnimating, setIsVictoryAnimating] = useState(false);
 	const lastAnimatedVictoryVersionRef = useRef(victoryVersion);
 
+	function getPointerPosition(event: React.PointerEvent<HTMLDivElement>): Position | null {
+		const boardElement = event.currentTarget;
+		const bounds = boardElement.getBoundingClientRect();
+		const x = event.clientX - bounds.left;
+		const y = event.clientY - bounds.top;
+
+		if (x < 0 || y < 0 || x >= bounds.width || y >= bounds.height) {
+			return null;
+		}
+
+		return [
+			Math.min(board.boardSize - 1, Math.floor((y / bounds.height) * board.boardSize)),
+			Math.min(board.boardSize - 1, Math.floor((x / bounds.width) * board.boardSize)),
+		];
+	}
+
+	function resetPointerState(event?: React.PointerEvent<HTMLDivElement>) {
+		if (event) {
+			try {
+				if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+					event.currentTarget.releasePointerCapture(event.pointerId);
+				}
+			} catch {
+			}
+		}
+
+		pointerDownRef.current = false;
+		pointerStartRef.current = null;
+		lastPlayedPositionRef.current = null;
+	}
+
+	function handleBoardPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+		if (!isPlayMode && editMode !== "NUMBERS") {
+			return;
+		}
+
+		const position = getPointerPosition(event);
+		if (!position) {
+			return;
+		}
+
+		try {
+			event.currentTarget.setPointerCapture(event.pointerId);
+		} catch {
+		}
+		pointerDownRef.current = true;
+		pointerStartRef.current = position;
+		lastPlayedPositionRef.current = null;
+	}
+
+	function handleBoardPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+		if (!pointerDownRef.current) {
+			return;
+		}
+
+		const position = getPointerPosition(event);
+		if (!position) {
+			return;
+		}
+
+		if (!isPlayMode) {
+			return;
+		}
+
+		const startPosition = pointerStartRef.current;
+		const lastPosition = lastPlayedPositionRef.current;
+		if (
+			startPosition
+			&& (startPosition[0] !== position[0] || startPosition[1] !== position[1])
+			&& (!lastPosition || lastPosition[0] !== position[0] || lastPosition[1] !== position[1])
+		) {
+			onCellClick(position);
+			lastPlayedPositionRef.current = position;
+		}
+	}
+
+	function handleBoardPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+		if (!pointerDownRef.current) {
+			return;
+		}
+
+		const position = getPointerPosition(event);
+		if (position && isPlayMode) {
+			const lastPosition = lastPlayedPositionRef.current;
+			if (!lastPosition || lastPosition[0] !== position[0] || lastPosition[1] !== position[1]) {
+				onCellClick(position);
+			}
+		} else if (
+			position
+			&& editMode === "NUMBERS"
+			&& pointerStartRef.current
+			&& pointerStartRef.current[0] === position[0]
+			&& pointerStartRef.current[1] === position[1]
+		) {
+			onCellClick(position);
+		}
+
+		resetPointerState(event);
+	}
+
 	useEffect(() => {
 		if (victoryVersion <= lastAnimatedVictoryVersionRef.current) {
 			return;
@@ -432,6 +532,10 @@ export default function Grid({
 			className="flex w-full justify-center select-none"
 		>
 			<div
+				onPointerDown={handleBoardPointerDown}
+				onPointerMove={handleBoardPointerMove}
+				onPointerUp={handleBoardPointerUp}
+				onPointerCancel={resetPointerState}
 				className="grid-board relative overflow-hidden rounded-2xl border transition-colors ui-transition"
 				style={{
 					width: gridPixels,
@@ -534,69 +638,6 @@ export default function Grid({
 									if (!isPlayMode) {
 										setHoveredCell(null);
 									}
-								}}
-								onPointerDown={() => {
-									pointerDownRef.current = true;
-									pointerStartRef.current = [row, col];
-									lastPlayedPositionRef.current = null;
-
-									if (isPlayMode) {
-										return;
-									}
-								}}
-								onPointerMove={() => {
-									if (!pointerDownRef.current) {
-										return;
-									}
-
-									const position: Position = [row, col];
-									const startPosition = pointerStartRef.current;
-
-									if (!isPlayMode) {
-										if (startPosition && (startPosition[0] !== row || startPosition[1] !== col)) {
-											pointerStartRef.current = null;
-										}
-										return;
-									}
-
-									if (
-										startPosition
-										&& (startPosition[0] !== row || startPosition[1] !== col)
-										&& (!lastPlayedPositionRef.current
-											|| lastPlayedPositionRef.current[0] !== row
-											|| lastPlayedPositionRef.current[1] !== col)
-									) {
-										onCellClick(position);
-										lastPlayedPositionRef.current = position;
-									}
-								}}
-								onPointerUp={() => {
-									if (pointerDownRef.current && isPlayMode) {
-										if (
-											(!lastPlayedPositionRef.current
-												|| lastPlayedPositionRef.current[0] !== row
-												|| lastPlayedPositionRef.current[1] !== col)
-										) {
-											onCellClick([row, col]);
-										}
-									} else if (
-										pointerDownRef.current
-										&& editMode === "NUMBERS"
-										&& pointerStartRef.current
-										&& pointerStartRef.current[0] === row
-										&& pointerStartRef.current[1] === col
-									) {
-										onCellClick([row, col]);
-									}
-
-									pointerDownRef.current = false;
-									pointerStartRef.current = null;
-									lastPlayedPositionRef.current = null;
-								}}
-								onPointerCancel={() => {
-									pointerDownRef.current = false;
-									pointerStartRef.current = null;
-									lastPlayedPositionRef.current = null;
 								}}
 							>
 								{isActive && (

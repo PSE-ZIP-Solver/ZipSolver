@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEmptyBoard, toggleWall, toggleWaypoint } from "./boardEditor";
+import { createEmptyBoard, toggleWall, toggleWaypoint } from "../../../src/utils/boardEditor";
 
 describe("board editor", () => {
     it("toggles waypoints immutably", () => {

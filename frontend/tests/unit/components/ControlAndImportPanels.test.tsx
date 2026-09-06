@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import ControlPanel from "./ControlPanel";
-import ImportSizeModal from "./ImportSizeModal";
-import ActionPanel from "./ActionPanel";
+import ControlPanel from "../../../src/components/ControlPanel";
+import ImportSizeModal from "../../../src/components/ImportSizeModal";
+import ActionPanel from "../../../src/components/ActionPanel";
 
 afterEach(() => cleanup());
 

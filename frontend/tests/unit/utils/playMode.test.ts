@@ -6,8 +6,8 @@ import {
     hasCompletedAllWaypoints,
     isCellAlreadyVisited,
     undoVisitedCell,
-} from "./playMode";
-import type { BoardConfig } from "../types/board";
+} from "../../../src/utils/playMode";
+import type { BoardConfig } from "../../../src/types/board";
 
 const board: BoardConfig = {
     boardSize: 6,
