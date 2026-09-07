@@ -233,4 +233,26 @@ describe("Grid interactions", () => {
         expect(onCellClick).toHaveBeenCalledWith([0, 1]);
         expect(onCellClick).toHaveBeenCalledWith([0, 2]);
     });
+
+    it("handles Play-mode touch swipes without relying on pointer events", () => {
+        const { onCellClick } = renderPlayGrid();
+        const gridBoard = document.querySelector(".grid-board") as HTMLElement;
+        vi.spyOn(gridBoard, "getBoundingClientRect").mockReturnValue({
+            left: 0, top: 0, right: 600, bottom: 600, width: 600, height: 600,
+            x: 0, y: 0, toJSON: () => ({}),
+        });
+
+        fireEvent.touchStart(gridBoard, {
+            touches: [{ identifier: 7, clientX: 10, clientY: 10 }],
+        });
+        fireEvent.touchMove(gridBoard, {
+            touches: [{ identifier: 7, clientX: 110, clientY: 10 }],
+        });
+        fireEvent.touchEnd(gridBoard, {
+            changedTouches: [{ identifier: 7, clientX: 210, clientY: 10 }],
+        });
+
+        expect(onCellClick).toHaveBeenCalledWith([0, 1]);
+        expect(onCellClick).toHaveBeenCalledWith([0, 2]);
+    });
 });

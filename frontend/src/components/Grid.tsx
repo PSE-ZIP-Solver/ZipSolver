@@ -109,14 +109,19 @@ export default function Grid({
 	const pointerDownRef = useRef(false);
 	const pointerStartRef = useRef<Position | null>(null);
 	const lastPlayedPositionRef = useRef<Position | null>(null);
+	const touchActiveRef = useRef(false);
+	const touchIdentifierRef = useRef<number | null>(null);
 	const [isVictoryAnimating, setIsVictoryAnimating] = useState(false);
 	const lastAnimatedVictoryVersionRef = useRef(victoryVersion);
 
-	function getPointerPosition(event: React.PointerEvent<HTMLDivElement>): Position | null {
-		const boardElement = event.currentTarget;
+	function getPositionFromCoordinates(
+		boardElement: HTMLDivElement,
+		clientX: number,
+		clientY: number,
+	): Position | null {
 		const bounds = boardElement.getBoundingClientRect();
-		const x = event.clientX - bounds.left;
-		const y = event.clientY - bounds.top;
+		const x = clientX - bounds.left;
+		const y = clientY - bounds.top;
 
 		if (x < 0 || y < 0 || x >= bounds.width || y >= bounds.height) {
 			return null;
@@ -126,6 +131,10 @@ export default function Grid({
 			Math.min(board.boardSize - 1, Math.floor((y / bounds.height) * board.boardSize)),
 			Math.min(board.boardSize - 1, Math.floor((x / bounds.width) * board.boardSize)),
 		];
+	}
+
+	function getPointerPosition(event: React.PointerEvent<HTMLDivElement>) {
+		return getPositionFromCoordinates(event.currentTarget, event.clientX, event.clientY);
 	}
 
 	function resetPointerState(event?: React.PointerEvent<HTMLDivElement>) {
@@ -144,6 +153,10 @@ export default function Grid({
 	}
 
 	function handleBoardPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+		if (event.pointerType === "touch" || touchActiveRef.current) {
+			return;
+		}
+
 		if (!isPlayMode && editMode !== "NUMBERS") {
 			return;
 		}
@@ -163,7 +176,7 @@ export default function Grid({
 	}
 
 	function handleBoardPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-		if (!pointerDownRef.current) {
+		if (touchActiveRef.current || !pointerDownRef.current) {
 			return;
 		}
 
@@ -189,7 +202,7 @@ export default function Grid({
 	}
 
 	function handleBoardPointerUp(event: React.PointerEvent<HTMLDivElement>) {
-		if (!pointerDownRef.current) {
+		if (touchActiveRef.current || !pointerDownRef.current) {
 			return;
 		}
 
@@ -207,6 +220,95 @@ export default function Grid({
 			&& pointerStartRef.current[1] === position[1]
 		) {
 			onCellClick(position);
+		}
+
+		resetPointerState(event);
+	}
+
+	function playPosition(position: Position) {
+		if (!isPlayMode || !pointerStartRef.current) {
+			return;
+		}
+
+		const startPosition = pointerStartRef.current;
+		const lastPosition = lastPlayedPositionRef.current;
+		if (
+			(startPosition[0] !== position[0] || startPosition[1] !== position[1])
+			&& (!lastPosition || lastPosition[0] !== position[0] || lastPosition[1] !== position[1])
+		) {
+			onCellClick(position);
+			lastPlayedPositionRef.current = position;
+		}
+	}
+
+	function handleBoardTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+		if (!isPlayMode || event.touches.length === 0) {
+			return;
+		}
+
+		const touch = event.touches[0];
+		const position = getPositionFromCoordinates(event.currentTarget, touch.clientX, touch.clientY);
+		if (!position) {
+			return;
+		}
+
+		event.preventDefault();
+		touchActiveRef.current = true;
+		touchIdentifierRef.current = touch.identifier;
+		pointerDownRef.current = true;
+		pointerStartRef.current = position;
+		lastPlayedPositionRef.current = null;
+	}
+
+	function handleBoardTouchMove(event: React.TouchEvent<HTMLDivElement>) {
+		if (!touchActiveRef.current || !pointerDownRef.current) {
+			return;
+		}
+
+		const touch = Array.from(event.touches).find(
+			(candidate) => candidate.identifier === touchIdentifierRef.current,
+		);
+		if (!touch) {
+			return;
+		}
+
+		event.preventDefault();
+		const position = getPositionFromCoordinates(event.currentTarget, touch.clientX, touch.clientY);
+		if (position) {
+			playPosition(position);
+		}
+	}
+
+	function handleBoardTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+		if (!touchActiveRef.current || !pointerDownRef.current) {
+			return;
+		}
+
+		const touch = Array.from(event.changedTouches).find(
+			(candidate) => candidate.identifier === touchIdentifierRef.current,
+		);
+		if (touch) {
+			event.preventDefault();
+			const position = getPositionFromCoordinates(event.currentTarget, touch.clientX, touch.clientY);
+			if (position) {
+				playPosition(position);
+			}
+		}
+
+		touchActiveRef.current = false;
+		touchIdentifierRef.current = null;
+		resetPointerState();
+	}
+
+	function handleBoardTouchCancel() {
+		touchActiveRef.current = false;
+		touchIdentifierRef.current = null;
+		resetPointerState();
+	}
+
+	function handleBoardPointerCancel(event: React.PointerEvent<HTMLDivElement>) {
+		if (event.pointerType === "touch" || touchActiveRef.current) {
+			return;
 		}
 
 		resetPointerState(event);
@@ -535,7 +637,11 @@ export default function Grid({
 				onPointerDown={handleBoardPointerDown}
 				onPointerMove={handleBoardPointerMove}
 				onPointerUp={handleBoardPointerUp}
-				onPointerCancel={resetPointerState}
+				onPointerCancel={handleBoardPointerCancel}
+				onTouchStart={handleBoardTouchStart}
+				onTouchMove={handleBoardTouchMove}
+				onTouchEnd={handleBoardTouchEnd}
+				onTouchCancel={handleBoardTouchCancel}
 				className="grid-board relative overflow-hidden rounded-2xl border transition-colors ui-transition"
 				style={{
 					width: gridPixels,
