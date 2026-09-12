@@ -17,15 +17,15 @@ class GridLocalizer:
     Finds and isolates the localized puzzle grid within the overall bounding screenshot.
 
     Responsibility:
-        Identifies spatial origins and scales associated with the gameplay area, dividing 
-        the raw graphical matrix into clearly mapped, coordinate-bound cells for downstream 
+        Identifies spatial origins and scales associated with the gameplay area, dividing
+        the raw graphical matrix into clearly mapped, coordinate-bound cells for downstream
         marker and wall extractions.
 
     Implementation Details:
-        Operates internally using two distinct sizing modes: a production pipeline utilizing 
-        a predetermined frontend dimension hint to reliably slice bounds without estimation, 
-        and a legacy diagnostic fallback executing edge-based estimations to determine cell scales. 
-        Calculations anchor heavily on highly saturated orange waypoint discs and background 
+        Operates internally using two distinct sizing modes: a production pipeline utilizing
+        a predetermined frontend dimension hint to reliably slice bounds without estimation,
+        and a legacy diagnostic fallback executing edge-based estimations to determine cell scales.
+        Calculations anchor heavily on highly saturated orange waypoint discs and background
         panel brightness to overcome low-contrast structural renderings.
     """
 
@@ -39,11 +39,11 @@ class GridLocalizer:
 
         Args:
             image_data: The normalized multi-channel pixel array representing the gameplay capture.
-            board_size: The explicitly defined structural dimension provided by outer orchestrators, 
+            board_size: The explicitly defined structural dimension provided by outer orchestrators,
                 serving as an authoritative hint to bypass estimation algorithms.
 
         Returns:
-            A tuple coupling the definitively identified grid dimension with a dictionary mapping 
+            A tuple coupling the definitively identified grid dimension with a dictionary mapping
             logical coordinate pairs directly to raw pixel bounding boxes.
 
         Raises:
@@ -51,15 +51,14 @@ class GridLocalizer:
             AmbiguousBoardError: If the size cannot be mathematically resolved to supported topologies.
 
         Implementation Details:
-            Safely delays the import of computer vision modules to prevent boot-time registry bloat. 
-            Selects geometric resolution logic dynamically based on the presence of the sizing hint, 
+            Safely delays the import of computer vision modules to prevent boot-time registry bloat.
+            Selects geometric resolution logic dynamically based on the presence of the sizing hint,
             generating an active coordinate dictionary matching pixel slices to grid logicals.
         """
         if image_data is None or image_data.size == 0:
             raise UnreadableImageError("Image data cannot be None or empty.")
 
         import cv2  # noqa: F401  (lazy import; used by helpers)
-        import numpy as np
 
         self.last_waypoint_cells: Dict[Tuple[int, int], Tuple[float, float, float]] = {}
 
@@ -98,10 +97,10 @@ class GridLocalizer:
             NoBoardDetectedError: If no reliable anchors or circular discs are present.
 
         Implementation Details:
-            Derives foundational geometry by identifying high-saturation discs and analyzing 
-            spatial nearest-neighbor gaps to calculate grid pitch. Snaps computed anchors back 
-            to identified panel limits to eliminate bounding box drift caused by external UI chrome. 
-            Actively preserves identified global disc centres within instance state to avoid 
+            Derives foundational geometry by identifying high-saturation discs and analyzing
+            spatial nearest-neighbor gaps to calculate grid pitch. Snaps computed anchors back
+            to identified panel limits to eliminate bounding box drift caused by external UI chrome.
+            Actively preserves identified global disc centres within instance state to avoid
             per-cell boundary cutoff issues during downstream digit reading.
         """
         import numpy as np
@@ -210,7 +209,7 @@ class GridLocalizer:
         # the extractor prefers them. Map each disc centre to its cell and keep the pixel
         # centre so the digit reader can crop precisely around the disc.
         self.last_waypoint_cells: Dict[Tuple[int, int], Tuple[float, float, float]] = {}
-        for (cx, cy, r) in board:
+        for cx, cy, r in board:
             col = int(round((cx - origin_x) / pitch - 0.5))
             row = int(round((cy - origin_y) / pitch - 0.5))
             if 0 <= col < n and 0 <= row < n:
@@ -229,8 +228,8 @@ class GridLocalizer:
             An accumulated compilation grouping absolute coordinates and geometric radii.
 
         Implementation Details:
-            Extracts strict color channels by forcing an HSV translation. Applies strict 
-            morphological thresholding isolating hyper-saturated orange values before computing 
+            Extracts strict color channels by forcing an HSV translation. Applies strict
+            morphological thresholding isolating hyper-saturated orange values before computing
             contour enclosing bounds and aggressively pruning non-circular blobs.
         """
         import cv2
@@ -240,7 +239,9 @@ class GridLocalizer:
         hue, sat, val = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
         # Dark-theme markers are pale orange, with much less saturation than
         # light-theme markers. Circularity below distinguishes them from walls.
-        mask = ((hue > 5) & (hue < 30) & (sat > 65) & (val > 120)).astype(np.uint8) * 255
+        mask = ((hue > 5) & (hue < 30) & (sat > 65) & (val > 120)).astype(
+            np.uint8
+        ) * 255
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         out = []
@@ -282,7 +283,9 @@ class GridLocalizer:
         for mask in masks:
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((31, 31), np.uint8))
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((31, 31), np.uint8))
-            found, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            found, _ = cv2.findContours(
+                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
             contours.extend(found)
 
         ccx = float(np.median([c[0] for c in circles])) if circles else None
@@ -317,8 +320,8 @@ class GridLocalizer:
             The normalized base spacing scale defining grid cell leaps.
 
         Implementation Details:
-            Extracts absolute gap limits mathematically. Since waypoints may spawn non-adjacently, 
-            identifies grouped spatial gaps and normalizes them against the structural panel 
+            Extracts absolute gap limits mathematically. Since waypoints may spawn non-adjacently,
+            identifies grouped spatial gaps and normalizes them against the structural panel
             estimation to recover singular cell spans cleanly.
         """
         import numpy as np
@@ -370,7 +373,7 @@ class GridLocalizer:
             The mathematically derived minimal hop spanning adjacent structures.
 
         Implementation Details:
-            Executes a rapid Euclidean distance map applying vectorization across node sets. 
+            Executes a rapid Euclidean distance map applying vectorization across node sets.
             Prunes outliers violating strict diagonal bounds to isolate purely cardinal relationships.
         """
         import numpy as np
@@ -399,7 +402,7 @@ class GridLocalizer:
             An active dictionary structuring localized indices directly to visual areas.
 
         Implementation Details:
-            Executes dual-axis generation utilizing rounding logic across pure floating-point 
+            Executes dual-axis generation utilizing rounding logic across pure floating-point
             steps to prevent accumulating floating-point drift at deeper grid sectors.
         """
         cell = int(round(pitch))
@@ -424,11 +427,10 @@ class GridLocalizer:
             The raw numeric mapping defining the overall span detected via contrast peaks.
 
         Implementation Details:
-            Maintains internal test compatibility. Invokes edge identification via Canny mapping, 
+            Maintains internal test compatibility. Invokes edge identification via Canny mapping,
             summing linear responses mathematically across axes to determine absolute interior volumes.
         """
         import cv2
-        import numpy as np
 
         gray = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray, 50, 150)

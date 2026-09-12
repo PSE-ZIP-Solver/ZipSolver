@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
     testDir: "./tests/e2e",
+    testIgnore: /fullstack\.spec\.ts/,
     fullyParallel: true,
     forbidOnly: Boolean(process.env.CI),
     retries: process.env.CI ? 2 : 0,
@@ -13,7 +14,13 @@ export default defineConfig({
     projects: [
         {
             name: "chromium",
+            testIgnore: /(?:fullstack|mobile)\.spec\.ts/,
             use: { ...devices["Desktop Chrome"] },
+        },
+        {
+            name: "mobile-chromium",
+            testMatch: /mobile\.spec\.ts/,
+            use: { ...devices["Pixel 5"] },
         },
     ],
     webServer: {

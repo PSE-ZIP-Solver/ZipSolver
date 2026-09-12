@@ -94,7 +94,7 @@ export default function ControlPanel({
                         <button
                             type="button"
                             onClick={onClearSolution}
-                            disabled={isSolving || isPlayCompleted}
+                            disabled={isSolving}
                             className="rounded-lg border border-board-border bg-background/80 px-4 py-2 text-sm font-semibold text-text transition-colors ui-transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Clear Solution

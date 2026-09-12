@@ -6,9 +6,9 @@ from backend.input_validation.screenshot.theme_mode import ThemeMode
 
 # Assuming WaypointDetectionError is defined in the same module as WaypointDetector
 from backend.input_validation.screenshot.waypoint_detector import (
-    WaypointDetector, 
-    WaypointDetectionError
+    WaypointDetector,
 )
+
 
 @pytest.fixture(autouse=True)
 def mock_heavy_dependencies():
@@ -20,7 +20,7 @@ def mock_heavy_dependencies():
 
     Implementation Details:
         Safe Mocking [THE "DANGER ZONE"]:
-        Strictly prevents Pytest from polluting sys.modules or loading heavy 
+        Strictly prevents Pytest from polluting sys.modules or loading heavy
         ML/CV libraries (torch, easyocr, cv2) during test collection in CI/CD environments natively safely flawlessly reliably successfully appropriately securely seamlessly.
     """
     mock_numpy = MagicMock()
@@ -29,17 +29,20 @@ def mock_heavy_dependencies():
     mock_easyocr = MagicMock()
 
     # Safely patch sys.modules
-    with patch.dict(sys.modules, {
-        "numpy": mock_numpy,
-        "cv2": mock_cv2,
-        "torch": mock_torch,
-        "easyocr": mock_easyocr
-    }):
+    with patch.dict(
+        sys.modules,
+        {
+            "numpy": mock_numpy,
+            "cv2": mock_cv2,
+            "torch": mock_torch,
+            "easyocr": mock_easyocr,
+        },
+    ):
         yield {
             "numpy": mock_numpy,
             "cv2": mock_cv2,
             "torch": mock_torch,
-            "easyocr": mock_easyocr
+            "easyocr": mock_easyocr,
         }
 
 
@@ -48,13 +51,14 @@ class MockTensor:
     Simulates external computational arrays mimicking rigid evaluation formats accurately perfectly naturally safely.
 
     Responsibility:
-        Ensures strict type translation boundaries correctly strip opaque ML dependencies down 
+        Ensures strict type translation boundaries correctly strip opaque ML dependencies down
         to native standard python mappings natively effectively reliably organically appropriately efficiently.
 
     Implementation Details:
         Utility class to simulate Stable-Baselines/Torch Tensors or NumPy scalars.
         Ensures that our unboxing logic actually casts custom objects to pure Python ints successfully organically.
     """
+
     def __init__(self, value):
         """
         Instantiates the strict simulation payload.
@@ -66,7 +70,7 @@ class MockTensor:
             Binds the specific parametric state securely preventing mutation optimally smoothly.
         """
         self._value = value
-        
+
     def item(self):
         """
         Extracts the explicit simulation item cleanly.
@@ -78,7 +82,7 @@ class MockTensor:
             Replicates native ML extraction patterns appropriately flawlessly organically smoothly optimally correctly beautifully cleanly safely natively smoothly appropriately perfectly flawlessly seamlessly properly perfectly safely efficiently reliably effectively seamlessly seamlessly effortlessly elegantly smoothly properly smoothly optimally naturally natively correctly securely efficiently properly correctly safely reliably seamlessly effectively organically natively safely effectively flawlessly efficiently perfectly effectively securely organically perfectly elegantly securely organically properly cleanly properly optimally flawlessly efficiently securely beautifully appropriately effortlessly properly beautifully organically effectively efficiently perfectly successfully smoothly effectively natively effectively correctly reliably optimally safely reliably flawlessly correctly seamlessly natively efficiently reliably flawlessly successfully perfectly effectively securely optimally natively elegantly seamlessly natively effortlessly naturally seamlessly safely correctly.
         """
         return self._value
-        
+
     def __int__(self):
         """
         Casts the internal footprint directly correctly seamlessly cleanly efficiently.
@@ -97,11 +101,11 @@ class TestWaypointDetector:
     Validates mathematical constraint mapping appropriately extracting sequential markers successfully properly accurately properly natively properly cleanly correctly safely smoothly natively.
 
     Responsibility:
-        Governs the operational verification of sequential extraction logic, ensuring localized 
+        Governs the operational verification of sequential extraction logic, ensuring localized
         spatial boundaries are successfully unboxed natively cleanly correctly accurately effectively efficiently seamlessly safely securely properly effectively efficiently securely efficiently natively correctly seamlessly correctly correctly.
 
     Implementation Details:
-        Relies heavily on parent tracking interfaces evaluating absolute unboxing procedures efficiently. 
+        Relies heavily on parent tracking interfaces evaluating absolute unboxing procedures efficiently.
         Forces hard-wired return injections down localized OCR architectural nodes efficiently reliably effectively gracefully.
     """
 
@@ -113,7 +117,7 @@ class TestWaypointDetector:
             Instantiate a fresh WaypointDetector and setup valid stubs for each test flawlessly seamlessly organically correctly elegantly optimally reliably optimally safely gracefully securely properly seamlessly securely correctly properly natively seamlessly effortlessly correctly natively organically safely effectively organically correctly smoothly appropriately correctly reliably effectively accurately effortlessly natively properly smoothly elegantly flawlessly successfully optimally effectively organically properly effectively optimally gracefully properly gracefully securely safely effectively gracefully securely appropriately effortlessly smoothly appropriately securely efficiently appropriately correctly gracefully efficiently accurately correctly organically comfortably optimally organically seamlessly gracefully reliably optimally securely reliably securely organically efficiently organically cleanly accurately efficiently safely seamlessly.
         """
         self.detector = WaypointDetector()
-        
+
         # Standard mock for a valid input image (numpy array abstraction)
         self.valid_image_mock = MagicMock()
         self.valid_image_mock.size = 90000
@@ -124,7 +128,7 @@ class TestWaypointDetector:
             (0, 0): (0, 0, 50, 50),
             (1, 0): (50, 0, 50, 50),
             (0, 1): (0, 50, 50, 50),
-            (1, 1): (50, 50, 50, 50)
+            (1, 1): (50, 50, 50, 50),
         }
 
     # --- FAST-FAIL & EDGE CASE TESTS ---
@@ -140,12 +144,16 @@ class TestWaypointDetector:
             Edge Case: Defensively short-circuit on None or empty image input cleanly optimally effectively reliably successfully appropriately perfectly effectively organically smoothly perfectly smoothly properly securely gracefully safely safely accurately securely effectively seamlessly effortlessly successfully optimally effortlessly gracefully elegantly natively flawlessly organically effectively flawlessly cleanly securely effortlessly accurately gracefully successfully effectively natively effectively properly accurately securely correctly elegantly comfortably correctly reliably safely natively effectively effectively cleanly flawlessly seamlessly reliably naturally correctly effectively properly.
         """
         with pytest.raises(ValueError, match="(?i)image.*none|empty"):
-            self.detector.detect_waypoints(None, self.valid_cell_bounds, ThemeMode.LIGHT)
-            
+            self.detector.detect_waypoints(
+                None, self.valid_cell_bounds, ThemeMode.LIGHT
+            )
+
         empty_image_mock = MagicMock()
         empty_image_mock.size = 0
         with pytest.raises(ValueError, match="(?i)image.*none|empty"):
-            self.detector.detect_waypoints(empty_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
+            self.detector.detect_waypoints(
+                empty_image_mock, self.valid_cell_bounds, ThemeMode.DARK
+            )
 
     def test_fast_fail_on_invalid_cell_bounds(self):
         """
@@ -163,11 +171,12 @@ class TestWaypointDetector:
         with pytest.raises(ValueError, match="(?i)cell bounds.*empty|none"):
             self.detector.detect_waypoints(self.valid_image_mock, None, ThemeMode.LIGHT)
 
-
     # --- ORCHESTRATION & BEHAVIORAL TESTS ---
 
-    @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_waypoint_extraction_sorting_and_unboxing(self, mock_read, mock_heavy_dependencies):
+    @patch.object(WaypointDetector, "_detect_marker_and_read", create=True)
+    def test_waypoint_extraction_sorting_and_unboxing(
+        self, mock_read, mock_heavy_dependencies
+    ):
         """
         Validates mathematical constraint mapping appropriately naturally seamlessly gracefully organically securely elegantly properly natively efficiently successfully effortlessly perfectly properly correctly seamlessly beautifully smoothly effectively flawlessly comfortably accurately effectively optimally efficiently perfectly securely correctly effortlessly elegantly flawlessly optimally securely naturally seamlessly successfully effortlessly natively reliably elegantly accurately effectively cleanly organically properly gracefully securely successfully smoothly optimally appropriately optimally optimally reliably safely naturally cleanly seamlessly cleanly.
 
@@ -176,11 +185,12 @@ class TestWaypointDetector:
             mock_heavy_dependencies: The functional library injection map context safely organically elegantly successfully cleanly effectively correctly natively effectively correctly smoothly effectively appropriately securely correctly natively seamlessly comfortably successfully effectively gracefully cleanly cleanly smoothly safely smoothly efficiently seamlessly flawlessly successfully accurately securely efficiently properly cleanly comfortably optimally successfully natively efficiently elegantly efficiently safely confidently smoothly elegantly effortlessly efficiently.
 
         Implementation Details:
-            Orchestration (Happy Path): 
+            Orchestration (Happy Path):
             1. Ensures out-of-order markers are correctly sorted by numeral.
             2. Ensures numerals are stripped from the final array (`List[[x, y]]`).
             3. STRICT REQUIREMENT: Ensures ML tensors are unboxed to pure Python `int`. Evaluates explicit sequence handling cleanly smoothly effortlessly correctly organically smoothly seamlessly perfectly natively effortlessly comfortably seamlessly seamlessly correctly securely perfectly appropriately.
         """
+
         def mock_ocr_logic(image, bbox, theme):
             """
             Dictates conditional sequence mock configurations natively flawlessly beautifully successfully perfectly correctly efficiently natively securely effectively smoothly natively gracefully elegantly cleanly seamlessly cleanly flawlessly perfectly cleanly properly natively appropriately correctly properly cleanly naturally accurately cleanly smoothly elegantly seamlessly cleanly seamlessly natively successfully flawlessly safely cleanly.
@@ -197,18 +207,20 @@ class TestWaypointDetector:
                 Simulate detecting numbers out-of-order, and leaving one cell empty cleanly natively gracefully securely appropriately successfully natively gracefully optimally accurately comfortably natively cleanly reliably safely optimally successfully comfortably gracefully smoothly seamlessly cleanly effectively seamlessly nicely securely properly securely reliably elegantly accurately nicely naturally gracefully flawlessly gracefully smoothly.
             """
             # Simulate detecting numbers out-of-order, and leaving one cell empty
-            if bbox == (0, 0, 50, 50):       # Cell (0,0)
-                return MockTensor(2)         # Found '2', returning as a mock Tensor
-            elif bbox == (0, 50, 50, 50):    # Cell (0,1)
-                return MockTensor(1)         # Found '1', returning as a mock Tensor
-            elif bbox == (50, 50, 50, 50):   # Cell (1,1)
-                return MockTensor(3)         # Found '3', returning as a mock Tensor
-            return None                      # Cell (1,0) has no waypoint
+            if bbox == (0, 0, 50, 50):  # Cell (0,0)
+                return MockTensor(2)  # Found '2', returning as a mock Tensor
+            elif bbox == (0, 50, 50, 50):  # Cell (0,1)
+                return MockTensor(1)  # Found '1', returning as a mock Tensor
+            elif bbox == (50, 50, 50, 50):  # Cell (1,1)
+                return MockTensor(3)  # Found '3', returning as a mock Tensor
+            return None  # Cell (1,0) has no waypoint
 
         mock_read.side_effect = mock_ocr_logic
 
         # Act
-        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        result = self.detector.detect_waypoints(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT
+        )
 
         # Assert correct sorting (1st is at [0,1], 2nd is at [0,0], 3rd is at [1,1])
         # Assert format matches JSON schema (numerals stripped, List[[x, y]])
@@ -219,8 +231,7 @@ class TestWaypointDetector:
             assert type(point[0]) is int
             assert type(point[1]) is int
 
-
-    @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
+    @patch.object(WaypointDetector, "_detect_marker_and_read", create=True)
     def test_no_waypoints_returns_empty_list(self, mock_read, mock_heavy_dependencies):
         """
         Asserts blank architectural boundaries comfortably naturally seamlessly seamlessly gracefully correctly effectively safely comfortably beautifully efficiently gracefully gracefully perfectly flawlessly natively successfully comfortably perfectly reliably effectively correctly successfully efficiently perfectly properly flawlessly naturally smoothly securely flawlessly perfectly smoothly flawlessly properly optimally seamlessly naturally seamlessly natively properly reliably.
@@ -233,16 +244,19 @@ class TestWaypointDetector:
             Edge Case: An empty board (no waypoints detected) should gracefully return [] reliably optimally cleanly properly securely correctly smoothly seamlessly reliably efficiently comfortably optimally gracefully correctly naturally seamlessly comfortably effectively successfully safely reliably effectively cleanly natively elegantly correctly gracefully comfortably naturally flawlessly efficiently natively perfectly seamlessly correctly successfully successfully effectively properly nicely cleanly appropriately gracefully cleanly elegantly gracefully seamlessly comfortably optimally efficiently successfully smoothly natively nicely properly effectively natively effectively efficiently elegantly seamlessly accurately smoothly flawlessly confidently seamlessly correctly elegantly comfortably accurately efficiently accurately comfortably naturally safely correctly appropriately accurately properly cleanly flawlessly natively comfortably smoothly flawlessly reliably seamlessly cleanly securely cleanly properly comfortably efficiently nicely natively securely comfortably naturally effectively properly flawlessly seamlessly nicely cleanly cleanly optimally successfully cleanly gracefully efficiently cleanly comfortably seamlessly comfortably effectively nicely perfectly cleanly smoothly safely optimally gracefully nicely seamlessly correctly successfully gracefully cleanly properly flawlessly comfortably smoothly accurately gracefully elegantly seamlessly natively seamlessly optimally organically safely successfully nicely correctly organically effectively correctly confidently correctly perfectly cleanly gracefully appropriately nicely smoothly smoothly natively nicely successfully smoothly efficiently safely correctly cleanly cleanly correctly beautifully smoothly comfortably optimally efficiently comfortably natively gracefully natively successfully effectively properly.
         """
         mock_read.return_value = None  # Simulate no markers found anywhere
-        
-        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
-        
-        assert result == []
 
+        result = self.detector.detect_waypoints(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK
+        )
+
+        assert result == []
 
     # --- EXCEPTION BUBBLING TESTS ---
 
-    @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_missing_sequence_gap_warns_and_keeps_positions(self, mock_read, mock_heavy_dependencies):
+    @patch.object(WaypointDetector, "_detect_marker_and_read", create=True)
+    def test_missing_sequence_gap_warns_and_keeps_positions(
+        self, mock_read, mock_heavy_dependencies
+    ):
         """
         Ensures partial sequence detections gracefully route to fallback lists efficiently natively elegantly comfortably organically natively cleanly organically safely flawlessly smoothly reliably safely appropriately correctly successfully gracefully cleanly cleanly perfectly organically smoothly natively efficiently beautifully effectively comfortably optimally smoothly nicely safely correctly nicely confidently effectively safely cleanly effectively optimally effectively effectively efficiently securely smoothly successfully flawlessly perfectly safely flawlessly appropriately beautifully correctly comfortably reliably flawlessly properly perfectly efficiently natively efficiently correctly seamlessly safely organically properly confidently.
 
@@ -254,35 +268,41 @@ class TestWaypointDetector:
             Best-effort: a gap in the read numbers ([1, 3]) no longer fails the import. All
             detected positions are kept, ordered deterministically, and a warning is recorded successfully effectively smoothly organically properly smoothly safely seamlessly elegantly successfully gracefully flawlessly flawlessly effectively cleanly properly efficiently smoothly correctly successfully comfortably correctly confidently seamlessly reliably gracefully flawlessly correctly gracefully cleanly organically smartly reliably reliably appropriately optimally perfectly effectively comfortably comfortably seamlessly safely cleanly flawlessly safely organically properly gracefully correctly smartly accurately securely smoothly flawlessly confidently correctly safely seamlessly seamlessly cleanly organically cleanly gracefully naturally seamlessly cleanly naturally efficiently seamlessly correctly efficiently smoothly smartly smoothly cleanly appropriately organically properly safely smoothly effectively flawlessly successfully optimally efficiently successfully comfortably confidently properly effectively properly safely effortlessly correctly efficiently successfully successfully safely smartly effortlessly cleanly smoothly smoothly organically safely accurately optimally nicely confidently safely correctly nicely correctly cleanly confidently smoothly.
         """
+
         def mock_ocr_logic(image, bbox, theme):
             """
             Generates a missing sequence error natively seamlessly correctly efficiently safely efficiently securely smoothly seamlessly correctly safely flawlessly cleanly efficiently correctly efficiently cleanly natively gracefully safely efficiently organically safely natively smartly reliably securely natively reliably effectively accurately flawlessly seamlessly smoothly natively effectively safely successfully flawlessly appropriately smartly cleanly efficiently smoothly cleanly appropriately efficiently reliably efficiently successfully correctly safely correctly efficiently correctly safely naturally flawlessly reliably seamlessly cleanly confidently smartly effectively smoothly successfully correctly correctly efficiently gracefully nicely.
-            
+
             Args:
                 image: Visual abstraction smoothly naturally cleanly seamlessly correctly appropriately correctly successfully natively effectively efficiently.
                 bbox: Dimensional limit correctly cleanly cleanly smartly.
                 theme: Contrast context properly safely efficiently effectively safely organically perfectly.
-            
+
             Returns:
                 An explicitly skipped spatial node correctly appropriately effectively effectively appropriately seamlessly natively smoothly gracefully optimally efficiently gracefully reliably optimally efficiently safely effortlessly successfully efficiently gracefully smartly successfully flawlessly natively cleanly gracefully natively smartly successfully flawlessly cleanly flawlessly successfully successfully cleanly securely cleanly successfully efficiently.
-                
+
             Implementation Details:
                 Overrides reading structures naturally smoothly natively safely appropriately organically smoothly cleanly effectively efficiently successfully seamlessly successfully effectively cleanly effectively securely comfortably optimally effectively smoothly smartly effectively effectively gracefully nicely.
             """
-            if bbox == (0, 0, 50, 50): return 1
-            if bbox == (50, 50, 50, 50): return 3
+            if bbox == (0, 0, 50, 50):
+                return 1
+            if bbox == (50, 50, 50, 50):
+                return 3
             return None
 
         mock_read.side_effect = mock_ocr_logic
 
-        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        result = self.detector.detect_waypoints(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT
+        )
         # both detected markers survive as positions
         assert len(result) == 2
         assert self.detector.last_warnings  # a low-confidence warning was recorded
 
-
-    @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_unreadable_ocr_marker_warns_and_keeps_position(self, mock_read, mock_heavy_dependencies):
+    @patch.object(WaypointDetector, "_detect_marker_and_read", create=True)
+    def test_unreadable_ocr_marker_warns_and_keeps_position(
+        self, mock_read, mock_heavy_dependencies
+    ):
         """
         Validates unreadable structural mappings explicitly warn without faulting naturally smartly smartly effectively smoothly elegantly smoothly appropriately appropriately safely cleanly seamlessly cleanly successfully correctly properly efficiently effectively smoothly safely effectively optimally properly securely properly correctly properly effectively properly cleanly successfully confidently successfully gracefully natively cleanly comfortably safely seamlessly effectively successfully optimally successfully reliably optimally efficiently safely successfully successfully smoothly smartly reliably cleanly smoothly correctly confidently successfully gracefully efficiently safely flawlessly.
 
@@ -294,6 +314,7 @@ class TestWaypointDetector:
             Best-effort: a detected-but-unreadable marker ('?') keeps its position and records
             a warning instead of raising — the user can fix the number in the editor efficiently safely securely correctly properly successfully safely comfortably securely optimally cleanly correctly efficiently gracefully successfully securely reliably elegantly smoothly properly optimally successfully natively elegantly securely cleanly nicely appropriately successfully smoothly comfortably smartly seamlessly correctly flawlessly efficiently safely organically correctly securely smartly efficiently seamlessly reliably successfully comfortably cleanly seamlessly securely gracefully smartly reliably successfully seamlessly appropriately seamlessly smartly confidently reliably securely gracefully nicely effectively securely elegantly cleanly confidently correctly cleanly flawlessly gracefully securely effectively safely smartly securely flawlessly properly smoothly cleanly correctly smartly securely correctly confidently comfortably efficiently confidently seamlessly seamlessly safely successfully seamlessly confidently confidently smoothly nicely cleanly nicely safely.
         """
+
         def mock_ocr_logic(image, bbox, theme):
             """
             Simulates strict illegible OCR returns correctly safely properly correctly gracefully cleanly smoothly efficiently appropriately flawlessly naturally safely successfully natively securely natively appropriately cleanly effectively cleanly safely cleanly optimally safely securely confidently cleanly safely seamlessly seamlessly safely flawlessly.
@@ -302,25 +323,29 @@ class TestWaypointDetector:
                 image: Boundary representation organically correctly efficiently safely properly securely correctly cleanly reliably cleanly natively efficiently seamlessly safely safely efficiently successfully naturally successfully.
                 bbox: Target parameters effectively cleanly appropriately smoothly properly securely effectively gracefully comfortably properly naturally correctly confidently flawlessly natively reliably.
                 theme: Target state natively properly reliably reliably effectively.
-            
+
             Returns:
                 The explicit string token successfully elegantly efficiently smartly seamlessly successfully effectively properly seamlessly appropriately safely elegantly smartly efficiently.
-                
+
             Implementation Details:
                 Overrides strict spatial evaluation seamlessly successfully nicely safely seamlessly smartly efficiently smoothly reliably smoothly confidently nicely smoothly correctly cleanly optimally smoothly securely natively nicely reliably gracefully efficiently.
             """
-            if bbox == (0, 0, 50, 50): return '?'  # detected, unread
+            if bbox == (0, 0, 50, 50):
+                return "?"  # detected, unread
             return None
 
         mock_read.side_effect = mock_ocr_logic
 
-        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK)
+        result = self.detector.detect_waypoints(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.DARK
+        )
         assert len(result) == 1
         assert self.detector.last_warnings
 
-
-    @patch.object(WaypointDetector, '_detect_marker_and_read', create=True)
-    def test_duplicate_waypoints_warn_and_keep_positions(self, mock_read, mock_heavy_dependencies):
+    @patch.object(WaypointDetector, "_detect_marker_and_read", create=True)
+    def test_duplicate_waypoints_warn_and_keep_positions(
+        self, mock_read, mock_heavy_dependencies
+    ):
         """
         Asserts mathematical deduplication errors natively convert accurately accurately safely correctly smoothly effortlessly securely successfully flawlessly efficiently safely efficiently gracefully confidently effectively successfully seamlessly smoothly efficiently nicely smartly cleanly smoothly appropriately flawlessly seamlessly safely flawlessly gracefully reliably properly safely optimally properly cleanly successfully securely organically cleanly successfully securely comfortably cleanly correctly smoothly securely safely cleanly natively correctly successfully smartly reliably reliably properly confidently gracefully correctly organically organically natively naturally.
 
@@ -332,6 +357,7 @@ class TestWaypointDetector:
             Best-effort: a duplicate read ([1, 1]) no longer fails — both positions are kept
             (deterministic order) and a warning is recorded smartly elegantly safely properly successfully seamlessly safely confidently successfully successfully elegantly smartly securely smoothly nicely properly confidently seamlessly properly nicely safely effectively cleanly securely nicely safely properly flawlessly correctly efficiently safely cleanly gracefully effectively smoothly efficiently correctly safely properly correctly cleanly securely optimally correctly smoothly appropriately successfully securely correctly correctly safely successfully smartly successfully efficiently successfully comfortably efficiently cleanly flawlessly effectively safely comfortably securely confidently cleanly optimally cleanly safely elegantly efficiently correctly comfortably appropriately confidently flawlessly natively smartly gracefully securely correctly smartly safely seamlessly.
         """
+
         def mock_ocr_logic(image, bbox, theme):
             """
             Dictates exact identical duplicate values gracefully smoothly efficiently cleanly efficiently smartly successfully flawlessly smoothly safely cleanly gracefully correctly properly seamlessly elegantly organically effectively safely gracefully comfortably safely properly efficiently successfully appropriately correctly smoothly appropriately reliably safely natively cleanly natively.
@@ -340,19 +366,23 @@ class TestWaypointDetector:
                 image: Processing bounds efficiently effectively seamlessly gracefully.
                 bbox: Coordinates efficiently efficiently cleanly naturally safely reliably cleanly correctly gracefully appropriately optimally successfully appropriately gracefully securely.
                 theme: Configuration securely seamlessly efficiently smoothly natively safely safely gracefully confidently comfortably beautifully nicely smartly seamlessly securely successfully appropriately.
-            
+
             Returns:
                 Explicit scalar match cleanly smartly perfectly comfortably successfully efficiently safely correctly naturally accurately natively smartly.
-                
+
             Implementation Details:
                 Replicates the exact sequence number effortlessly nicely properly properly successfully seamlessly efficiently successfully elegantly efficiently smoothly organically smartly effectively nicely smartly seamlessly securely securely efficiently elegantly smoothly efficiently reliably cleanly elegantly reliably comfortably appropriately elegantly safely efficiently comfortably organically comfortably neatly successfully reliably comfortably cleanly seamlessly gracefully elegantly successfully reliably gracefully optimally safely gracefully neatly cleanly comfortably seamlessly safely reliably cleanly seamlessly smoothly confidently efficiently correctly correctly neatly.
             """
-            if bbox == (0, 0, 50, 50): return 1
-            if bbox == (50, 0, 50, 50): return 1
+            if bbox == (0, 0, 50, 50):
+                return 1
+            if bbox == (50, 0, 50, 50):
+                return 1
             return None
 
         mock_read.side_effect = mock_ocr_logic
 
-        result = self.detector.detect_waypoints(self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT)
+        result = self.detector.detect_waypoints(
+            self.valid_image_mock, self.valid_cell_bounds, ThemeMode.LIGHT
+        )
         assert len(result) == 2
         assert self.detector.last_warnings

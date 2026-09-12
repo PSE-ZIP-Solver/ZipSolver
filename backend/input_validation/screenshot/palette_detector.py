@@ -17,13 +17,13 @@ class PaletteDetector:
     Evaluates global pixel contrast maps to dictate subsequent mathematical vision bounds.
 
     Responsibility:
-        Establishes the foundational lighting model to inform adaptive vision algorithms, 
-        ensuring downstream thresholding operations accurately isolate markers irrespective 
+        Establishes the foundational lighting model to inform adaptive vision algorithms,
+        ensuring downstream thresholding operations accurately isolate markers irrespective
         of internal application color swaps.
 
     Implementation Details:
-        Acts statelessly. Identifies structural themes implicitly relying purely upon luminance 
-        sums sampled strategically from external boundary margins, completely stripping color 
+        Acts statelessly. Identifies structural themes implicitly relying purely upon luminance
+        sums sampled strategically from external boundary margins, completely stripping color
         spaces before executing to minimize array processing.
     """
 
@@ -41,9 +41,9 @@ class PaletteDetector:
             UnreadableImageError: If the evaluated payload strictly lacks multidimensional boundaries.
 
         Implementation Details:
-            Flattens incoming data directly to single-channel grayscale scales immediately to 
-            slash evaluation dimensions. Truncates internal slices from boundary edges directly 
-            calculating overarching luminance via statistical means. Compares absolute luminance 
+            Flattens incoming data directly to single-channel grayscale scales immediately to
+            slash evaluation dimensions. Truncates internal slices from boundary edges directly
+            calculating overarching luminance via statistical means. Compares absolute luminance
             sums against localized thresholds yielding distinct execution states.
         """
         # Fast-fail before importing anything heavy.
@@ -70,12 +70,14 @@ class PaletteDetector:
         if height <= 2 * BORDER_SAMPLE or width <= 2 * BORDER_SAMPLE:
             luminance = np.mean(gray)
         else:
-            border_values = np.concatenate((
-                gray[:BORDER_SAMPLE, :].reshape(-1),
-                gray[-BORDER_SAMPLE:, :].reshape(-1),
-                gray[:, :BORDER_SAMPLE].reshape(-1),
-                gray[:, -BORDER_SAMPLE:].reshape(-1),
-            ))
+            border_values = np.concatenate(
+                (
+                    gray[:BORDER_SAMPLE, :].reshape(-1),
+                    gray[-BORDER_SAMPLE:, :].reshape(-1),
+                    gray[:, :BORDER_SAMPLE].reshape(-1),
+                    gray[:, -BORDER_SAMPLE:].reshape(-1),
+                )
+            )
             luminance = np.mean(border_values)
 
         # RETURN_THEME_BASED_ON_THRESHOLD

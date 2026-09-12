@@ -2,23 +2,24 @@ import json
 from typing import Any, Dict, Union, cast
 
 
-from backend.input_validation.errors import BoardParseError, DuplicateWallError
+from backend.input_validation.errors import DuplicateWallError
 from backend.puzzle_logic.board import Board
 from backend.puzzle_logic import Position
+
 
 class JsonInterpreter:
     """
     Validates and parses structural and topological puzzle definition JSON data.
 
     Responsibility:
-        Serves as the primary validation gateway for incoming layout schemas, asserting 
-        structural integrity, bounds checking, and preventing impossible geometries before 
+        Serves as the primary validation gateway for incoming layout schemas, asserting
+        structural integrity, bounds checking, and preventing impossible geometries before
         passing objects downstream.
 
     Implementation Details:
-        Functions as a static namespace without maintaining an active state. Constrains 
-        attributes such as dimensional arrays, waypoint lengths, and adjacency rules by 
-        processing raw formats into Python dicts. Employs independent verification loops 
+        Functions as a static namespace without maintaining an active state. Constrains
+        attributes such as dimensional arrays, waypoint lengths, and adjacency rules by
+        processing raw formats into Python dicts. Employs independent verification loops
         for disparate object blocks to efficiently identify logical rule breaking.
     """
 
@@ -43,10 +44,10 @@ class JsonInterpreter:
             A definitive boolean confirming absolute structural and spatial adherence.
 
         Implementation Details:
-            Acts as an all-or-nothing boolean gate designed explicitly for disk-based 
-            configurations (reference boards, fixtures) where precise error reporting is 
-            unnecessary. Submits the raw input to protected load methods, masking crashes 
-            in a defensive exception block, and delegates nested array checks to targeted 
+            Acts as an all-or-nothing boolean gate designed explicitly for disk-based
+            configurations (reference boards, fixtures) where precise error reporting is
+            unnecessary. Submits the raw input to protected load methods, masking crashes
+            in a defensive exception block, and delegates nested array checks to targeted
             validation helpers. Short-circuits heavily upon the first encountered anomaly.
         """
         try:
@@ -81,7 +82,7 @@ class JsonInterpreter:
             return False
 
         return True
-    
+
     @staticmethod
     def buildBoard(file: Union[str, dict, Any]) -> Board:
         """
@@ -98,11 +99,11 @@ class JsonInterpreter:
             DuplicateWallError: If identical barrier parameters map out over the identical segment.
 
         Implementation Details:
-            Applies structural parsing exclusively. Extracts valid dictionary pairs utilizing 
-            an internal cast closure (`_point`) to strip booleans and force native integer bounds. 
-            Deliberately abstains from overarching semantic checks (like dimensional size) to 
-            avoid collapsing specific error codes into blanket responses. Leverages a local 
-            `frozenset` generation hook to explicitly trap unordered wall duplication before 
+            Applies structural parsing exclusively. Extracts valid dictionary pairs utilizing
+            an internal cast closure (`_point`) to strip booleans and force native integer bounds.
+            Deliberately abstains from overarching semantic checks (like dimensional size) to
+            avoid collapsing specific error codes into blanket responses. Leverages a local
+            `frozenset` generation hook to explicitly trap unordered wall duplication before
             injecting it into the lossy board-level properties.
         """
         data = JsonInterpreter._load(file)
@@ -112,18 +113,26 @@ class JsonInterpreter:
         for key in ("boardSize", "waypoints", "walls"):
             if key not in data:
                 raise ValueError(f"Puzzle JSON is missing required key: {key!r}.")
-        if not isinstance(data["boardSize"], int) or isinstance(data["boardSize"], bool):
+        if not isinstance(data["boardSize"], int) or isinstance(
+            data["boardSize"], bool
+        ):
             raise ValueError("boardSize must be an integer.")
-        if not isinstance(data["waypoints"], list) or not isinstance(data["walls"], list):
+        if not isinstance(data["waypoints"], list) or not isinstance(
+            data["walls"], list
+        ):
             raise ValueError("waypoints and walls must be lists.")
 
         def _point(value: Any) -> tuple[int, int]:
             if (
                 not isinstance(value, (list, tuple))
                 or len(value) != 2
-                or not all(isinstance(c, int) and not isinstance(c, bool) for c in value)
+                or not all(
+                    isinstance(c, int) and not isinstance(c, bool) for c in value
+                )
             ):
-                raise ValueError(f"Coordinate must be a [x, y] integer pair: {value!r}.")
+                raise ValueError(
+                    f"Coordinate must be a [x, y] integer pair: {value!r}."
+                )
             return int(value[0]), int(value[1])
 
         board = Board(data["boardSize"])
@@ -142,7 +151,11 @@ class JsonInterpreter:
         seen_walls: set[frozenset[tuple[int, int]]] = set()
 
         for wall in data["walls"]:
-            if not isinstance(wall, dict) or "neighborA" not in wall or "neighborB" not in wall:
+            if (
+                not isinstance(wall, dict)
+                or "neighborA" not in wall
+                or "neighborB" not in wall
+            ):
                 raise ValueError("Each wall must have neighborA and neighborB.")
             ax, ay = _point(wall["neighborA"])
             bx, by = _point(wall["neighborB"])
@@ -159,7 +172,6 @@ class JsonInterpreter:
 
         return board
 
-
     @staticmethod
     def _load(arg: Union[str, dict, Any]) -> Dict[str, Any]:
         """
@@ -175,9 +187,9 @@ class JsonInterpreter:
             TypeError: If the supplied reference target structurally contradicts supported patterns.
 
         Implementation Details:
-            Sequences extraction based strictly upon `duck-typing`. Evaluates Pydantic structures 
-            utilizing `.model_dump()` paired with alias rules, bypassing object inheritance checks. 
-            Applies standard UTF-8 parsing via native IO hooks directly mapping string locations 
+            Sequences extraction based strictly upon `duck-typing`. Evaluates Pydantic structures
+            utilizing `.model_dump()` paired with alias rules, bypassing object inheritance checks.
+            Applies standard UTF-8 parsing via native IO hooks directly mapping string locations
             and fallback memory objects into operational dictionaries.
         """
         if isinstance(arg, dict):
@@ -194,7 +206,7 @@ class JsonInterpreter:
             content = arg.read()
             return json.loads(content)
         raise TypeError(f"Unsupported argument type for json file: {type(arg)}")
-    
+
     @staticmethod
     def _validate_board_size(board_size: Any) -> bool:
         """
@@ -207,11 +219,11 @@ class JsonInterpreter:
             A boolean denoting direct support for the requested parameters.
 
         Implementation Details:
-            Conducts a direct membership evaluation against the class-level tuple defining 
+            Conducts a direct membership evaluation against the class-level tuple defining
             architectural capacities, ensuring limits stay bounded safely.
         """
         return board_size in JsonInterpreter.ALLOWED_BOARD_SIZES
-    
+
     @staticmethod
     def _is_valid_point(point: Any, board_size: int) -> bool:
         """
@@ -225,16 +237,19 @@ class JsonInterpreter:
             A boolean identifying uncorrupted and internal map placement.
 
         Implementation Details:
-            Explicitly intercepts boolean inheritance exploits native to Python before enforcing 
+            Explicitly intercepts boolean inheritance exploits native to Python before enforcing
             strictly constrained zero-indexed Cartesian boundaries against both internal indices.
         """
         if not isinstance(point, (list, tuple)) or len(point) != 2:
             return False
         x, y = point
-        if not (isinstance(x, int) and isinstance(y, int)) \
-                or isinstance(x, bool) or isinstance(y, bool):
+        if (
+            not (isinstance(x, int) and isinstance(y, int))
+            or isinstance(x, bool)
+            or isinstance(y, bool)
+        ):
             return False
-        
+
         return 0 <= x < board_size and 0 <= y < board_size
 
     @staticmethod
@@ -250,14 +265,14 @@ class JsonInterpreter:
             A boolean acknowledging clean structural separation and correct payload depth.
 
         Implementation Details:
-            Computes grid saturation ceilings natively utilizing basic exponents. Traverses 
-            point definitions aggressively pushing translated tuples against a generic Set 
+            Computes grid saturation ceilings natively utilizing basic exponents. Traverses
+            point definitions aggressively pushing translated tuples against a generic Set
             tracker to instantly trigger upon coordinate repetition.
         """
         if not isinstance(waypoints, list):
             return False
 
-        max_waypoints = board_size ** 2
+        max_waypoints = board_size**2
         if not (2 <= len(waypoints) <= max_waypoints):
             return False
 
@@ -285,9 +300,9 @@ class JsonInterpreter:
             A boolean indicating all grid partitions maintain localized rules.
 
         Implementation Details:
-            Generates theoretical mathematical limits applying standard combination geometry 
-            to short-circuit large payloads. Evaluates positional relationships directly against 
-            Manhattan sums to enforce cardinal adjacency. Utilizes immutable `frozenset` objects 
+            Generates theoretical mathematical limits applying standard combination geometry
+            to short-circuit large payloads. Evaluates positional relationships directly against
+            Manhattan sums to enforce cardinal adjacency. Utilizes immutable `frozenset` objects
             to trap any identical boundary declarations without regard to directional ordering.
         """
         if not isinstance(walls, list):

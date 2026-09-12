@@ -20,14 +20,14 @@ class ImageLoader:
     Handles safe decoding, orientation correction, and normalization of graphic bytes.
 
     Responsibility:
-        Serves as the secure entry gateway for volatile user-provided payloads, translating 
-        multipart forms securely into deterministic mathematical arrays ready for internal 
+        Serves as the secure entry gateway for volatile user-provided payloads, translating
+        multipart forms securely into deterministic mathematical arrays ready for internal
         vision mapping while preventing memory exhaustion.
 
     Implementation Details:
-        Functions statelessly, applying hard temporal file size and resolution limits directly. 
-        Explicitly defers the import of heavy machine learning and graphic libraries directly 
-        into execution methods, heavily suppressing application initialization overhead and 
+        Functions statelessly, applying hard temporal file size and resolution limits directly.
+        Explicitly defers the import of heavy machine learning and graphic libraries directly
+        into execution methods, heavily suppressing application initialization overhead and
         blocking fatal pipeline exceptions triggered by test discovery tools.
     """
 
@@ -42,14 +42,14 @@ class ImageLoader:
             A mathematically constrained multi-dimensional array mapping BGR color space.
 
         Raises:
-            UnreadableImageError: If the payload violates absolute volume restrictions, is missing, 
+            UnreadableImageError: If the payload violates absolute volume restrictions, is missing,
                 or fundamentally fails structural pixel decoding protocols.
 
         Implementation Details:
-            Executes defensive volume assertions instantly, halting execution before launching 
-            expensive IO interpreters. Translates raw phone camera inputs referencing embedded 
-            EXIF metadata to structurally rotate the image into absolute mathematical planes. 
-            Resamples massive dimensions iteratively maintaining physical ratios prior to 
+            Executes defensive volume assertions instantly, halting execution before launching
+            expensive IO interpreters. Translates raw phone camera inputs referencing embedded
+            EXIF metadata to structurally rotate the image into absolute mathematical planes.
+            Resamples massive dimensions iteratively maintaining physical ratios prior to
             channeling colors back to BGR formatting standard required by internal vision tools.
         """
         # FAST_FAIL_IF_BYTES_INVALID — before importing anything heavy.
@@ -86,7 +86,9 @@ class ImageLoader:
             rgb = transposed.convert("RGB")
         except UnreadableImageError:
             raise
-        except Exception as exc:  # noqa: BLE001 - any decode failure maps to one message
+        except (
+            Exception
+        ) as exc:  # noqa: BLE001 - any decode failure maps to one message
             raise UnreadableImageError("Failed to decode image data.") from exc
 
         rgb_array = np.array(rgb)

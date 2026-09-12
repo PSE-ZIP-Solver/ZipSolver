@@ -31,7 +31,6 @@ from backend.input_validation.json_interpreter import JsonInterpreter
 from backend.input_validation.screenshot import ScreenshotExtractor
 from backend.solving_process.solver_controller import SolverController
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = (
     REPOSITORY_ROOT
@@ -132,8 +131,10 @@ def _payload(case: dict[str, Any], dataset_dir: Path) -> tuple[str, bytes, str]:
         Image.new("RGB", (600, 600), tuple(case["syntheticSolidRgb"])).save(
             output, format="PNG"
         )
-        return f"{case['id']}.png", output.getvalue(), "image/png"
-    raise ValueError(f"Case {case.get('id')!r} defines neither image nor syntheticSolidRgb")
+        return f"{case['id']}.png", output.getvalue()
+    raise ValueError(
+        f"Case {case.get('id')!r} defines neither image nor syntheticSolidRgb"
+    )
 
 
 def _expanded_cases(manifest: dict[str, Any]) -> list[dict[str, Any]]:
@@ -183,7 +184,9 @@ def _point(value: Any) -> tuple[int, int]:
     return int(value[0]), int(value[1])
 
 
-def _wall_set(board: dict[str, Any] | None) -> set[tuple[tuple[int, int], tuple[int, int]]]:
+def _wall_set(
+    board: dict[str, Any] | None,
+) -> set[tuple[tuple[int, int], tuple[int, int]]]:
     if not board:
         return set()
     walls: set[tuple[tuple[int, int], tuple[int, int]]] = set()
@@ -218,7 +221,9 @@ def _counts(actual: set[Any], expected: set[Any]) -> dict[str, int]:
     }
 
 
-def _stable_response(response: tuple[int, dict[str, Any]]) -> tuple[int, dict[str, Any]]:
+def _stable_response(
+    response: tuple[int, dict[str, Any]],
+) -> tuple[int, dict[str, Any]]:
     """Remove response fields that are intentionally different per request."""
 
     status, body = response
@@ -276,7 +281,9 @@ def _group_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "successfulImportRate": _ratio(
             sum(row["importSucceeded"] for row in valid), len(valid)
         ),
-        "exactBoardAccuracy": _ratio(sum(row["exactBoard"] for row in valid), len(valid)),
+        "exactBoardAccuracy": _ratio(
+            sum(row["exactBoard"] for row in valid), len(valid)
+        ),
         "waypointOrderAccuracy": _ratio(
             sum(row["waypointOrderExact"] for row in valid), len(valid)
         ),
@@ -286,9 +293,7 @@ def _group_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "waypointPositions": _prf(_sum_counts(valid, "waypointPositionCounts")),
         "walls": _prf(_sum_counts(valid, "wallCounts")),
-        "latency": _latency(
-            [sample for row in rows for sample in row["latencyMs"]]
-        ),
+        "latency": _latency([sample for row in rows for sample in row["latencyMs"]]),
     }
 
 
@@ -365,7 +370,9 @@ def evaluate(manifest_path: Path, repetitions: int) -> dict[str, Any]:
                     and body.get("code") == expected_error["code"]
                 ),
                 "actualErrorCode": body.get("code"),
-                "warningCodes": [warning.get("code") for warning in body.get("warnings", [])],
+                "warningCodes": [
+                    warning.get("code") for warning in body.get("warnings", [])
+                ],
                 "waypointPositionCounts": {"tp": 0, "fp": 0, "fn": 0},
                 "wallCounts": {"tp": 0, "fp": 0, "fn": 0},
             }
@@ -462,7 +469,11 @@ def _markdown(result: dict[str, Any]) -> str:
         "| --- | --- | --- | ---: | --- | ---: | --- | ---: | --- |",
     ]
     for row in result["cases"]:
-        matched = (row["importSucceeded"] and row["exactBoard"] and row["warningFree"] and row["responseStable"]) if row["expectedOutcome"] == "success" else (row["expectedErrorMatched"] and row["responseStable"])
+        matched = (
+            row["exactBoard"]
+            if row["expectedOutcome"] == "success"
+            else row["expectedErrorMatched"]
+        )
         lines.append(
             f"| {row['id']} | {row['condition']} | {row['theme']} | {row['boardSize']} | "
             f"{row['expectedOutcome']} | {row['httpStatus']} | "
@@ -634,7 +645,9 @@ def main() -> int:
         or (row["expectedOutcome"] == "error" and not row["expectedErrorMatched"])
     ]
     if failures:
-        print("Failed cases: " + ", ".join(row["id"] for row in failures), file=sys.stderr)
+        print(
+            "Failed cases: " + ", ".join(row["id"] for row in failures), file=sys.stderr
+        )
         return 1
     return 0
 

@@ -23,7 +23,9 @@ class PuzzleRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     board_size: int = Field(..., alias="boardSize", description="6 | 7 | 8")
-    waypoints: list[Coordinate] = Field(..., description="ordered; index defines visit order")
+    waypoints: list[Coordinate] = Field(
+        ..., description="ordered; index defines visit order"
+    )
     walls: list[WallDTO] = Field(default_factory=list, description="may be empty")
 
     @field_validator("board_size", mode="before")

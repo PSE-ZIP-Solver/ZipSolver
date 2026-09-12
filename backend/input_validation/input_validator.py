@@ -2,15 +2,15 @@
 Semantic validation of a constructed Board (§5.5.4).
 
 Responsibility:
-    Functions as the specialized domain evaluator for overarching puzzle elements following 
-    raw structure digestion. Generates descriptive, machine-readable validation outputs 
-    designed to plug dynamically into API taxonomies while consolidating all identifiable 
+    Functions as the specialized domain evaluator for overarching puzzle elements following
+    raw structure digestion. Generates descriptive, machine-readable validation outputs
+    designed to plug dynamically into API taxonomies while consolidating all identifiable
     failures.
 
 Implementation Details:
-    Operates entirely apart from raw payload interpretation (managed by `JsonInterpreter`) 
-    and runtime logic (`PuzzleRules`). The architecture enforces comprehensive, exhaustive 
-    scanning, rejecting isolated drip-feed corrections by aggregating every discovered flaw 
+    Operates entirely apart from raw payload interpretation (managed by `JsonInterpreter`)
+    and runtime logic (`PuzzleRules`). The architecture enforces comprehensive, exhaustive
+    scanning, rejecting isolated drip-feed corrections by aggregating every discovered flaw
     across nodes and barriers into a single return execution.
 """
 
@@ -37,7 +37,7 @@ def _err(code: str, field: str | None, message: str) -> ValidationError:
         The initialized transport container encapsulating the localized fault.
 
     Implementation Details:
-        Leverages strict constructor invocation for the localized DTO wrapper, ensuring 
+        Leverages strict constructor invocation for the localized DTO wrapper, ensuring
         consistent structure for the payload's subsequent serialization up to the orchestrator.
     """
     return ValidationError(errorCode=code, affectedField=field, message=message)
@@ -48,12 +48,12 @@ class InputValidator:
     Semantic rule validator executed post-construction to secure model viability.
 
     Responsibility:
-        Evaluates a structured domain matrix enforcing absolute boundaries, valid geometric 
+        Evaluates a structured domain matrix enforcing absolute boundaries, valid geometric
         shapes, and node counts prior to dispatching them toward execution engines.
 
     Implementation Details:
-        Functions statelessly, satisfying an implicit `InputValidatorProtocol` seamlessly. 
-        Built to be instantiated globally or shared across concurrent threading limits 
+        Functions statelessly, satisfying an implicit `InputValidatorProtocol` seamlessly.
+        Built to be instantiated globally or shared across concurrent threading limits
         without fear of internal state corruption, exposing only a singular public operation.
     """
 
@@ -68,9 +68,9 @@ class InputValidator:
             A definitive packaged finding communicating structural validity and contextual flaws.
 
         Implementation Details:
-            Safeguards execution channels defensively by validating primary matrix boundaries 
-            first. Aborts immediately upon gross size violations to prevent overwhelming arrays 
-            of secondary errors, before chaining array generators to pool disparate milestone 
+            Safeguards execution channels defensively by validating primary matrix boundaries
+            first. Aborts immediately upon gross size violations to prevent overwhelming arrays
+            of secondary errors, before chaining array generators to pool disparate milestone
             and barrier failures safely.
         """
         size = board.getSize
@@ -107,8 +107,8 @@ class InputValidator:
             A generator pushing distinct contextual violation envelopes upon detection.
 
         Implementation Details:
-            Traverses embedded spatial instances comparing localized grid keys against internal 
-            `Board` evaluation methods. Constructs memory maps via tuple Sets to efficiently 
+            Traverses embedded spatial instances comparing localized grid keys against internal
+            `Board` evaluation methods. Constructs memory maps via tuple Sets to efficiently
             reject node coordinates stacked onto identical active spaces.
         """
         waypoints = board.getWaypoints
@@ -159,9 +159,9 @@ class InputValidator:
             An iterative sequence of localized error envelopes identifying violations.
 
         Implementation Details:
-            Dynamically limits evaluations natively before iterating internal array items. 
-            Selectively short-circuits internal validation branches when nodes register as 
-            entirely out-of-bounds, actively preventing garbage calculations or misleading 
+            Dynamically limits evaluations natively before iterating internal array items.
+            Selectively short-circuits internal validation branches when nodes register as
+            entirely out-of-bounds, actively preventing garbage calculations or misleading
             adjacent failure tags from polluting downstream system logs.
         """
         walls = board.getWalls
@@ -191,7 +191,9 @@ class InputValidator:
                 yield _err(
                     "INVALID_WALLS",
                     "walls",
-                    "Wall references cell(s) outside the board: " + ", ".join(oob) + ".",
+                    "Wall references cell(s) outside the board: "
+                    + ", ".join(oob)
+                    + ".",
                 )
                 # Coordinates are meaningless once out of bounds; skip the adjacency and
                 # equality checks so the user is not handed noise they cannot act on.
@@ -226,7 +228,7 @@ class InputValidator:
             A definitive boolean affirming direct system support.
 
         Implementation Details:
-            Defensively intercepts edge cases associated with base `bool` inheritance prior to 
+            Defensively intercepts edge cases associated with base `bool` inheritance prior to
             accessing the global allowance tuple, explicitly returning internal validation flags.
         """
         # bool is a subclass of int — exclude it so True/False can't pass as a size.
@@ -245,8 +247,8 @@ class InputValidator:
             The comprehensive container utilized by outer orchestrators to map system behavior.
 
         Implementation Details:
-            Examines array lengths actively to construct dynamically populated warning strings. 
-            Differentiates directly between plural grammatical structures and instantiates 
+            Examines array lengths actively to construct dynamically populated warning strings.
+            Differentiates directly between plural grammatical structures and instantiates
             external validation models utilizing absolute state bindings.
         """
         if not errors:

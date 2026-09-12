@@ -10,16 +10,25 @@ class SolverResponse:
     Defines the finalized, comprehensive payload dispatched by the orchestration layer.
 
     Responsibility:
-        Wraps internal solver results with additional macro-level orchestration context 
-        (e.g., which specific engine was deployed) to fulfill strict external API contracts. 
+        Wraps internal solver results with additional macro-level orchestration context
+        (e.g., which specific engine was deployed) to fulfill strict external API contracts.
         It bridges legacy boolean success indicators with modern, high-granularity status enums.
 
     Implementation Details:
-        Acts as a read-only data boundary. Preserves critical backward compatibility with 
-        older API integrations by injecting dynamic constructor logic that artificially 
+        Acts as a read-only data boundary. Preserves critical backward compatibility with
+        older API integrations by injecting dynamic constructor logic that artificially
         derives an appropriate enum state if the caller only furnishes a legacy binary success flag.
     """
-    def __init__(self, success: bool, path: Optional[SolutionPath], message: str, solverUsed: str, metrics: SolverMetrics, status: Optional[SolverStatus] = None):
+
+    def __init__(
+        self,
+        success: bool,
+        path: Optional[SolutionPath],
+        message: str,
+        solverUsed: str,
+        metrics: SolverMetrics,
+        status: Optional[SolverStatus] = None,
+    ):
         """
         Initializes the comprehensive external transmission payload.
 
@@ -32,8 +41,8 @@ class SolverResponse:
             status: The explicit categorical outcome state, offering deeper context than a boolean.
 
         Implementation Details:
-            Secures all parameters inside protected fields. Actively intercepts the status 
-            parameter to deploy fallback logic; if missing, it dynamically casts the legacy success 
+            Secures all parameters inside protected fields. Actively intercepts the status
+            parameter to deploy fallback logic; if missing, it dynamically casts the legacy success
             boolean into a modern success/failure enum to prevent architectural fractures downstream.
         """
         self._success = success
@@ -44,8 +53,10 @@ class SolverResponse:
         # Optional and defaulted so every existing construction site keeps working. When
         # supplied it preserves the distinction the API contract requires between
         # UNSOLVABLE, TIMEOUT and FAILED, which a bare success bool cannot express.
-        self._status = status if status is not None else (
-            SolverStatus.SOLVED if success else SolverStatus.FAILED
+        self._status = (
+            status
+            if status is not None
+            else (SolverStatus.SOLVED if success else SolverStatus.FAILED)
         )
 
     @property

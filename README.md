@@ -10,6 +10,8 @@ order and never crossing a wall.
 Developed as a PSE project at the Chair of Dependable Nano Computing (CDNC), Karlsruhe
 Institute of Technology.
 
+![Zip Image](https://github.com/PSE-ZIP-Solver/ZipSolver/blob/dev/ZipImage.png?raw=true)
+
 ---
 
 ## Table of contents
@@ -61,8 +63,6 @@ search blows up quickly and why the board sizes are capped at 6×6, 7×7, and 8�
 - **Share by link.** Boards are encoded into the URL, so sharing a puzzle needs no server
   storage and no account.
 - **Example puzzles.** A built-in set of boards per grid size for a zero-setup demo.
-- **Advanced mode.** Exposes solver metrics: runtime, steps, attempts, and which solver
-  produced the answer.
 - **Light and dark themes.**
 
 ---
@@ -426,20 +426,15 @@ training functionality is exposed through the API.
 
 | Aspect | Implementation |
 |---|---|
-| Algorithm | DQN (Stable-Baselines3) |
+| Algorithm | DQN (Stable-Baselines3) and Deep-DQN |
 | Observation | 8 channels of *n* × *n*, values in `[0, 1]` |
 | Action space | `Discrete(4)` — up, right, down, left |
-| Feature extractor | `ZipCNN`, three convolutional layers into a 128-dim dense head |
 | Episode budget | *n*² − 1 steps (the start cell counts as already visited) |
 | Rewards | +200 completion, +25 per waypoint reached in order, +2 per new cell, −0.01 per step, −10 invalid move |
 
 `offline_training/` holds the training orchestration (`AgentTrainer`), the board generator,
 pre-generated training and evaluation board pools, and the trained artifacts under
 `trained_models/<size>/`. Training runs were executed on the bwUniCluster.
-
-Only a 6×6 model currently ships. Boards of other sizes are served by the algorithmic
-solver, which handles them correctly — the fallback is a first-class path, not a
-degraded one.
 
 ---
 
@@ -482,12 +477,12 @@ model. Always confirm imported waypoint numbers before solving.
 
 ```bash
 # Everything
-uv run pytest -q
+uv run pytest
 
 # By surface
-uv run pytest backend/tests/api -q          # API layer: contracts, routing, errors, orchestration
-uv run pytest backend/tests/unit -q         # Puzzle logic, validators, solvers, screenshot pipeline
-uv run pytest offline_training/tests -q     # Board generation
+uv run pytest backend/tests/api           # API layer: contracts, routing, errors, orchestration
+uv run pytest backend/tests/unit          # Puzzle logic, validators, solvers, screenshot pipeline
+uv run pytest offline_training/tests      # Board generation
 
 # Frontend
 cd frontend

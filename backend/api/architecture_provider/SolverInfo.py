@@ -7,5 +7,5 @@ class SolverInfo(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     name: str
-    kind: str            # "reinforcement-learning" | "DFS"
+    kind: str  # "reinforcement-learning" | "DFS"
     default: bool = False

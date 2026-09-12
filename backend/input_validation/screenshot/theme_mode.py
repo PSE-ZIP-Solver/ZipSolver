@@ -1,19 +1,21 @@
 import enum
 
+
 class ThemeMode(enum.Enum):
     """
     Categorical enumeration managing overarching structural color baselines.
 
     Responsibility:
-        Determines targeted thresholds utilized by underlying computer vision frameworks, 
-        ensuring mask evaluations, morphological ops, and extraction targets dynamically 
+        Determines targeted thresholds utilized by underlying computer vision frameworks,
+        ensuring mask evaluations, morphological ops, and extraction targets dynamically
         adapt depending on the application's underlying visual theme.
 
     Implementation Details:
-        Derives from a native enumeration strictly limiting comparative logic maps. Integrates 
-        convenience properties exposing safe equality assessments without demanding external 
+        Derives from a native enumeration strictly limiting comparative logic maps. Integrates
+        convenience properties exposing safe equality assessments without demanding external
         module injections.
     """
+
     LIGHT = "LIGHT"
     DARK = "DARK"
 
@@ -26,7 +28,7 @@ class ThemeMode(enum.Enum):
             A boolean reporting direct equivalence to the corresponding state.
 
         Implementation Details:
-            Exposed via property wrappers preventing unsafe external mutations while providing 
+            Exposed via property wrappers preventing unsafe external mutations while providing
             direct read-only confirmation logic. Must be evaluated natively without invocation parameters.
         """
         return self == ThemeMode.LIGHT
@@ -40,7 +42,7 @@ class ThemeMode(enum.Enum):
             A boolean reporting direct equivalence to the corresponding state.
 
         Implementation Details:
-            Exposed via property wrappers preventing unsafe external mutations while providing 
+            Exposed via property wrappers preventing unsafe external mutations while providing
             direct read-only confirmation logic. Must be evaluated natively without invocation parameters.
         """
         return self == ThemeMode.DARK
@@ -53,7 +55,7 @@ class ThemeMode(enum.Enum):
             The uniformly constructed debug format string safely identifying active states.
 
         Implementation Details:
-            Uses protected namespace definitions targeting absolute internal properties natively 
+            Uses protected namespace definitions targeting absolute internal properties natively
             to prevent formatting leaks during runtime reporting.
         """
         return f"[{self.__class__.__name__} :: {self.value}]"

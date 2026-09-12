@@ -417,10 +417,6 @@ export default function useGridBuilderState() {
     }
 
     function handleClearPlayPath() {
-        if (hasCompletedAllWaypoints(playModeState, board)) {
-            return;
-        }
-
         setPlayModeState(resetPlayModeState(board.waypoints[0] ?? null));
         setHintPath(null);
     }
@@ -561,6 +557,10 @@ export default function useGridBuilderState() {
         }
 
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (hasCompletedAllWaypoints(playModeState, board)) {
+                return;
+            }
+
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
                 event.preventDefault();
                 setPlayModeState((previous) => undoVisitedCell(previous));
@@ -601,7 +601,7 @@ export default function useGridBuilderState() {
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [board.boardSize, board.waypoints, playModeState, viewMode]);
+    }, [board, playModeState, viewMode]);
 
     const nextWaypoint = viewMode === "PLAY" ? getExpectedNextWaypoint(playModeState, board) : null;
     const isPlayCompleted = viewMode === "PLAY" && hasCompletedAllWaypoints(playModeState, board);

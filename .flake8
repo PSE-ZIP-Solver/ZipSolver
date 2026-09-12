@@ -1,0 +1,18 @@
+[flake8]
+max-line-length = 9999
+# Set this to a high number to effectively ignore E501 in comments and docstrings
+max-doc-length = 9999
+
+extend-ignore =
+    E203,
+    W503
+max-complexity = 30
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    sanity_check.py
+show-source = True

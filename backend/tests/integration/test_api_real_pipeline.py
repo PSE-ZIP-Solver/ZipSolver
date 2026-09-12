@@ -30,7 +30,6 @@ from backend.solving_process.solver_metrics import SolverMetrics
 from backend.solving_process.solver_result import SolverResult
 from backend.solving_process.solver_status import SolverStatus
 
-
 SOLVABLE_BOARD = {
     "boardSize": 6,
     "waypoints": [[0, 0], [5, 0]],

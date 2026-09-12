@@ -3,15 +3,16 @@ class ValidationError:
     Represents a structured, granular breakdown of a specific logic or rule failure.
 
     Responsibility:
-        Acts as an immutable data transfer object to communicate the exact operational conditions 
-        that caused a proposed solution to fail, providing both human-readable context and 
+        Acts as an immutable data transfer object to communicate the exact operational conditions
+        that caused a proposed solution to fail, providing both human-readable context and
         machine-parseable identifiers for debugging and API responses.
 
     Implementation Details:
-        Designed strictly as a read-only state container. Isolates the string identifiers and 
-        descriptions within protected instance attributes during instantiation, exclusively exposing 
+        Designed strictly as a read-only state container. Isolates the string identifiers and
+        descriptions within protected instance attributes during instantiation, exclusively exposing
         them via property getters to enforce total immutability downstream.
     """
+
     def __init__(self, errorCode: str, message: str, affectedField: str):
         """
         Constructs a definitive record of a singular validation failure.
@@ -22,7 +23,7 @@ class ValidationError:
             affectedField: The specific localized data segment or system scope that triggered the fault.
 
         Implementation Details:
-            Captures and routes all provided string metadata directly into secure, protected 
+            Captures and routes all provided string metadata directly into secure, protected
             internal parameters upon object creation.
         """
         self._errorCode = errorCode

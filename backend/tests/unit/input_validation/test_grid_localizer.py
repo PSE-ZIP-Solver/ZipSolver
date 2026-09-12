@@ -11,13 +11,13 @@ def mock_heavy_dependencies():
     Safe Mocking [THE "DANGER ZONE"]: keep heavy CV/Math deps out of collection.
 
     Responsibility:
-        Ensures the test suite runs deterministically without bootstrapping heavy 
+        Ensures the test suite runs deterministically without bootstrapping heavy
         external C-based libraries during the test discovery phase.
 
     Implementation Details:
-        Intercepts and dynamically patches the global module registry before any test executes. 
-        Replaces actual module references with strictly configured mock objects, injecting 
-        essential baseline constant values to prevent runtime attribution errors when the 
+        Intercepts and dynamically patches the global module registry before any test executes.
+        Replaces actual module references with strictly configured mock objects, injecting
+        essential baseline constant values to prevent runtime attribution errors when the
         tested components attempt lazy imports.
     """
     mock_numpy = MagicMock()
@@ -37,21 +37,22 @@ class TestGridLocalizer:
     Test suite validating the structural boundary detection of the grid localizer.
 
     Responsibility:
-        Ensures the localizer accurately calculates topological scales, origins, and 
-        bounding boxes for grid layouts while appropriately raising documented domain 
+        Ensures the localizer accurately calculates topological scales, origins, and
+        bounding boxes for grid layouts while appropriately raising documented domain
         errors during invalid states.
 
     Implementation Details:
-        Relies purely on mocked image matrices and computer vision operations. Focuses on 
-        orchestrating the internal method pipelines, validating both the production (hinted size) 
+        Relies purely on mocked image matrices and computer vision operations. Focuses on
+        orchestrating the internal method pipelines, validating both the production (hinted size)
         and legacy (estimated size) mathematical scaling logic natively without actual I/O.
     """
+
     def setup_method(self):
         """
         Initializes fresh test fixtures preventing state bleed between unit tests.
 
         Implementation Details:
-            Instantiates the primary component alongside a standard mocked multidimensional 
+            Instantiates the primary component alongside a standard mocked multidimensional
             array representing a valid target baseline.
         """
         self.localizer = GridLocalizer()
@@ -69,7 +70,7 @@ class TestGridLocalizer:
             Verifies the component actively rejects invalid null payloads before attempting evaluation.
 
         Implementation Details:
-            Passes entirely absent data and intentionally flattened mock objects into the processor, 
+            Passes entirely absent data and intentionally flattened mock objects into the processor,
             asserting that a strict validation error is aggressively raised.
         """
         with pytest.raises(ValueError, match="Image data cannot be None or empty"):
@@ -86,16 +87,18 @@ class TestGridLocalizer:
         contains no board -> NoBoardDetectedError ("No board detected").
 
         Responsibility:
-            Confirms the system correctly aborts evaluation when standard visual markers 
+            Confirms the system correctly aborts evaluation when standard visual markers
             fail to resolve, rather than generating a randomized origin guess.
 
         Implementation Details:
-            Forcefully overrides internal circle and panel detection methods to yield empty arrays. 
-            Validates that the component recognizes the lack of reference material and triggers 
+            Forcefully overrides internal circle and panel detection methods to yield empty arrays.
+            Validates that the component recognizes the lack of reference material and triggers
             the designated error code.
         """
-        with patch.object(GridLocalizer, "_detect_circles", return_value=[]), \
-             patch.object(GridLocalizer, "_panel_bounds", return_value=None):
+        with (
+            patch.object(GridLocalizer, "_detect_circles", return_value=[]),
+            patch.object(GridLocalizer, "_panel_bounds", return_value=None),
+        ):
             with pytest.raises(ValueError, match="No board detected"):
                 self.localizer.localize_grid(self.valid_image_mock, board_size=6)
 
@@ -110,17 +113,23 @@ class TestGridLocalizer:
             Validates the standard production behavior computing exact mathematical coordinate blocks.
 
         Implementation Details:
-            Mocks panel detection bounding boxes directly and evaluates whether the internal 
-            mathematical loop appropriately divides the region by the hinted limit, resulting in 
+            Mocks panel detection bounding boxes directly and evaluates whether the internal
+            mathematical loop appropriately divides the region by the hinted limit, resulting in
             the exact expected number of localized bounds matching the input size.
         """
         # panel at (100,100) 600x600 -> pitch 100 for n=6
-        with patch.object(GridLocalizer, "_detect_circles", return_value=[]), \
-             patch.object(GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)):
-            n, cell_bounds = self.localizer.localize_grid(self.valid_image_mock, board_size=6)
+        with (
+            patch.object(GridLocalizer, "_detect_circles", return_value=[]),
+            patch.object(
+                GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)
+            ),
+        ):
+            n, cell_bounds = self.localizer.localize_grid(
+                self.valid_image_mock, board_size=6
+            )
 
         assert n == 6
-        assert len(cell_bounds) == 36           # 6 x 6 cells
+        assert len(cell_bounds) == 36  # 6 x 6 cells
         assert (0, 0) in cell_bounds
         assert (5, 5) in cell_bounds
         # top-left cell sits at the panel origin, cell size == pitch
@@ -136,7 +145,7 @@ class TestGridLocalizer:
             Asserts dimensional hints are explicitly checked against defined operational constraints.
 
         Implementation Details:
-            Supplies an arbitrary out-of-range structural variable, expecting the localizer 
+            Supplies an arbitrary out-of-range structural variable, expecting the localizer
             to defensively break utilizing explicit error terminology.
         """
         with pytest.raises(ValueError, match="Unsupported board size"):
@@ -152,15 +161,22 @@ class TestGridLocalizer:
             Ensures spatial refinement loops execute without throwing syntax or state errors.
 
         Implementation Details:
-            Mocks singular circle variables overlapping panel zones. Relies on internal mocked 
-            objects to bypass the actual math while ensuring the overarching conditional 
+            Mocks singular circle variables overlapping panel zones. Relies on internal mocked
+            objects to bypass the actual math while ensuring the overarching conditional
             block safely exits returning the uncorrupted cell total.
         """
-        with patch.object(GridLocalizer, "_detect_circles",
-                          return_value=[(155.0, 155.0, 30.0)]), \
-             patch.object(GridLocalizer, "_disc_spacing_pitch", return_value=None), \
-             patch.object(GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)):
-            n, cell_bounds = self.localizer.localize_grid(self.valid_image_mock, board_size=6)
+        with (
+            patch.object(
+                GridLocalizer, "_detect_circles", return_value=[(155.0, 155.0, 30.0)]
+            ),
+            patch.object(GridLocalizer, "_disc_spacing_pitch", return_value=None),
+            patch.object(
+                GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)
+            ),
+        ):
+            n, cell_bounds = self.localizer.localize_grid(
+                self.valid_image_mock, board_size=6
+            )
         assert n == 6
         assert len(cell_bounds) == 36
 
@@ -170,20 +186,28 @@ class TestGridLocalizer:
         origin falls back to the disc extent. Still yields a complete n x n grid.
 
         Responsibility:
-            Proves the localizer securely calculates foundational geometry based entirely 
+            Proves the localizer securely calculates foundational geometry based entirely
             on node clustering when standard architectural panels remain obscured.
 
         Implementation Details:
-            Overwrites panel detection strictly to nothing, while simultaneously injecting 
-            a mathematically uniform array of circular nodes. Asserts the extraction 
+            Overwrites panel detection strictly to nothing, while simultaneously injecting
+            a mathematically uniform array of circular nodes. Asserts the extraction
             algorithm still yields the absolute complete matrix.
         """
-        discs = [(100.0, 100.0, 30.0), (200.0, 100.0, 30.0),
-                 (100.0, 200.0, 30.0), (200.0, 200.0, 30.0)]
-        with patch.object(GridLocalizer, "_detect_circles", return_value=discs), \
-             patch.object(GridLocalizer, "_panel_bounds", return_value=None), \
-             patch.object(GridLocalizer, "_disc_spacing_pitch", return_value=100.0):
-            n, cell_bounds = self.localizer.localize_grid(self.valid_image_mock, board_size=6)
+        discs = [
+            (100.0, 100.0, 30.0),
+            (200.0, 100.0, 30.0),
+            (100.0, 200.0, 30.0),
+            (200.0, 200.0, 30.0),
+        ]
+        with (
+            patch.object(GridLocalizer, "_detect_circles", return_value=discs),
+            patch.object(GridLocalizer, "_panel_bounds", return_value=None),
+            patch.object(GridLocalizer, "_disc_spacing_pitch", return_value=100.0),
+        ):
+            n, cell_bounds = self.localizer.localize_grid(
+                self.valid_image_mock, board_size=6
+            )
         assert n == 6
         assert len(cell_bounds) == 36
 
@@ -197,7 +221,7 @@ class TestGridLocalizer:
             Ensures legacy estimations are clamped safely against established domain rules.
 
         Implementation Details:
-            Forces the native estimation algorithm to yield a mathematically invalid scalar, 
+            Forces the native estimation algorithm to yield a mathematically invalid scalar,
             confirming the module rejects the resolution utilizing a domain-specific exception.
         """
         with patch.object(GridLocalizer, "_estimate_size_from_edges", return_value=5):
@@ -212,12 +236,16 @@ class TestGridLocalizer:
             Verifies fallback size generations appropriately chain back into standard math generation.
 
         Implementation Details:
-            Hooks the estimator to output an accepted constant, confirming standard pipeline 
+            Hooks the estimator to output an accepted constant, confirming standard pipeline
             resolution executes exactly as it would given direct production inputs.
         """
-        with patch.object(GridLocalizer, "_estimate_size_from_edges", return_value=6), \
-             patch.object(GridLocalizer, "_detect_circles", return_value=[]), \
-             patch.object(GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)):
+        with (
+            patch.object(GridLocalizer, "_estimate_size_from_edges", return_value=6),
+            patch.object(GridLocalizer, "_detect_circles", return_value=[]),
+            patch.object(
+                GridLocalizer, "_panel_bounds", return_value=(100, 100, 600, 600)
+            ),
+        ):
             n, cell_bounds = self.localizer.localize_grid(self.valid_image_mock)
         assert n == 6
         assert len(cell_bounds) == 36

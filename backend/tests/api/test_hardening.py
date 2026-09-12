@@ -22,7 +22,6 @@ from backend.input_validation.json_interpreter import JsonInterpreter
 
 from .conftest import IMAGE_UPLOAD, VALID_BODY
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Duplicate walls — Board's wall set is lossy, so the rule is only checkable
 # against the ordered payload list (see input_validation/errors.py).
@@ -97,7 +96,9 @@ class TestDuplicateWalls:
         assert body["code"] == ErrorCode.INVALID_WALLS.value
         assert body["details"][0]["affectedField"] == "walls"
 
-    def test_a_duplicate_wall_never_reaches_the_solver(self, make_api, solver_controller):
+    def test_a_duplicate_wall_never_reaches_the_solver(
+        self, make_api, solver_controller
+    ):
         _, client = make_api(interpreter=JsonInterpreter())
 
         client.post(
@@ -248,7 +249,9 @@ class TestDefaultCorsOrigins:
         failures that presented as backend outages."""
         _, client = make_api()
 
-        response = client.post("/api/solve", json=VALID_BODY, headers={"Origin": origin})
+        response = client.post(
+            "/api/solve", json=VALID_BODY, headers={"Origin": origin}
+        )
 
         assert response.headers["access-control-allow-origin"] == origin
 
@@ -316,10 +319,7 @@ class TestModelReadiness:
 class TestLayering:
     def test_input_validation_does_not_import_the_api_package(self):
         source = (
-            __import__("pathlib")
-            .Path(__file__)
-            .resolve()
-            .parents[2]
+            __import__("pathlib").Path(__file__).resolve().parents[2]
             / "input_validation"
             / "input_validator.py"
         ).read_text()
@@ -329,7 +329,9 @@ class TestLayering:
         """Both import paths must resolve to one class, or isinstance checks and the
         generated OpenAPI schema would diverge."""
         from backend.api.dtos.ValidationResult import ValidationResult as viaApi
-        from backend.input_validation.validation_dtos import ValidationResult as viaDomain
+        from backend.input_validation.validation_dtos import (
+            ValidationResult as viaDomain,
+        )
 
         assert viaApi is viaDomain
 

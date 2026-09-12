@@ -98,6 +98,12 @@ export function hasCompletedAllWaypoints(state: PlayModeState, board: BoardConfi
         return true;
     }
 
+    const finalPosition = state.visitedCells[state.visitedCells.length - 1] ?? null;
+    const finalWaypoint = board.waypoints[board.waypoints.length - 1] ?? null;
+    if (!isSamePosition(finalPosition, finalWaypoint)) {
+        return false;
+    }
+
     const visitedWaypoints = state.visitedCells.filter((position) => board.waypoints.some((waypoint) => isSamePosition(position, waypoint)));
 
     if (visitedWaypoints.length !== board.waypoints.length) {

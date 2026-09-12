@@ -8,6 +8,7 @@ from backend.puzzle_logic.board import Board
 from backend.puzzle_logic import Position
 from backend.input_validation.json_interpreter import JsonInterpreter
 
+
 @pytest.fixture
 def valid_json_data():
     """
@@ -17,16 +18,17 @@ def valid_json_data():
         The simulated payload containing all mandatory structural constraints.
 
     Implementation Details:
-        Yields a hardcoded structural snapshot populated with dimensional data, 
-        sorted spatial coordinates, and physical barriers to be utilized seamlessly 
+        Yields a hardcoded structural snapshot populated with dimensional data,
+        sorted spatial coordinates, and physical barriers to be utilized seamlessly
         across structural validations without invoking disk operations.
     """
     return {
         "boardSize": 6,
         "waypoints": [[0, 0], [2, 2], [4, 4]],
         "walls": [{"neighborA": [0, 0], "neighborB": [1, 0]}],
-        "solutionPath": []
+        "solutionPath": [],
     }
+
 
 @pytest.fixture
 def interpreter():
@@ -37,10 +39,11 @@ def interpreter():
         An isolated instance of the interpretation class.
 
     Implementation Details:
-        Instantiates the core interpreter cleanly before each test execution context, 
+        Instantiates the core interpreter cleanly before each test execution context,
         ensuring cross-test state mutations are explicitly prevented.
     """
     return JsonInterpreter()
+
 
 def call(func, *args):
     """
@@ -54,16 +57,17 @@ def call(func, *args):
         The computed result of the underlying function call.
 
     Implementation Details:
-        Acts as a bulletproof helper to call internal interpreter methods cleanly. 
-        It inspects the signature to see if 'self' is explicitly required. This ensures 
-        the test suites run perfectly right now (accommodating the temporary dual 
-        `@staticmethod` + `self` bug) and will natively survive future code fixes 
+        Acts as a bulletproof helper to call internal interpreter methods cleanly.
+        It inspects the signature to see if 'self' is explicitly required. This ensures
+        the test suites run perfectly right now (accommodating the temporary dual
+        `@staticmethod` + `self` bug) and will natively survive future code fixes
         (whether the static decorator is removed or the self parameter is dropped).
     """
     sig = inspect.signature(func)
-    if 'self' in sig.parameters:
+    if "self" in sig.parameters:
         return func(None, *args)
     return func(*args)
+
 
 # ===================================================================
 # Tests for _load
@@ -77,11 +81,12 @@ def test_load_dict(interpreter, valid_json_data):
         valid_json_data: The standard compliant payload fixture.
 
     Implementation Details:
-        Passes a native data dictionary into the load method and executes a direct 
-        equality assertion, ensuring internal bypassing logic resolves immediately 
+        Passes a native data dictionary into the load method and executes a direct
+        equality assertion, ensuring internal bypassing logic resolves immediately
         without throwing conversion faults.
     """
     assert call(interpreter._load, valid_json_data) == valid_json_data
+
 
 def test_load_filepath(interpreter, valid_json_data, tmp_path):
     """
@@ -93,13 +98,14 @@ def test_load_filepath(interpreter, valid_json_data, tmp_path):
         tmp_path: The dynamic directory fixture natively provided by pytest.
 
     Implementation Details:
-        Constructs a temporary disk artifact and writes the serialized payload. 
-        Subsequently invokes the parser against the absolute path, verifying standard 
+        Constructs a temporary disk artifact and writes the serialized payload.
+        Subsequently invokes the parser against the absolute path, verifying standard
         filesystem reading capabilities.
     """
     file_path = tmp_path / "puzzle.json"
     file_path.write_text(json.dumps(valid_json_data), encoding="utf-8")
     assert call(interpreter._load, str(file_path)) == valid_json_data
+
 
 def test_load_file_like_object(interpreter, valid_json_data):
     """
@@ -110,11 +116,12 @@ def test_load_file_like_object(interpreter, valid_json_data):
         valid_json_data: The standard compliant payload fixture.
 
     Implementation Details:
-        Dumps the standard dictionary into a temporary textual memory stream, 
+        Dumps the standard dictionary into a temporary textual memory stream,
         ensuring the parser dynamically accepts file-like readers alongside static paths.
     """
     file_like = io.StringIO(json.dumps(valid_json_data))
     assert call(interpreter._load, file_like) == valid_json_data
+
 
 def test_load_file_like_invalid_json(interpreter):
     """
@@ -124,13 +131,14 @@ def test_load_file_like_invalid_json(interpreter):
         interpreter: The active test instance evaluating structural loads.
 
     Implementation Details:
-        Forces malformed textual syntax into an explicit memory stream, strictly 
-        asserting that standard deserialization errors bubble up cleanly without 
+        Forces malformed textual syntax into an explicit memory stream, strictly
+        asserting that standard deserialization errors bubble up cleanly without
         being mistakenly swallowed.
     """
     file_like = io.StringIO("{bad json")
     with pytest.raises(json.JSONDecodeError):
         call(interpreter._load, file_like)
+
 
 def test_load_invalid_type(interpreter):
     """
@@ -140,11 +148,12 @@ def test_load_invalid_type(interpreter):
         interpreter: The active test instance evaluating structural loads.
 
     Implementation Details:
-        Injects a raw numerical scalar into the parsing gateway, asserting that explicit 
+        Injects a raw numerical scalar into the parsing gateway, asserting that explicit
         type-bound checks trigger accurate exceptions noting the lack of support.
     """
     with pytest.raises(TypeError, match="Unsupported argument type"):
         call(interpreter._load, 123)
+
 
 def test_load_file_not_found(interpreter):
     """
@@ -154,7 +163,7 @@ def test_load_file_not_found(interpreter):
         interpreter: The active test instance evaluating structural loads.
 
     Implementation Details:
-        Points the parsing gateway at an explicitly invalid file location, validating 
+        Points the parsing gateway at an explicitly invalid file location, validating
         that disk-level missing node exceptions are allowed to propagate upward.
     """
     with pytest.raises(FileNotFoundError):
@@ -164,11 +173,21 @@ def test_load_file_not_found(interpreter):
 # ===================================================================
 # Tests for _validate_board_size
 # ===================================================================
-@pytest.mark.parametrize("size, expected", [
-    (6, True), (7, True), (8, True), (6.0, True),
-    (5, False), (9, False), (0, False), (-6, False),
-    ("6", False), (None, False)
-])
+@pytest.mark.parametrize(
+    "size, expected",
+    [
+        (6, True),
+        (7, True),
+        (8, True),
+        (6.0, True),
+        (5, False),
+        (9, False),
+        (0, False),
+        (-6, False),
+        ("6", False),
+        (None, False),
+    ],
+)
 def test_validate_board_size(interpreter, size, expected):
     """
     Validates dimensional boundary enforcement against parameterized variants.
@@ -179,8 +198,8 @@ def test_validate_board_size(interpreter, size, expected):
         expected: The mathematical truth state required to pass the assertion.
 
     Implementation Details:
-        Executes a mass-parameterized matrix encompassing correct scalars, boundary 
-        violations, negative integers, and strict type failures, confirming the core 
+        Executes a mass-parameterized matrix encompassing correct scalars, boundary
+        violations, negative integers, and strict type failures, confirming the core
         sizing engine evaluates dimensional legality flawlessly.
     """
     assert call(interpreter._validate_board_size, size) is expected
@@ -189,31 +208,36 @@ def test_validate_board_size(interpreter, size, expected):
 # ===================================================================
 # Tests for _is_valid_point
 # ===================================================================
-@pytest.mark.parametrize("point, size, expected", [
-    # General Valid
-    ([0, 0], 6, True),
-    ([2, 3], 6, True),
-    ((1, 1), 6, True),     # Tuples are permitted
-    
-    # Boundary tests for X and Y axes
-    ([0, 5], 6, True),     # Note: Expects True, but currently fails due to your `board_size-1` bug.
-    ([5, 0], 6, True),     
-    ([5, 5], 6, True),     
-    ([0, 6], 6, False),    # Upper bound breach
-    ([6, 0], 6, False),
-    ([-1, 0], 6, False),   # Lower bound breach
-    ([0, -1], 6, False),
-    
-    # Format and Types constraints
-    ("0,0", 6, False),
-    ([1], 6, False),       # Too short
-    ([1, 2, 3], 6, False), # Too long
-    ([1.5, 2], 6, False),  # Float inclusion
-    ([True, 1], 6, False), # Strict boolean rejection check
-    ([0, False], 6, False),# Strict boolean rejection (y-axis)
-    (["0", 0], 6, False),  # Mixed types
-    (None, 6, False)
-])
+@pytest.mark.parametrize(
+    "point, size, expected",
+    [
+        # General Valid
+        ([0, 0], 6, True),
+        ([2, 3], 6, True),
+        ((1, 1), 6, True),  # Tuples are permitted
+        # Boundary tests for X and Y axes
+        (
+            [0, 5],
+            6,
+            True,
+        ),  # Note: Expects True, but currently fails due to your `board_size-1` bug.
+        ([5, 0], 6, True),
+        ([5, 5], 6, True),
+        ([0, 6], 6, False),  # Upper bound breach
+        ([6, 0], 6, False),
+        ([-1, 0], 6, False),  # Lower bound breach
+        ([0, -1], 6, False),
+        # Format and Types constraints
+        ("0,0", 6, False),
+        ([1], 6, False),  # Too short
+        ([1, 2, 3], 6, False),  # Too long
+        ([1.5, 2], 6, False),  # Float inclusion
+        ([True, 1], 6, False),  # Strict boolean rejection check
+        ([0, False], 6, False),  # Strict boolean rejection (y-axis)
+        (["0", 0], 6, False),  # Mixed types
+        (None, 6, False),
+    ],
+)
 def test_is_valid_point(interpreter, point, size, expected):
     """
     Validates coordinate spatial logic and underlying formatting constraints.
@@ -225,9 +249,9 @@ def test_is_valid_point(interpreter, point, size, expected):
         expected: The definitive resolution state required to pass.
 
     Implementation Details:
-        Iterates over a broad parameterized suite. Specifically stresses extreme boundary 
-        conditions, tuple conversions, float inclusions, explicit length truncations, 
-        and defensive boolean unboxing scenarios effectively confirming strict 
+        Iterates over a broad parameterized suite. Specifically stresses extreme boundary
+        conditions, tuple conversions, float inclusions, explicit length truncations,
+        and defensive boolean unboxing scenarios effectively confirming strict
         spatial integrity natively.
     """
     assert call(interpreter._is_valid_point, point, size) is expected
@@ -244,20 +268,24 @@ def test_validate_waypoints_valid(interpreter):
         interpreter: The target engine parsing the structural data.
 
     Implementation Details:
-        Constructs a minimal valid coordinate path and routes it through the 
+        Constructs a minimal valid coordinate path and routes it through the
         milestone structural validator, ensuring a naturally flawless state is yielded.
     """
     waypoints = [[0, 0], [1, 2], [3, 4]]
     assert call(interpreter._validate_waypoints, waypoints, 6) is True
 
-@pytest.mark.parametrize("waypoints, size, expected", [
-    ([[0, 0], [1, 1]], 6, True),      # Min count (2)
-    ([[0, 0]], 6, False),             # Below min count
-    ([], 6, False),                   # Empty
-    ("not a list", 6, False),         # Invalid type
-    ([{"x": 0, "y": 0}], 6, False),   # Invalid point format
-    ([[1, 1], [2, 2], [1, 1]], 6, False) # Duplicate points
-])
+
+@pytest.mark.parametrize(
+    "waypoints, size, expected",
+    [
+        ([[0, 0], [1, 1]], 6, True),  # Min count (2)
+        ([[0, 0]], 6, False),  # Below min count
+        ([], 6, False),  # Empty
+        ("not a list", 6, False),  # Invalid type
+        ([{"x": 0, "y": 0}], 6, False),  # Invalid point format
+        ([[1, 1], [2, 2], [1, 1]], 6, False),  # Duplicate points
+    ],
+)
 def test_validate_waypoints_constraints(interpreter, waypoints, size, expected):
     """
     Validates milestone aggregation bounds and distinct spatial requirements.
@@ -269,10 +297,11 @@ def test_validate_waypoints_constraints(interpreter, waypoints, size, expected):
         expected: The required resolution flag matching the permutation.
 
     Implementation Details:
-        Injects parameterized variations specifically stressing collection minimums, 
+        Injects parameterized variations specifically stressing collection minimums,
         duplicate coordinate detections, and structural formatting failures safely.
     """
     assert call(interpreter._validate_waypoints, waypoints, size) is expected
+
 
 def test_validate_waypoints_max_count(interpreter):
     """
@@ -282,14 +311,14 @@ def test_validate_waypoints_max_count(interpreter):
         interpreter: The active parsing component instance.
 
     Implementation Details:
-        Synthetically generates a fully saturated topological grid (every single spatial 
-        node acting as a checkpoint). Asserts this passes, but immediately appends a 
+        Synthetically generates a fully saturated topological grid (every single spatial
+        node acting as a checkpoint). Asserts this passes, but immediately appends a
         single subsequent marker to definitively trigger the total saturation cap natively.
     """
     # Max waypoints is board_size ** 2 (36 for 6x6)
     waypoints = [[x, y] for x in range(6) for y in range(6)]
     assert call(interpreter._validate_waypoints, waypoints, 6) is True
-    
+
     # 37 points (Exceeds capacity)
     waypoints.append([6, 6])
     assert call(interpreter._validate_waypoints, waypoints, 6) is False
@@ -306,14 +335,15 @@ def test_validate_walls_valid(interpreter):
         interpreter: The active parsing component verifying barrier structures.
 
     Implementation Details:
-        Constructs a small payload of properly formatted adjacent barriers and executes 
+        Constructs a small payload of properly formatted adjacent barriers and executes
         a direct assertion confirming structural rules correctly mark them as legal.
     """
     walls = [
         {"neighborA": [0, 0], "neighborB": [1, 0]},
-        {"neighborA": [1, 1], "neighborB": [1, 2]}
+        {"neighborA": [1, 1], "neighborB": [1, 2]},
     ]
     assert call(interpreter._validate_walls, walls, 6) is True
+
 
 def test_validate_walls_empty_allowed(interpreter):
     """
@@ -323,10 +353,11 @@ def test_validate_walls_empty_allowed(interpreter):
         interpreter: The active parsing component verifying barrier structures.
 
     Implementation Details:
-        Supplies a purposefully empty barrier array, validating that puzzle topologies 
+        Supplies a purposefully empty barrier array, validating that puzzle topologies
         without internal blockades perfectly fulfill baseline configuration contracts.
     """
     assert call(interpreter._validate_walls, [], 6) is True
+
 
 def test_validate_walls_extra_keys_allowed(interpreter):
     """
@@ -336,25 +367,35 @@ def test_validate_walls_extra_keys_allowed(interpreter):
         interpreter: The active parsing component verifying barrier structures.
 
     Implementation Details:
-        Injects a payload containing standard neighbor coordinates alongside an explicit 
-        undocumented key. Validates that the underlying set logic natively allows extra 
+        Injects a payload containing standard neighbor coordinates alongside an explicit
+        undocumented key. Validates that the underlying set logic natively allows extra
         information smoothly via subset evaluations.
     """
     # Tests that .issubset allows extra undocumented keys cleanly
     walls = [{"neighborA": [0, 0], "neighborB": [1, 0], "wallType": "stone"}]
     assert call(interpreter._validate_walls, walls, 6) is True
 
-@pytest.mark.parametrize("walls, expected", [
-    ([{"neighborA": [0, 0]}], False),                             # Missing neighborB
-    ([{"neighborA": [0, 0], "neighborC": [1, 0]}], False),        # Wrong keys
-    ([{"neighborA": [-1, 0], "neighborB": [0, 0]}], False),       # Out of bounds
-    ([{"neighborA": [1, 1], "neighborB": [1, 1]}], False),        # Same point
-    ([{"neighborA": [0, 0], "neighborB": [1, 1]}], False),        # Diagonal
-    ([{"neighborA": [0, 0], "neighborB": [0, 2]}], False),        # Gap > 1
-    ("not a list", False),                                        # Root invalid type
-    ([{"neighborA": [0, 0], "neighborB": [1, 0]}, "string"], False), # Bad element type
-    ([{"neighborA": [0, 0], "neighborB": [1, 0]}, [[1,1], [1,2]]], False) # Array instead of Dict
-])
+
+@pytest.mark.parametrize(
+    "walls, expected",
+    [
+        ([{"neighborA": [0, 0]}], False),  # Missing neighborB
+        ([{"neighborA": [0, 0], "neighborC": [1, 0]}], False),  # Wrong keys
+        ([{"neighborA": [-1, 0], "neighborB": [0, 0]}], False),  # Out of bounds
+        ([{"neighborA": [1, 1], "neighborB": [1, 1]}], False),  # Same point
+        ([{"neighborA": [0, 0], "neighborB": [1, 1]}], False),  # Diagonal
+        ([{"neighborA": [0, 0], "neighborB": [0, 2]}], False),  # Gap > 1
+        ("not a list", False),  # Root invalid type
+        (
+            [{"neighborA": [0, 0], "neighborB": [1, 0]}, "string"],
+            False,
+        ),  # Bad element type
+        (
+            [{"neighborA": [0, 0], "neighborB": [1, 0]}, [[1, 1], [1, 2]]],
+            False,
+        ),  # Array instead of Dict
+    ],
+)
 def test_validate_walls_invalid_cases(interpreter, walls, expected):
     """
     Evaluates partition topologies against comprehensive spatial formatting failures.
@@ -365,11 +406,12 @@ def test_validate_walls_invalid_cases(interpreter, walls, expected):
         expected: The anticipated failure state of the assertion.
 
     Implementation Details:
-        Pushes a parameterized sequence covering incorrect keys, diagonal breaches, 
-        overlapping points, detached nodes, and raw structural typing errors natively, 
+        Pushes a parameterized sequence covering incorrect keys, diagonal breaches,
+        overlapping points, detached nodes, and raw structural typing errors natively,
         guaranteeing the parser correctly rejects impossible physical geometry natively.
     """
     assert call(interpreter._validate_walls, walls, 6) is expected
+
 
 def test_validate_walls_duplicates(interpreter):
     """
@@ -379,21 +421,36 @@ def test_validate_walls_duplicates(interpreter):
         interpreter: The active parsing component checking mathematical deduplication.
 
     Implementation Details:
-        Executes two independent verifications: First, it asserts exact duplicate dictionary 
-        copies are safely rejected. Second, it flips neighbor orientation arrays, verifying 
+        Executes two independent verifications: First, it asserts exact duplicate dictionary
+        copies are safely rejected. Second, it flips neighbor orientation arrays, verifying
         that underlying topological sets accurately catch mirrored duplications natively.
     """
     # Exact duplicate dictionary
-    assert call(interpreter._validate_walls, [
-        {"neighborA": [0, 0], "neighborB": [1, 0]},
-        {"neighborA": [0, 0], "neighborB": [1, 0]}
-    ], 6) is False
+    assert (
+        call(
+            interpreter._validate_walls,
+            [
+                {"neighborA": [0, 0], "neighborB": [1, 0]},
+                {"neighborA": [0, 0], "neighborB": [1, 0]},
+            ],
+            6,
+        )
+        is False
+    )
 
     # Reversed orientation duplicate (ensures frozenset uniqueness logic works)
-    assert call(interpreter._validate_walls, [
-        {"neighborA": [0, 0], "neighborB": [1, 0]},
-        {"neighborA": [1, 0], "neighborB": [0, 0]}
-    ], 6) is False
+    assert (
+        call(
+            interpreter._validate_walls,
+            [
+                {"neighborA": [0, 0], "neighborB": [1, 0]},
+                {"neighborA": [1, 0], "neighborB": [0, 0]},
+            ],
+            6,
+        )
+        is False
+    )
+
 
 def test_validate_walls_max_count(interpreter):
     """
@@ -403,8 +460,8 @@ def test_validate_walls_max_count(interpreter):
         interpreter: The active instance mapping maximum topological edge cases.
 
     Implementation Details:
-        Programmatically constructs a perfectly saturated grid utilizing maximal internal 
-        barriers across all dimensional vectors natively. Verifies immediate success, then 
+        Programmatically constructs a perfectly saturated grid utilizing maximal internal
+        barriers across all dimensional vectors natively. Verifies immediate success, then
         appends an extra external barrier strictly guaranteeing upper bounds logic triggers safely.
     """
     # Max walls for 6x6 is 6 * 5 * 2 = 60 valid walls total
@@ -415,11 +472,11 @@ def test_validate_walls_max_count(interpreter):
                 walls.append({"neighborA": [x, y], "neighborB": [x + 1, y]})
             if y < 5:
                 walls.append({"neighborA": [x, y], "neighborB": [x, y + 1]})
-    
+
     assert call(interpreter._validate_walls, walls, 6) is True
-    
+
     # 61st wall violates upper bounds logic
-    walls.append({"neighborA": [0, 0], "neighborB": [1, 1]}) 
+    walls.append({"neighborA": [0, 0], "neighborB": [1, 1]})
     assert call(interpreter._validate_walls, walls, 6) is False
 
 
@@ -435,10 +492,11 @@ def test_verifySyntax_valid(interpreter, valid_json_data):
         valid_json_data: The completely verified structural blueprint.
 
     Implementation Details:
-        Simply forces the macro-evaluation gateway to ingest a perfectly formed payload, 
+        Simply forces the macro-evaluation gateway to ingest a perfectly formed payload,
         asserting the resulting aggregation tree properly bubbles a success condition.
     """
     assert call(interpreter.verifySyntax, valid_json_data) is True
+
 
 def test_verifySyntax_extra_keys_allowed(interpreter, valid_json_data):
     """
@@ -449,12 +507,13 @@ def test_verifySyntax_extra_keys_allowed(interpreter, valid_json_data):
         valid_json_data: The standard structural blueprint ready for mutation.
 
     Implementation Details:
-        Appends an explicitly unsupported global parameter onto the root layer natively. 
-        Asserts the verification routine disregards it entirely instead of throwing 
+        Appends an explicitly unsupported global parameter onto the root layer natively.
+        Asserts the verification routine disregards it entirely instead of throwing
         strict schematic failure faults.
     """
     valid_json_data["extraMetadataKey"] = "SuperSecretValue"
     assert call(interpreter.verifySyntax, valid_json_data) is True
+
 
 def test_verifySyntax_catches_load_exception(interpreter):
     """
@@ -464,13 +523,14 @@ def test_verifySyntax_catches_load_exception(interpreter):
         interpreter: The active instance being subjected to mock exceptions.
 
     Implementation Details:
-        Leverages `unittest.mock.patch` dynamically to simulate a raw structural 
-        disk failure (FileNotFound) originating deep within the load utility, 
+        Leverages `unittest.mock.patch` dynamically to simulate a raw structural
+        disk failure (FileNotFound) originating deep within the load utility,
         verifying the syntax evaluator swallows it gracefully into a False return.
     """
     # Ensure any exceptions occurring in _load safely result in False (no crashes)
-    with patch.object(JsonInterpreter, '_load', side_effect=FileNotFoundError):
+    with patch.object(JsonInterpreter, "_load", side_effect=FileNotFoundError):
         assert call(interpreter.verifySyntax, "dummy_file.json") is False
+
 
 @pytest.mark.parametrize("missing_key", ["boardSize", "waypoints", "walls"])
 def test_verifySyntax_missing_required_keys(interpreter, valid_json_data, missing_key):
@@ -483,8 +543,8 @@ def test_verifySyntax_missing_required_keys(interpreter, valid_json_data, missin
         missing_key: The string identifier of the removed attribute.
 
     Implementation Details:
-        Iteratively deletes absolute required nodes natively from the payload prior 
-        to checking, assuring strict domain mapping rejects incomplete schematics correctly. 
+        Iteratively deletes absolute required nodes natively from the payload prior
+        to checking, assuring strict domain mapping rejects incomplete schematics correctly.
         boardSize/waypoints/walls are required. solutionPath is optional (the API and the
         screenshot extractor never send it, and the reference board ships it populated), so it
         is not in this list.
@@ -505,20 +565,26 @@ def test_verifySyntax_solution_path_is_optional(interpreter, valid_json_data):
         valid_json_data: The structural dictionary payload template.
 
     Implementation Details:
-        Strictly eradicates the entire solution trace attribute from the root context 
-        before evaluation. Confirms the engine still definitively passes the object, 
+        Strictly eradicates the entire solution trace attribute from the root context
+        before evaluation. Confirms the engine still definitively passes the object,
         proving a payload with no solutionPath key is valid — it is not part of the board contract.
     """
     """A payload with no solutionPath key is valid — it is not part of the board contract."""
     valid_json_data.pop("solutionPath", None)
     assert call(interpreter.verifySyntax, valid_json_data) is True
 
-@pytest.mark.parametrize("solution_path", [
-    "empty",        # Wrong type (string)
-    None,           # Wrong type (None)
-    {},             # Wrong type (dict)
-])
-def test_verifySyntax_invalid_solution_path(interpreter, valid_json_data, solution_path):
+
+@pytest.mark.parametrize(
+    "solution_path",
+    [
+        "empty",  # Wrong type (string)
+        None,  # Wrong type (None)
+        {},  # Wrong type (dict)
+    ],
+)
+def test_verifySyntax_invalid_solution_path(
+    interpreter, valid_json_data, solution_path
+):
     """
     Validates structural formatting rules apply explicitly to appended routing paths.
 
@@ -528,7 +594,7 @@ def test_verifySyntax_invalid_solution_path(interpreter, valid_json_data, soluti
         solution_path: The parameterized corrupt path parameter.
 
     Implementation Details:
-        Alters the solution structure aggressively to non-array formatting dynamically. 
+        Alters the solution structure aggressively to non-array formatting dynamically.
         Confirms that when solutionPath is present it must be a list. Its contents are not constrained
         here — path correctness is SolutionValidator's job, not the interpreter's — so a
         populated list is accepted (see next test).
@@ -549,7 +615,7 @@ def test_verifySyntax_populated_solution_path_is_accepted(interpreter, valid_jso
         valid_json_data: The structural dictionary context.
 
     Implementation Details:
-        Injects a perfect simulated spatial traverse into the payload structure safely. 
+        Injects a perfect simulated spatial traverse into the payload structure safely.
         Assures the reference board_configuration.json carries a full solutionPath; it must import
         cleanly rather than being rejected for being non-empty.
     """
@@ -557,6 +623,7 @@ def test_verifySyntax_populated_solution_path_is_accepted(interpreter, valid_jso
     cleanly rather than being rejected for being non-empty."""
     valid_json_data["solutionPath"] = [[0, 0], [0, 1], [0, 2]]
     assert call(interpreter.verifySyntax, valid_json_data) is True
+
 
 def test_verifySyntax_cascading_failures(interpreter, valid_json_data):
     """
@@ -567,18 +634,19 @@ def test_verifySyntax_cascading_failures(interpreter, valid_json_data):
         valid_json_data: The foundational structure to be recursively broken.
 
     Implementation Details:
-        Methodically damages dimensional and topological limits in sequence, strictly 
-        ensuring that macro verification appropriately delegates downward, bubbling 
+        Methodically damages dimensional and topological limits in sequence, strictly
+        ensuring that macro verification appropriately delegates downward, bubbling
         localized nested faults up securely to the overarching verification gateway natively.
     """
     # Corrupting nested data properties to ensure verify delegates to sub-validators
     valid_json_data["boardSize"] = 10
     assert call(interpreter.verifySyntax, valid_json_data) is False
-    
+
     valid_json_data["boardSize"] = 6
     valid_json_data["waypoints"] = [[0, 0]]
     assert call(interpreter.verifySyntax, valid_json_data) is False
-    
+
+
 def test_verifySyntax_non_dict_data(interpreter):
     """
     Verifies base payload mapping requirements intercept root typing errors perfectly.
@@ -587,7 +655,7 @@ def test_verifySyntax_non_dict_data(interpreter):
         interpreter: The active parsing component processing evaluations.
 
     Implementation Details:
-        Abandons the entire structure context cleanly, forcing an explicit array into 
+        Abandons the entire structure context cleanly, forcing an explicit array into
         the top tier to definitively guarantee base syntax loops catch base-level typing natively.
     """
     assert call(interpreter.verifySyntax, ["list data"]) is False
@@ -606,14 +674,14 @@ def test_buildBoard_valid(interpreter, valid_json_data):
 
     Implementation Details:
         Confirms `buildBoard` does structural parsing only and builds the Board directly — it no
-        longer delegates to verifySyntax (semantics are InputValidator's job). Validates instances 
-        are mapped cleanly. Waypoint order is 1-based, matching PuzzleRules.getWaypointByOrder(1) 
+        longer delegates to verifySyntax (semantics are InputValidator's job). Validates instances
+        are mapped cleanly. Waypoint order is 1-based, matching PuzzleRules.getWaypointByOrder(1)
         and GameState, confirming internal models unpack properly.
     """
     """buildBoard does structural parsing only and builds the Board directly — it no
     longer delegates to verifySyntax (semantics are InputValidator's job). Waypoint order
     is 1-based, matching PuzzleRules.getWaypointByOrder(1) and GameState."""
-    with patch.object(JsonInterpreter, '_load', return_value=valid_json_data):
+    with patch.object(JsonInterpreter, "_load", return_value=valid_json_data):
         board = call(interpreter.buildBoard, valid_json_data)
 
         assert isinstance(board, Board)
@@ -632,6 +700,7 @@ def test_buildBoard_valid(interpreter, valid_json_data):
         assert len(walls) == 1
         assert board.hasWallBetween(Position(0, 0), Position(1, 0)) is True
 
+
 def test_buildBoard_zero_walls(interpreter, valid_json_data):
     """
     Ensures standard build operations tolerate empty barrier arrays seamlessly natively.
@@ -641,13 +710,14 @@ def test_buildBoard_zero_walls(interpreter, valid_json_data):
         valid_json_data: The baseline template structure modified natively.
 
     Implementation Details:
-        Erases internal blockades, overriding internal mock returns perfectly to guarantee 
+        Erases internal blockades, overriding internal mock returns perfectly to guarantee
         the generation cycle scales flawlessly onto completely open topological mapping environments.
     """
     valid_json_data["walls"] = []
-    with patch.object(JsonInterpreter, '_load', return_value=valid_json_data):
+    with patch.object(JsonInterpreter, "_load", return_value=valid_json_data):
         board = call(interpreter.buildBoard, valid_json_data)
         assert len(board.getWalls) == 0
+
 
 def test_buildBoard_structurally_invalid_raises(interpreter):
     """
@@ -669,9 +739,12 @@ def test_buildBoard_structurally_invalid_raises(interpreter):
     Board at all (missing a required key, non-integer coordinates). Semantically-invalid
     but structurally-sound boards build successfully and are judged by InputValidator —
     that is what lets the API return a structured 422 rather than a blanket 400."""
-    with patch.object(JsonInterpreter, '_load', return_value={"boardSize": 6, "waypoints": [[0]]}):
+    with patch.object(
+        JsonInterpreter, "_load", return_value={"boardSize": 6, "waypoints": [[0]]}
+    ):
         with pytest.raises(ValueError):
             call(interpreter.buildBoard, {"boardSize": 6, "waypoints": [[0]]})
+
 
 def test_buildBoard_integration(interpreter, valid_json_data, tmp_path):
     """
@@ -684,22 +757,22 @@ def test_buildBoard_integration(interpreter, valid_json_data, tmp_path):
 
     Implementation Details:
         End-To-End test evaluating the whole pipeline un-mocked.
-        WARNING: This test acts as a real-world assertion and will legitimately FAIL 
-        until the internal `@staticmethod def method(self)` and `boardSize-1` bugs 
-        are resolved inside JsonInterpreter. Dumps structures directly to disk space 
+        WARNING: This test acts as a real-world assertion and will legitimately FAIL
+        until the internal `@staticmethod def method(self)` and `boardSize-1` bugs
+        are resolved inside JsonInterpreter. Dumps structures directly to disk space
         and extracts cleanly via overarching routing routines natively.
     """
     """
     End-To-End test evaluating the whole pipeline un-mocked.
-    WARNING: This test acts as a real-world assertion and will legitimately FAIL 
-    until the internal `@staticmethod def method(self)` and `boardSize-1` bugs 
+    WARNING: This test acts as a real-world assertion and will legitimately FAIL
+    until the internal `@staticmethod def method(self)` and `boardSize-1` bugs
     are resolved inside JsonInterpreter.
     """
     file_path = tmp_path / "puzzle.json"
     file_path.write_text(json.dumps(valid_json_data), encoding="utf-8")
-    
+
     board = call(interpreter.buildBoard, str(file_path))
-    
+
     assert isinstance(board, Board)
     assert board.getSize == 6
     assert len(board.getWaypoints) == 3

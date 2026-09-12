@@ -6,7 +6,6 @@ from backend.puzzle_logic.board import Board
 from backend.puzzle_logic.data_models import Position
 from backend.rl_components.rl_environment import RLEnvironment
 
-
 BOARD_SIZE = 6
 OBSERVATION_CHANNELS = 8
 OBSERVATION_SHAPE = (
@@ -20,6 +19,7 @@ OBSERVATION_SHAPE = (
 # Setup & Fixtures
 # ==========================================
 
+
 @pytest.fixture
 def real_board():
     """
@@ -29,8 +29,8 @@ def real_board():
         The structured baseline configuration dictating spatial bounds.
 
     Implementation Details:
-        Instantiates a standard dimensional grid mapping an origin requirement natively at the 
-        top-left and an endpoint constraint positioned at the far opposing corner. This geometry 
+        Instantiates a standard dimensional grid mapping an origin requirement natively at the
+        top-left and an endpoint constraint positioned at the far opposing corner. This geometry
         ensures immediate, adjacent topological exploration from the start remains mathematically valid.
     """
     board = Board(BOARD_SIZE)
@@ -52,7 +52,7 @@ def env(real_board):
         The fully wrapped simulator mapping native spatial logic to learning matrices.
 
     Implementation Details:
-        Directly injects the mathematical structural parameters into the customized evaluation environment natively 
+        Directly injects the mathematical structural parameters into the customized evaluation environment natively
         orchestrating the translation between deep learning state outputs and domain rule evaluations.
     """
     return RLEnvironment(real_board)
@@ -72,8 +72,8 @@ def find_valid_action(environment: RLEnvironment):
         AssertionError: If the spatial node is physically marooned without any mathematically viable exits.
 
     Implementation Details:
-        Iterates explicitly over the bounded action limits natively tracking valid branches. Extracts target 
-        locations dynamically and utilizes the underlying rule engine explicitly to verify step compliance 
+        Iterates explicitly over the bounded action limits natively tracking valid branches. Extracts target
+        locations dynamically and utilizes the underlying rule engine explicitly to verify step compliance
         without actively advancing or altering the encapsulated environmental state.
     """
     current = environment.game.getState.getCurrentPosition
@@ -91,6 +91,7 @@ def find_valid_action(environment: RLEnvironment):
 # Gym API Contract & Spaces Tests
 # ==========================================
 
+
 def test_initialization(env):
     """
     Validates strict architectural adherence to external simulation space contracts.
@@ -99,8 +100,8 @@ def test_initialization(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Verifies the evaluation branches natively restrict commands to discrete cardinal directions. 
-        Asserts the multi-channel observation matrix mathematically matches precision limitations 
+        Verifies the evaluation branches natively restrict commands to discrete cardinal directions.
+        Asserts the multi-channel observation matrix mathematically matches precision limitations
         and inherently maps bounding extremes perfectly between standard analytical thresholds.
     """
     assert isinstance(env.action_space, gym.spaces.Discrete)
@@ -123,8 +124,8 @@ def test_reset(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Triggers a seeded sequence initialization loop natively. Asserts numerical trackers collapse safely, 
-        spatial markers return explicitly to origin bounds, and checks the generated observation securely 
+        Triggers a seeded sequence initialization loop natively. Asserts numerical trackers collapse safely,
+        spatial markers return explicitly to origin bounds, and checks the generated observation securely
         illuminates the subsequent sequential milestone within its designated architectural channel.
     """
     observation, info = env.reset(seed=42)
@@ -147,12 +148,13 @@ def test_reset(env):
 # Action & Target Logic
 # ==========================================
 
+
 @pytest.mark.parametrize(
     "action, offset_x, offset_y",
     [
         (0, 0, -1),  # UP
-        (1, 1, 0),   # RIGHT
-        (2, 0, 1),   # DOWN
+        (1, 1, 0),  # RIGHT
+        (2, 0, 1),  # DOWN
         (3, -1, 0),  # LEFT
     ],
 )
@@ -167,8 +169,8 @@ def test_get_target_position(env, action, offset_x, offset_y):
         offset_y: The expected vertical architectural shift.
 
     Implementation Details:
-        Utilizes parameterized test arrays tracking exact structural bounds natively against a fixed 
-        origin point. Directly evaluates the protected coordinate retrieval logic to assert 
+        Utilizes parameterized test arrays tracking exact structural bounds natively against a fixed
+        origin point. Directly evaluates the protected coordinate retrieval logic to assert
         mathematical translation safely computes dimensional distances.
     """
     current = Position(2, 2)
@@ -187,8 +189,8 @@ def test_invalid_action_mapping_edge_case(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Funnels a maliciously high numerical bound directly into the translation matrix natively. 
-        Actively captures and safely asserts the localized exception handler successfully intercepts 
+        Funnels a maliciously high numerical bound directly into the translation matrix natively.
+        Actively captures and safely asserts the localized exception handler successfully intercepts
         undefined operations before causing unmapped memory segment reads.
     """
     current = Position(2, 2)
@@ -201,6 +203,7 @@ def test_invalid_action_mapping_edge_case(env):
 # Step Logic, Terminations & Rewards
 # ==========================================
 
+
 def test_step_invalid_move(env):
     """
     Verifies punitive reward applications and episode termination algorithms upon mathematical violations.
@@ -209,8 +212,8 @@ def test_step_invalid_move(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Forces a navigational sequence moving beyond spatial boundaries explicitly. Asserts the domain natively 
-        generates extreme negative reward matrices, securely flags the iteration as mathematically terminated, 
+        Forces a navigational sequence moving beyond spatial boundaries explicitly. Asserts the domain natively
+        generates extreme negative reward matrices, securely flags the iteration as mathematically terminated,
         and fundamentally guarantees the foundational trajectory arrays remain pristine and untampered.
     """
     env.reset()
@@ -239,8 +242,8 @@ def test_step_valid_move_new_cell(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Derives an explicitly verified clear cell via helper computations natively. Manages a standard 
-        navigational execution and asserts the resulting reward precisely stacks minor time decay penalties 
+        Derives an explicitly verified clear cell via helper computations natively. Manages a standard
+        navigational execution and asserts the resulting reward precisely stacks minor time decay penalties
         against standard discovery bonuses while keeping the operational window securely open.
     """
     env.reset()
@@ -252,10 +255,7 @@ def test_step_valid_move_new_cell(env):
 
     observation, reward, terminated, truncated, info = env.step(valid_action)
 
-    expected_reward = (
-        env.config.step_penalty
-        + env.config.new_cell_reward
-    )
+    expected_reward = env.config.step_penalty + env.config.new_cell_reward
 
     assert observation.shape == OBSERVATION_SHAPE
     assert reward == expected_reward
@@ -275,8 +275,8 @@ def test_step_valid_move_waypoint():
     Confirms escalating milestone payouts natively map immediate chronological achievements.
 
     Implementation Details:
-        Constructs a distinct spatial layout hosting nested milestones inherently near the starting point. 
-        Actively forces intersection with the subsequent logical constraint safely and directly maps the resulting 
+        Constructs a distinct spatial layout hosting nested milestones inherently near the starting point.
+        Actively forces intersection with the subsequent logical constraint safely and directly maps the resulting
         array to ensure target objectives naturally cycle while compounding specific achievement metric bonuses.
     """
     board = Board(BOARD_SIZE)
@@ -291,8 +291,7 @@ def test_step_valid_move_waypoint():
     observation, reward, terminated, truncated, info = environment.step(1)
 
     expected_reward = (
-        environment.config.step_penalty
-        + environment.config.next_waypoint_reward
+        environment.config.step_penalty + environment.config.next_waypoint_reward
     )
 
     assert observation.shape == OBSERVATION_SHAPE
@@ -317,8 +316,8 @@ def test_step_final_waypoint_too_early_is_invalid():
     Validates extreme topological logic rejecting endpoint resolutions prior to full Hamiltonian traversal.
 
     Implementation Details:
-        Positions the final milestone immediately adjacent to origin boundaries natively. Initiates direct 
-        penetration into the terminal node safely and explicitly asserts the rule engine punishes the sequence 
+        Positions the final milestone immediately adjacent to origin boundaries natively. Initiates direct
+        penetration into the terminal node safely and explicitly asserts the rule engine punishes the sequence
         as aggressively as an uncrossable wall collision, collapsing evaluation immediately.
     """
     board = Board(BOARD_SIZE)
@@ -352,9 +351,9 @@ def test_step_valid_move_finished(env, monkeypatch):
         monkeypatch: The framework tool for dynamic runtime dependency alterations.
 
     Implementation Details:
-        Aggressively stubs the heavily nested architectural rule validator mathematically concluding 
-        volume limits (since actively walking a full 36-step trajectory is outside boundary tests). 
-        Processes a generic step natively triggering the mocked completion flag and asserting the delivery 
+        Aggressively stubs the heavily nested architectural rule validator mathematically concluding
+        volume limits (since actively walking a full 36-step trajectory is outside boundary tests).
+        Processes a generic step natively triggering the mocked completion flag and asserting the delivery
         of massive resolution multipliers ending the active sequence cleanly.
     """
     env.reset()
@@ -365,10 +364,7 @@ def test_step_valid_move_finished(env, monkeypatch):
 
     observation, reward, terminated, truncated, info = env.step(valid_action)
 
-    expected_reward = (
-        env.config.step_penalty
-        + env.config.completion_reward
-    )
+    expected_reward = env.config.step_penalty + env.config.completion_reward
 
     assert observation.shape == OBSERVATION_SHAPE
     assert reward == expected_reward
@@ -390,8 +386,8 @@ def test_step_truncation_edge_case(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Re-calibrates the operational maximum loop count to an extreme fractional ceiling natively. 
-        Processes a fully legitimate execution map avoiding mathematical rule violations and verifies the 
+        Re-calibrates the operational maximum loop count to an extreme fractional ceiling natively.
+        Processes a fully legitimate execution map avoiding mathematical rule violations and verifies the
         engine still distinctly drops the iteration utilizing the `truncated` output field rather than `terminated`.
     """
     env.reset()
@@ -418,6 +414,7 @@ def test_step_truncation_edge_case(env):
 # Observation Tensor Compilation
 # ==========================================
 
+
 def test_get_observation_zero_waypoints_edge_case(env):
     """
     Secures mathematical normalization boundaries against unsupported unconstrained topological states.
@@ -426,8 +423,8 @@ def test_get_observation_zero_waypoints_edge_case(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Employs direct internal memory manipulation natively wiping out sequence objective dependencies. 
-        Requests a direct tensor state representation ensuring all complex fractional division calculations 
+        Employs direct internal memory manipulation natively wiping out sequence objective dependencies.
+        Requests a direct tensor state representation ensuring all complex fractional division calculations
         fail-safe cleanly to explicit zeros instead of propagating catastrophic divisor errors.
     """
     env.reset()
@@ -454,9 +451,9 @@ def test_get_observation_channels(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Manipulates architectural constraints aggressively boxing the current location within surrounding barriers safely 
-        respecting dimensional grids. Rebuilds the numerical state outputs natively and evaluates every independent array 
-        layer asserting distinct bits accurately flip verifying active positions, trajectory routes, adjacent walls, 
+        Manipulates architectural constraints aggressively boxing the current location within surrounding barriers safely
+        respecting dimensional grids. Rebuilds the numerical state outputs natively and evaluates every independent array
+        layer asserting distinct bits accurately flip verifying active positions, trajectory routes, adjacent walls,
         and progressive tracking goals map flawlessly onto neural dimensions.
     """
     env.reset()
@@ -524,7 +521,7 @@ def test_observation_is_contained_in_observation_space(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Extracts a populated state interpretation natively and explicitly utilizes standard verification bindings 
+        Extracts a populated state interpretation natively and explicitly utilizes standard verification bindings
         provided by the analytical platform to guarantee matrix sizes and depth arrays accurately mimic definition specs.
     """
     observation, _ = env.reset()
@@ -536,6 +533,7 @@ def test_observation_is_contained_in_observation_space(env):
 # Rendering Tests
 # ==========================================
 
+
 def test_render_ansi_mode(env):
     """
     Confirms text-based execution interpretations cleanly form structured representations natively.
@@ -544,7 +542,7 @@ def test_render_ansi_mode(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Instructs the simulation engine to distinctly route visual diagnostics natively into localized memory. 
+        Instructs the simulation engine to distinctly route visual diagnostics natively into localized memory.
         Validates the output generates standard character placements successfully mapping structural objects without streaming errors.
     """
     env.reset()
@@ -564,8 +562,8 @@ def test_render_human_mode(env, capsys):
         capsys: The testing utility tracking natively piped standard output channels.
 
     Implementation Details:
-        Commands the active simulator mapping engine dynamically towards active pipeline streams natively. 
-        Safely captures and reads textual buffers confirming internal visual layers accurately route expected 
+        Commands the active simulator mapping engine dynamically towards active pipeline streams natively.
+        Safely captures and reads textual buffers confirming internal visual layers accurately route expected
         character matrices without crashing runtime rendering logic.
     """
     env.reset()
@@ -586,8 +584,8 @@ def test_render_invalid_mode(env):
         env: The fully configured reinforcement simulator.
 
     Implementation Details:
-        Violates expected processing commands injecting unknown parameters directly into standard output functions safely. 
-        Ensures the execution correctly rejects the sequence explicitly yielding formatted exception hierarchies over 
+        Violates expected processing commands injecting unknown parameters directly into standard output functions safely.
+        Ensures the execution correctly rejects the sequence explicitly yielding formatted exception hierarchies over
         generating corrupted array layouts.
     """
     env.reset()

@@ -15,10 +15,7 @@ import pytest
 from backend.input_validation.screenshot.theme_mode import ThemeMode
 from backend.input_validation.screenshot.waypoint_detector import WaypointDetector
 
-
-CELL_BOUNDS = {
-    (x, y): (x * 10, y * 10, 10, 10) for x in range(6) for y in range(6)
-}
+CELL_BOUNDS = {(x, y): (x * 10, y * 10, 10, 10) for x in range(6) for y in range(6)}
 
 
 @pytest.mark.parametrize("disc_cells", [None, {}])

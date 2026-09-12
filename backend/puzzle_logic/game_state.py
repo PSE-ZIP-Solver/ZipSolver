@@ -8,14 +8,14 @@ class GameState:
     Tracks and maintains the localized progression of an active Hamiltonian path attempt.
 
     Responsibility:
-        Governs the ongoing temporal evolution of the puzzle session by carefully chronicling 
-        all traversed steps, archiving path histories, monitoring cell visitation statuses, 
+        Governs the ongoing temporal evolution of the puzzle session by carefully chronicling
+        all traversed steps, archiving path histories, monitoring cell visitation statuses,
         and determining the upcoming mathematical waypoint target.
 
     Implementation Details:
-        Employs dual internal data structures to preserve operations: an explicitly ordered list 
-        preserves chronological traversal histories, while an identically mapped set structure 
-        facilitates immediate O(1) performance lookup queries during complex movement validations. 
+        Employs dual internal data structures to preserve operations: an explicitly ordered list
+        preserves chronological traversal histories, while an identically mapped set structure
+        facilitates immediate O(1) performance lookup queries during complex movement validations.
         Operates fully isolated from rule validation logic to adhere to Separation of Concerns.
     """
 
@@ -27,8 +27,8 @@ class GameState:
             startPosition: The definitive physical coordinate marking the origination of the path.
 
         Implementation Details:
-            Secures the active coordinate location into memory. Automatically instantiates the 
-            chronological list and matching internal lookup set natively populated with the original 
+            Secures the active coordinate location into memory. Automatically instantiates the
+            chronological list and matching internal lookup set natively populated with the original
             provided parameter. Seeds the chronological next target sequence strictly to 2.
         """
         self._currentPosition = startPosition
@@ -44,8 +44,8 @@ class GameState:
             position: The localized destination coordinate finalizing the executed transition.
 
         Implementation Details:
-            Transitions the overarching live position attribute. Sequentially appends the metric 
-            into the historical tracking list whilst appending it identically into the high-performance 
+            Transitions the overarching live position attribute. Sequentially appends the metric
+            into the historical tracking list whilst appending it identically into the high-performance
             visitation hash set for future validation lookups.
         """
         self._currentPosition = position
@@ -63,7 +63,7 @@ class GameState:
             True if the specified localized metric was historically tracked, False otherwise.
 
         Implementation Details:
-            Queries the underlying protected hash set of visited cells, guaranteeing rapid 
+            Queries the underlying protected hash set of visited cells, guaranteeing rapid
             O(1) time complexity logic evaluation critical for tight loop validations.
         """
         return position in self._visitedCells
@@ -79,8 +79,8 @@ class GameState:
             A unique set enclosing all physical coordinates absent from current path histories.
 
         Implementation Details:
-            Leverages high-speed Python native set mathematics. Triggers the baseline board to 
-            generate a full scope matrix layout and subtracts the internal protected visitation 
+            Leverages high-speed Python native set mathematics. Triggers the baseline board to
+            generate a full scope matrix layout and subtracts the internal protected visitation
             set, instantly yielding mathematically unpopulated boundaries.
         """
         return board.getAllPositions() - self._visitedCells
@@ -93,7 +93,7 @@ class GameState:
             startPosition: The baseline original anchor point resolving the pristine game launch.
 
         Implementation Details:
-            Purges active history sets and lists, entirely replacing them with identical single-element 
+            Purges active history sets and lists, entirely replacing them with identical single-element
             data structures. Fully overrides the chronological progression target constraint back to 2.
         """
         self._currentPosition = startPosition
@@ -107,11 +107,10 @@ class GameState:
         Dynamically escalates the chronological waypoint sequence tracker to the subsequent requirement.
 
         Implementation Details:
-            Mutates the rigidly guarded integer tracking parameter upwards by an exact magnitude of 1, 
+            Mutates the rigidly guarded integer tracking parameter upwards by an exact magnitude of 1,
             signifying the successful traversal over a mandatory targeted puzzle sequence.
         """
         self._nextWaypointOrder += 1
-
 
     @property
     def getCurrentPosition(self) -> Position:
@@ -122,7 +121,7 @@ class GameState:
             The localized endpoint coordinate representation.
 
         Implementation Details:
-            Exposes immutable accessibility to the localized spatial tracker variable using 
+            Exposes immutable accessibility to the localized spatial tracker variable using
             decorator protections.
         """
         return self._currentPosition
@@ -136,7 +135,7 @@ class GameState:
             A sequentially structured list of traversed coordinate milestones.
 
         Implementation Details:
-            Reveals external access to the exact protected timeline listing managed natively 
+            Reveals external access to the exact protected timeline listing managed natively
             by the internal state processor.
         """
         return self._path
