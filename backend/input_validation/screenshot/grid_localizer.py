@@ -112,7 +112,14 @@ class GridLocalizer:
         # direct, reliable pitch measurement — more trustworthy than the panel bounds, which
         # can be over-sized by surrounding chrome. When enough discs are present, use their
         # spacing; otherwise fall back to the panel, then to disc radius.
-        board_circles = [c for c in circles if c[2] < 40]  # drop oversized UI blobs
+        board_circles = [
+            c for c in circles
+            if panel is None
+            or (
+                panel[0] <= c[0] <= panel[0] + panel[2]
+                and panel[1] <= c[1] <= panel[1] + panel[3]
+            )
+        ]
         approx = None
         if panel is not None:
             approx = (panel[2] + panel[3]) / 2.0 / n
@@ -242,7 +249,9 @@ class GridLocalizer:
         mask = ((hue > 5) & (hue < 30) & (sat > 65) & (val > 120)).astype(
             np.uint8
         ) * 255
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
+        # A 9-pixel opening breaks small discs around their digit-shaped holes.
+        # Remove only fine noise; shape filtering below rejects UI controls.
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         out = []
         for c in contours:
@@ -250,15 +259,15 @@ class GridLocalizer:
             if area < 300:
                 continue
             (cx, cy), r = cv2.minEnclosingCircle(c)
-            if area / (np.pi * r * r) > 0.6:  # reasonably circular
+            if area / (np.pi * r * r) > 0.82:  # reject rounded rectangular UI buttons
                 out.append((float(cx), float(cy), float(r)))
         return out
 
     def _panel_bounds(self, image_data, circles):
         """Find a square panel from bright areas or repeated cell colours.
 
-        Morphology joins cells across grid lines. A candidate must contain the
-        marker centroid; the returned box anchors the disc-derived cell spacing.
+        Morphology joins cells across grid lines. A filled, square candidate
+        must contain marker anchors; its bounds anchor disc-derived spacing.
         """
         import cv2
         import numpy as np
@@ -281,28 +290,30 @@ class GridLocalizer:
 
         contours = []
         for mask in masks:
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((31, 31), np.uint8))
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((31, 31), np.uint8))
+            # Bridge grid lines without joining the board to nearby UI panels.
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
             found, _ = cv2.findContours(
                 mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
             )
             contours.extend(found)
-
-        ccx = float(np.median([c[0] for c in circles])) if circles else None
-        ccy = float(np.median([c[1] for c in circles])) if circles else None
 
         best = None
         for c in contours:
             x, y, ww, hh = cv2.boundingRect(c)
             if ww * hh < w * h * 0.04:
                 continue
+            if cv2.contourArea(c) / (ww * hh) < 0.75:
+                continue
             if not (0.8 < ww / hh < 1.25):
                 continue
-            if (
-                ccx is not None
-                and ccy is not None
-                and not (x <= ccx <= x + ww and y <= ccy <= y + hh)
-            ):
+            # A UI icon can move the global median outside a sparse board.
+            # Require actual marker anchors inside each candidate instead.
+            contained = sum(
+                x <= cx <= x + ww and y <= cy <= y + hh
+                for cx, cy, _ in circles
+            )
+            if circles and contained < min(2, len(circles)):
                 continue
             if best is None or ww * hh > best[0]:
                 best = (ww * hh, x, y, ww, hh)
