@@ -67,6 +67,14 @@ class GridLocalizer:
                 raise AmbiguousBoardError(
                     f"Unsupported board size {board_size}; expected 6, 7, or 8."
                 )
+            from backend.input_validation.screenshot.linkedin_grid_localizer import (
+                localize_linkedin_grid,
+            )
+
+            monochrome = localize_linkedin_grid(image_data, board_size)
+            if monochrome is not None:
+                bounds, self.last_waypoint_cells = monochrome
+                return board_size, bounds
             origin_x, origin_y, pitch = self._solve_geometry(image_data, board_size)
             return board_size, self._cell_bounds(board_size, origin_x, origin_y, pitch)
 

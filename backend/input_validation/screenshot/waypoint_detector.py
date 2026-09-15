@@ -125,7 +125,10 @@ class WaypointDetector:
             iterator = list(cell_bounds.items())
 
         for (grid_x, grid_y), bbox in iterator:
-            raw = self._detect_marker_and_read(image_data, bbox, theme)
+            if has_disc_positions:
+                raw = self._detect_marker_and_read(image_data, bbox, theme, allow_black=True)
+            else:
+                raw = self._detect_marker_and_read(image_data, bbox, theme)
             if has_disc_positions and raw is None:
                 # Position is trusted (came from global detection); only the number failed.
                 raw = "?"
@@ -204,6 +207,7 @@ class WaypointDetector:
         image_data: "np.ndarray",
         bbox: Tuple[int, int, int, int],
         theme: ThemeMode,
+        allow_black: bool = False,
     ):
         """
         Segments localized blocks validating high saturation circular boundaries yielding read targets.
@@ -236,7 +240,24 @@ class WaypointDetector:
         # Is there an orange disc in this cell? (saturated orange covering a real fraction.)
         disc = (hue > 5) & (hue < 30) & (sat > 65) & (val > 120)
         if disc.sum() < (w * h) * 0.12:
-            return None  # no marker here
+            if not allow_black:
+                return None
+            # LinkedIn uses white digits on black discs. Check the disc shape
+            # so a flat dark cell or a wall does not become a phantom waypoint.
+            black = (val < 95).astype(np.uint8) * 255
+            contours, _ = cv2.findContours(
+                black, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+            has_black_disc = False
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                _, radius = cv2.minEnclosingCircle(contour)
+                if area >= w * h * 0.12 and radius > 0:
+                    if area / (np.pi * radius * radius) > 0.82:
+                        has_black_disc = True
+                        break
+            if not has_black_disc:
+                return None
 
         # Restrict glyph detection to the core, away from the anti-aliased rim.
         cy0, cy1 = int(h * 0.18), int(h * 0.82)
@@ -323,6 +344,7 @@ class WaypointDetector:
         # Compare distances between ink shapes in both directions. Pixelwise
         # mismatch over-penalises harmless differences in stroke thickness and
         # can confuse small antialiased digits such as 3 and 5.
+        holes = self._glyph_holes(g)
         distance = cv2.distanceTransform((~g).astype(np.uint8), cv2.DIST_L2, 3)
         cache = getattr(self, "_digit_distance_cache", None)
         if cache is None:
@@ -333,14 +355,32 @@ class WaypointDetector:
                     target_distance = cv2.distanceTransform(
                         (~ink).astype(np.uint8), cv2.DIST_L2, 3
                     )
-                    cache.append((digit, ink, target_distance))
+                    cache.append((digit, ink, target_distance, self._glyph_holes(ink)))
             self._digit_distance_cache = cache
         best, best_dist = None, float("inf")
-        for digit, ink, target_distance in cache:
+        for digit, ink, target_distance, target_holes in cache:
             dist = float(np.mean(distance[ink]) + np.mean(target_distance[g]))
+            # Closed counters distinguish rounded bold 5s from 6s and 8s.
+            # Keep this a soft penalty: damaged images can break a counter.
+            dist += 0.75 * abs(holes - target_holes)
             if dist < best_dist:
                 best_dist, best = dist, digit
         return best
+
+    def _glyph_holes(self, ink):
+        """Count sizeable enclosed gaps, ignoring tiny thresholding speckles."""
+        import cv2
+        import numpy as np
+
+        contours, hierarchy = cv2.findContours(
+            ink.astype(np.uint8) * 255, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+        if hierarchy is None:
+            return 0
+        return sum(
+            int(parent[3]) >= 0 and cv2.contourArea(contour) >= 4
+            for contour, parent in zip(contours, hierarchy[0])
+        )
 
     def _normalise_glyph(self, glyph, box: int = 40):
         """

@@ -1,0 +1,1524 @@
+{
+  "notes": "Manually transcribed board coordinates; two captures show the same 7x7 board. Development regression data, not independent real-world accuracy.",
+  "boards": {
+    "19.49.31": {
+      "boardSize": 7,
+      "waypoints": [
+        [
+          6,
+          0
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          1,
+          5
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            5,
+            1
+          ],
+          "neighborB": [
+            6,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            2
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            4
+          ],
+          "neighborB": [
+            2,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            0,
+            5
+          ],
+          "neighborB": [
+            1,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            1
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            4
+          ],
+          "neighborB": [
+            1,
+            5
+          ]
+        }
+      ]
+    },
+    "19.49.42": {
+      "boardSize": 8,
+      "waypoints": [
+        [
+          3,
+          7
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          7,
+          4
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          3,
+          6
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            1,
+            2
+          ],
+          "neighborB": [
+            2,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            2
+          ],
+          "neighborB": [
+            6,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            5
+          ],
+          "neighborB": [
+            2,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            5
+          ],
+          "neighborB": [
+            6,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            1
+          ],
+          "neighborB": [
+            2,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            1
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            5
+          ],
+          "neighborB": [
+            2,
+            6
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            5
+          ],
+          "neighborB": [
+            5,
+            6
+          ]
+        }
+      ]
+    },
+    "19.49.53": {
+      "boardSize": 6,
+      "waypoints": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            2,
+            1
+          ],
+          "neighborB": [
+            3,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            4
+          ],
+          "neighborB": [
+            3,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            0
+          ],
+          "neighborB": [
+            3,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            0
+          ],
+          "neighborB": [
+            4,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            4
+          ],
+          "neighborB": [
+            1,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            4
+          ],
+          "neighborB": [
+            2,
+            5
+          ]
+        }
+      ]
+    },
+    "19.50.07": {
+      "boardSize": 6,
+      "waypoints": [
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            0,
+            1
+          ],
+          "neighborB": [
+            1,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            0,
+            2
+          ],
+          "neighborB": [
+            1,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            0,
+            3
+          ],
+          "neighborB": [
+            1,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            0,
+            4
+          ],
+          "neighborB": [
+            1,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            1
+          ],
+          "neighborB": [
+            5,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            2
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            3
+          ],
+          "neighborB": [
+            5,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            4
+          ],
+          "neighborB": [
+            5,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            2
+          ],
+          "neighborB": [
+            1,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            2
+          ],
+          "neighborB": [
+            2,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            2
+          ],
+          "neighborB": [
+            3,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            2
+          ],
+          "neighborB": [
+            4,
+            3
+          ]
+        }
+      ]
+    },
+    "19.50.21": {
+      "boardSize": 6,
+      "waypoints": [
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            0,
+            1
+          ],
+          "neighborB": [
+            1,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            1
+          ],
+          "neighborB": [
+            5,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            2
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            3
+          ],
+          "neighborB": [
+            5,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            4
+          ],
+          "neighborB": [
+            5,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            0
+          ],
+          "neighborB": [
+            1,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            0
+          ],
+          "neighborB": [
+            2,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            0
+          ],
+          "neighborB": [
+            3,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            0
+          ],
+          "neighborB": [
+            4,
+            1
+          ]
+        }
+      ]
+    },
+    "19.50.37": {
+      "boardSize": 8,
+      "waypoints": [
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          2
+        ]
+      ],
+      "walls": []
+    },
+    "19.50.47": {
+      "boardSize": 7,
+      "waypoints": [
+        [
+          5,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      "walls": []
+    },
+    "19.50.57": {
+      "boardSize": 8,
+      "waypoints": [
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          2,
+          3
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            3,
+            2
+          ],
+          "neighborB": [
+            4,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            3
+          ],
+          "neighborB": [
+            4,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            4
+          ],
+          "neighborB": [
+            4,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            2
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            3
+          ],
+          "neighborB": [
+            5,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            2
+          ],
+          "neighborB": [
+            6,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            3
+          ],
+          "neighborB": [
+            6,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            5
+          ],
+          "neighborB": [
+            6,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            6
+          ],
+          "neighborB": [
+            6,
+            6
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            7
+          ],
+          "neighborB": [
+            6,
+            7
+          ]
+        },
+        {
+          "neighborA": [
+            6,
+            2
+          ],
+          "neighborB": [
+            7,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            6,
+            3
+          ],
+          "neighborB": [
+            7,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            6,
+            4
+          ],
+          "neighborB": [
+            7,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            6,
+            5
+          ],
+          "neighborB": [
+            7,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            6,
+            6
+          ],
+          "neighborB": [
+            7,
+            6
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            4
+          ],
+          "neighborB": [
+            4,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            4
+          ],
+          "neighborB": [
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    "19.51.06": {
+      "boardSize": 7,
+      "waypoints": [
+        [
+          3,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          3,
+          5
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            1,
+            1
+          ],
+          "neighborB": [
+            1,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            1
+          ],
+          "neighborB": [
+            2,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            1
+          ],
+          "neighborB": [
+            3,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            1
+          ],
+          "neighborB": [
+            4,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            1
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            2
+          ],
+          "neighborB": [
+            1,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            3
+          ],
+          "neighborB": [
+            5,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            4
+          ],
+          "neighborB": [
+            1,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            2,
+            4
+          ],
+          "neighborB": [
+            2,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            4
+          ],
+          "neighborB": [
+            3,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            4
+          ],
+          "neighborB": [
+            4,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            4
+          ],
+          "neighborB": [
+            5,
+            5
+          ]
+        }
+      ]
+    },
+    "19.46.03": {
+      "boardSize": 7,
+      "waypoints": [
+        [
+          6,
+          0
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          1,
+          5
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            5,
+            1
+          ],
+          "neighborB": [
+            6,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            2
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            4
+          ],
+          "neighborB": [
+            2,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            0,
+            5
+          ],
+          "neighborB": [
+            1,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            1
+          ],
+          "neighborB": [
+            5,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            4
+          ],
+          "neighborB": [
+            1,
+            5
+          ]
+        }
+      ]
+    },
+    "102225": {
+      "boardSize": 8,
+      "waypoints": [
+        [
+          4,
+          7
+        ],
+        [
+          1,
+          6
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          6,
+          6
+        ]
+      ],
+      "walls": []
+    },
+    "102318": {
+      "boardSize": 7,
+      "waypoints": [
+        [
+          6,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "walls": [
+        {
+          "neighborA": [
+            2,
+            1
+          ],
+          "neighborB": [
+            3,
+            1
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            3
+          ],
+          "neighborB": [
+            2,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            4,
+            3
+          ],
+          "neighborB": [
+            5,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            5
+          ],
+          "neighborB": [
+            4,
+            5
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            1
+          ],
+          "neighborB": [
+            3,
+            2
+          ]
+        },
+        {
+          "neighborA": [
+            1,
+            3
+          ],
+          "neighborB": [
+            1,
+            4
+          ]
+        },
+        {
+          "neighborA": [
+            5,
+            2
+          ],
+          "neighborB": [
+            5,
+            3
+          ]
+        },
+        {
+          "neighborA": [
+            3,
+            4
+          ],
+          "neighborB": [
+            3,
+            5
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.49.31.jpeg",
+      "board": "19.49.31"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.49.42.jpeg",
+      "board": "19.49.42"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.49.53.jpeg",
+      "board": "19.49.53"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.50.07.jpeg",
+      "board": "19.50.07"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.50.21.jpeg",
+      "board": "19.50.21"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.50.37.jpeg",
+      "board": "19.50.37"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.50.47.jpeg",
+      "board": "19.50.47"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.50.57.jpeg",
+      "board": "19.50.57"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.51.06.jpeg",
+      "board": "19.51.06"
+    },
+    {
+      "file": "WhatsApp Image 2026-09-12 at 19.46.03.jpeg",
+      "board": "19.46.03"
+    },
+    {
+      "file": "Screenshot 2026-08-16 102225.png",
+      "board": "102225"
+    },
+    {
+      "file": "Screenshot 2026-08-16 102318.png",
+      "board": "102318"
+    }
+  ]
+}

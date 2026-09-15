@@ -28,7 +28,12 @@ def mock_heavy_dependencies():
     mock_cv2.MORPH_CLOSE = 3
     mock_cv2.COLOR_BGR2HSV = 40
     mock_cv2.COLOR_BGR2GRAY = 6
-    with patch.dict(sys.modules, {"numpy": mock_numpy, "cv2": mock_cv2}):
+    # These unit tests isolate the orange-grid path. Real LinkedIn detection
+    # is exercised by test_screenshot_linkedin.py with actual image arrays.
+    with patch.dict(sys.modules, {"numpy": mock_numpy, "cv2": mock_cv2}), patch(
+        "backend.input_validation.screenshot.linkedin_grid_localizer.localize_linkedin_grid",
+        return_value=None,
+    ):
         yield {"numpy": mock_numpy, "cv2": mock_cv2}
 
 
