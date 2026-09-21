@@ -1,5 +1,4 @@
 {
-  "installCommand": "uv sync --no-dev",
   "functions": {
     "run_api.py": {
       "memory": 3008,
