@@ -12,6 +12,7 @@ from backend.solution_path import SolutionPath
 from backend.puzzle_logic.board import Board
 from backend.rl_components.rl_agent import RLAgent
 from backend.rl_components.rl_environment import RLEnvironment
+from backend.rl_configuration import rl_board_size_allowed
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ class RLSolver(Solver):
             Queries the global configuration dictionary and explicitly interrogates the OS file
             system to guarantee the payload physically exists before attempting network ingestion.
         """
-        if board_size not in MODEL_PATHS:
+        if board_size not in MODEL_PATHS or not rl_board_size_allowed(board_size):
             raise ValueError(
                 f"No RL model available for " f"{board_size}x{board_size} boards."
             )

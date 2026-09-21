@@ -16,6 +16,7 @@ from backend.api.architecture_provider.RuntimeInfo import RuntimeInfo
 from backend.api.architecture_provider.SolverInfo import SolverInfo
 from backend.api.dtos.ArchitectureInfo import ArchitectureInfo
 from backend.api.version import API_VERSION
+from backend.rl_configuration import rl_board_size_allowed
 
 _UNKNOWN = "unknown"
 
@@ -57,6 +58,8 @@ def available_model_sizes() -> list[int]:
 
     sizes: list[int] = []
     for size in (6, 7, 8):
+        if not rl_board_size_allowed(size):
+            continue
         folder = _TRAINED_MODELS_DIR / f"{size}x{size}"
         if folder.is_dir() and any(folder.glob("*.zip")):
             sizes.append(size)
