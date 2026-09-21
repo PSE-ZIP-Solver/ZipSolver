@@ -29,6 +29,9 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.vercel]
+entrypoint = "run_api:app"
+
 [tool.hatch.build.targets.wheel]
 # Installs the project into the venv so `import backend` resolves from any working
 # directory and under any invocation (pytest, `python -m`, VS Code, uvicorn).
