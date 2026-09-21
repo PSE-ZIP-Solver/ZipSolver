@@ -174,6 +174,7 @@ class BackendAPI:
                 "http://127.0.0.1:5173",
                 "https://zipsolver-1.onrender.com",
                 "https://zipsolver-90yf.onrender.com",
+                "https://zip-solver-frontend.vercel.app"
             ],
             allow_origin_regex=r"https://.*\.onrender\.com$",
             allow_methods=["GET", "POST"],
