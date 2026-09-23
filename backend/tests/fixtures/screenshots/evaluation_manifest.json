@@ -1,56 +1,178 @@
 {
-  "name": "ZipSolver screenshot regression and robustness v2",
+  "name": "ZipSolver screenshot regression and robustness v3",
   "datasetRole": "development_regression_and_derived_robustness",
-  "groundTruth": "expected_boards.json",
-  "notes": "Four previously used screenshots of two boards. Six fixed transformations each; correlated derivatives, not independent unseen data. Conditions piloted before final repeated measurement. All failures retained.",
+  "groundTruth": "evaluation_expected_boards.json",
+  "notes": "34 original captures: four legacy app screenshots, 18 app captures representing nine boards in both themes, and 12 LinkedIn captures representing eleven distinct boards. Each original is evaluated unchanged and with six fixed transformations. Two blank negative cases are included. Expected boards reuse the existing manually transcribed fixtures. Board-size hints are supplied. These are development regression and robustness cases, not independent unseen samples; transformed versions are correlated with their originals. All failures are retained.",
   "baseCases": [
     {
-      "id": "6x6-light",
-      "theme": "light",
-      "boardSize": 6,
+      "id": "6x6-light", "theme": "light", "boardSize": 6,
       "image": "6x6-light.png",
-      "expectedBoardKey": "6x6",
-      "backgroundRgb": [
-        255,
-        249,
-        241
-      ]
+      "expectedBoardKey": "6x6", "backgroundRgb": [255, 249, 241]
     },
     {
-      "id": "6x6-dark",
-      "theme": "dark",
-      "boardSize": 6,
+      "id": "6x6-dark", "theme": "dark", "boardSize": 6,
       "image": "6x6-dark.png",
-      "expectedBoardKey": "6x6",
-      "backgroundRgb": [
-        47,
-        36,
-        25
-      ]
+      "expectedBoardKey": "6x6", "backgroundRgb": [47, 36, 25]
     },
     {
-      "id": "8x8-light",
-      "theme": "light",
-      "boardSize": 8,
+      "id": "8x8-light", "theme": "light", "boardSize": 8,
       "image": "8x8-light.png",
-      "expectedBoardKey": "8x8",
-      "backgroundRgb": [
-        255,
-        249,
-        241
-      ]
+      "expectedBoardKey": "8x8", "backgroundRgb": [255, 249, 241]
     },
     {
-      "id": "8x8-dark",
-      "theme": "dark",
-      "boardSize": 8,
+      "id": "8x8-dark", "theme": "dark", "boardSize": 8,
       "image": "8x8-dark.png",
-      "expectedBoardKey": "8x8",
-      "backgroundRgb": [
-        47,
-        36,
-        25
-      ]
+      "expectedBoardKey": "8x8", "backgroundRgb": [47, 36, 25]
+    },
+    {
+      "id": "app-191913", "theme": "dark", "boardSize": 6,
+      "image": "app_captures/Screenshot 2026-09-13 191913.png",
+      "expectedBoardKey": "app:agent", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-191932", "theme": "light", "boardSize": 6,
+      "image": "app_captures/Screenshot 2026-09-13 191932.png",
+      "expectedBoardKey": "app:agent", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-191920", "theme": "dark", "boardSize": 7,
+      "image": "app_captures/Screenshot 2026-09-13 191920.png",
+      "expectedBoardKey": "app:hell", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-191940", "theme": "light", "boardSize": 7,
+      "image": "app_captures/Screenshot 2026-09-13 191940.png",
+      "expectedBoardKey": "app:hell", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-191951", "theme": "light", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 191951.png",
+      "expectedBoardKey": "app:henrik", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-191959", "theme": "dark", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 191959.png",
+      "expectedBoardKey": "app:henrik", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192013", "theme": "dark", "boardSize": 6,
+      "image": "app_captures/Screenshot 2026-09-13 192013.png",
+      "expectedBoardKey": "app:loop", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192018", "theme": "light", "boardSize": 6,
+      "image": "app_captures/Screenshot 2026-09-13 192018.png",
+      "expectedBoardKey": "app:loop", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192102", "theme": "light", "boardSize": 6,
+      "image": "app_captures/Screenshot 2026-09-13 192102.png",
+      "expectedBoardKey": "app:custom6", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192108", "theme": "dark", "boardSize": 6,
+      "image": "app_captures/Screenshot 2026-09-13 192108.png",
+      "expectedBoardKey": "app:custom6", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192159", "theme": "dark", "boardSize": 7,
+      "image": "app_captures/Screenshot 2026-09-13 192159.png",
+      "expectedBoardKey": "app:custom7", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192206", "theme": "light", "boardSize": 7,
+      "image": "app_captures/Screenshot 2026-09-13 192206.png",
+      "expectedBoardKey": "app:custom7", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192257", "theme": "light", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 192257.png",
+      "expectedBoardKey": "app:custom8", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192303", "theme": "dark", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 192303.png",
+      "expectedBoardKey": "app:custom8", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192314", "theme": "dark", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 192314.png",
+      "expectedBoardKey": "app:sparse8", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192319", "theme": "light", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 192319.png",
+      "expectedBoardKey": "app:sparse8", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192346", "theme": "light", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 192346.png",
+      "expectedBoardKey": "app:reserved8", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "app-192351", "theme": "dark", "boardSize": 8,
+      "image": "app_captures/Screenshot 2026-09-13 192351.png",
+      "expectedBoardKey": "app:reserved8", "backgroundRgb": [100, 100, 100]
+    },
+    {
+      "id": "linkedin-19.49.31", "theme": "light", "boardSize": 7,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.49.31.jpeg",
+      "expectedBoardKey": "linkedin:19.49.31", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.49.42", "theme": "light", "boardSize": 8,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.49.42.jpeg",
+      "expectedBoardKey": "linkedin:19.49.42", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.49.53", "theme": "light", "boardSize": 6,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.49.53.jpeg",
+      "expectedBoardKey": "linkedin:19.49.53", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.50.07", "theme": "light", "boardSize": 6,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.50.07.jpeg",
+      "expectedBoardKey": "linkedin:19.50.07", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.50.21", "theme": "light", "boardSize": 6,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.50.21.jpeg",
+      "expectedBoardKey": "linkedin:19.50.21", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.50.37", "theme": "light", "boardSize": 8,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.50.37.jpeg",
+      "expectedBoardKey": "linkedin:19.50.37", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.50.47", "theme": "light", "boardSize": 7,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.50.47.jpeg",
+      "expectedBoardKey": "linkedin:19.50.47", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.50.57", "theme": "light", "boardSize": 8,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.50.57.jpeg",
+      "expectedBoardKey": "linkedin:19.50.57", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.51.06", "theme": "light", "boardSize": 7,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.51.06.jpeg",
+      "expectedBoardKey": "linkedin:19.51.06", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-19.46.03", "theme": "light", "boardSize": 7,
+      "image": "linkedin_captures/WhatsApp Image 2026-09-12 at 19.46.03.jpeg",
+      "expectedBoardKey": "linkedin:19.46.03", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-102225", "theme": "light", "boardSize": 8,
+      "image": "linkedin_captures/Screenshot 2026-08-16 102225.png",
+      "expectedBoardKey": "linkedin:102225", "backgroundRgb": [240, 240, 240]
+    },
+    {
+      "id": "linkedin-102318", "theme": "light", "boardSize": 7,
+      "image": "linkedin_captures/Screenshot 2026-08-16 102318.png",
+      "expectedBoardKey": "linkedin:102318", "backgroundRgb": [240, 240, 240]
     }
   ],
   "variants": [
@@ -60,45 +182,27 @@
     },
     {
       "id": "scale-75",
-      "transformation": {
-        "type": "scale",
-        "factor": 0.75
-      }
+      "transformation": {"type": "scale", "factor": 0.75}
     },
     {
       "id": "scale-125",
-      "transformation": {
-        "type": "scale",
-        "factor": 1.25
-      }
+      "transformation": {"type": "scale", "factor": 1.25}
     },
     {
       "id": "jpeg-q65",
-      "transformation": {
-        "type": "jpeg",
-        "quality": 65
-      }
+      "transformation": {"type": "jpeg", "quality": 65}
     },
     {
       "id": "blur-0.8",
-      "transformation": {
-        "type": "gaussianBlur",
-        "radius": 0.8
-      }
+      "transformation": {"type": "gaussianBlur", "radius": 0.8}
     },
     {
       "id": "pad-40",
-      "transformation": {
-        "type": "pad",
-        "pixels": 40
-      }
+      "transformation": {"type": "pad", "pixels": 40}
     },
     {
       "id": "crop-12",
-      "transformation": {
-        "type": "crop",
-        "pixels": 12
-      }
+      "transformation": {"type": "crop", "pixels": 12}
     }
   ],
   "negativeCases": [
@@ -106,11 +210,7 @@
       "id": "blank-light",
       "theme": "light",
       "boardSize": 6,
-      "syntheticSolidRgb": [
-        255,
-        249,
-        241
-      ],
+      "syntheticSolidRgb": [255, 249, 241],
       "expectedError": {
         "status": 422,
         "code": "NO_BOARD_DETECTED"
@@ -120,11 +220,7 @@
       "id": "blank-dark",
       "theme": "dark",
       "boardSize": 6,
-      "syntheticSolidRgb": [
-        47,
-        36,
-        25
-      ],
+      "syntheticSolidRgb": [47, 36, 25],
       "expectedError": {
         "status": 422,
         "code": "NO_BOARD_DETECTED"

@@ -478,7 +478,7 @@ def _markdown(result: dict[str, Any]) -> str:
             f"| {row['id']} | {row['condition']} | {row['theme']} | {row['boardSize']} | "
             f"{row['expectedOutcome']} | {row['httpStatus']} | "
             f"{'Pass' if matched else 'Fail'} | {row['latency']['medianMs']} | "
-            f"{'Yes' if row['responseStable'] else 'No'} |"
+            f"{'n/a' if len(row['latencyMs']) < 2 else ('Yes' if row['responseStable'] else 'No')} |"
         )
     lines.extend(
         [
@@ -544,33 +544,79 @@ def _markdown(result: dict[str, Any]) -> str:
             f"{_display_ratio(group['expectedErrorAccuracy'])} | "
             f"{group['latency']['medianMs']} / {group['latency']['p95Ms']} |"
         )
-    lines.extend(
-        [
-            "",
-            "## Interpretation and limitations",
-            "",
-            "Accuracy uses one observation per case; repetitions measure timing and response",
-            "stability, and do not increase the number of independent screenshots. The 28",
-            "positive cases come from four screenshots of just two boards. Conditions were",
-            "piloted before this repeated run. Failed conditions remain in the denominator.",
-            "Timing includes first-use requests and excludes image-transformation time.",
-            "Full responses and payload SHA-256 hashes are retained in metrics.json.",
-            "Exit code 1 means evaluation mismatches were recorded; results are still saved.",
-            "",
-            "The strict exact-board metric passes only when board size, ordered waypoint",
-            "positions, and the complete undirected wall set all match. Position and wall",
-            "precision/recall show partial extraction errors that exact accuracy alone would",
-            "hide. Error accuracy requires both the expected HTTP status and error code.",
-            "",
-            "The set covers four original 6x6 and 8x8 light/dark screenshots, controlled",
-            "scale, JPEG-compression, blur, padding, and crop variants, plus two synthetic",
-            "blank-image rejection cases. It contains no 7x7 board, phone photograph,",
-            "LinkedIn screenshot, or held-out real failure. Board size is supplied, matching",
-            "the frontend workflow; automatic size inference is not evaluated. Latency is",
-            "in-process and must not be described as deployed-network or load-test performance.",
-            "",
-        ]
+        rows = result["cases"]
+    original_count = sum(
+        row.get("sourceKind") == "real_original" for row in rows
     )
+    derived_count = sum(
+        row.get("sourceKind") == "derived_robustness" for row in rows
+    )
+    sizes = sorted({
+        row["boardSize"] for row in rows
+        if row["expectedOutcome"] == "success"
+    })
+    size_text = ", ".join(f"{size}x{size}" for size in sizes) or "n/a"
+
+    repeated_rows = [
+        row for row in rows if len(row["latencyMs"]) > 1
+    ]
+    stable_count = sum(
+        row["responseStable"] for row in repeated_rows
+    )
+    stability_text = (
+        f"{stable_count}/{len(repeated_rows)} repeatedly evaluated cases "
+        "returned consistent normalized responses."
+        if repeated_rows else
+        "Response stability was not measured because each case was run only once."
+    )
+
+    lines.extend([
+        "",
+        "## Dataset coverage",
+        "",
+        f"- Original capture cases: {original_count}",
+        f"- Derived robustness cases: {derived_count}",
+        f"- Valid image cases: {summary['validCases']}",
+        f"- Negative cases: {summary['negativeCases']}",
+        f"- Total cases: {summary['cases']}",
+        f"- Measured API requests: {summary['latency']['samples']}",
+        f"- Supplied board sizes for valid cases: {size_text}",
+        "",
+        "Dataset notes from the manifest:",
+        result["dataset"].get("notes") or "No additional notes supplied.",
+        "",
+        "## Interpretation and limitations",
+        "",
+        "Accuracy is calculated from the first response for each case. Additional",
+        "repetitions measure latency and response consistency; they do not increase",
+        "the number of independent screenshots. Transformed versions share their",
+        "source image, and different captures can show the same puzzle.",
+        stability_text,
+        "",
+        "An exact-board match requires the supplied board size, ordered waypoint",
+        "positions, and complete undirected wall set to match the expected board.",
+        "Import success and warning-free responses are checked separately.",
+        "Negative-case success requires both the expected HTTP status and error code.",
+        "Failed cases remain in the accuracy denominators.",
+        "",
+        "These results describe the cases and conditions listed above. This",
+        "development corpus does not establish accuracy on independent unseen images",
+        "or on image conditions absent from the dataset. Negative-case results apply",
+        "only to the included invalid inputs. Board size is supplied; automatic",
+        "size inference is not evaluated.",
+        "",
+        "Latency covers in-process API requests, including first-use requests and",
+        "negative cases. Image-transformation time is excluded. These measurements",
+        "do not represent browser upload time, deployed-network latency, or concurrent",
+        "load performance. A report regenerated from saved metrics reuses the original",
+        "measurements and does not constitute a new evaluation run.",
+        "",
+        "metrics.json retains the first response per case, payload SHA-256 hashes,",
+        "individual request timings, and a response-stability flag. It does not",
+        "retain every repeated response. Exit code 1 indicates an evaluation mismatch",
+        "or unstable responses; completed evaluation results are still saved.",
+        "",
+    ])
     return "\n".join(lines)
 
 

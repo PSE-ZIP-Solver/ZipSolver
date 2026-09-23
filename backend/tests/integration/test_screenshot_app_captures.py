@@ -81,6 +81,7 @@ def test_app_capture(extractor, case, variant):
     [
         {**base, **variant, "case_id": f"{base['id']}--{variant['id']}"}
         for base in LEGACY_MANIFEST["baseCases"]
+        if base["expectedBoardKey"] in LEGACY_EXPECTED
         for variant in LEGACY_MANIFEST["variants"]
     ],
     ids=lambda case: case["case_id"],
