@@ -131,7 +131,7 @@ def _payload(case: dict[str, Any], dataset_dir: Path) -> tuple[str, bytes, str]:
         Image.new("RGB", (600, 600), tuple(case["syntheticSolidRgb"])).save(
             output, format="PNG"
         )
-        return f"{case['id']}.png", output.getvalue()
+        return f"{case['id']}.png", output.getvalue(), "image/png"
     raise ValueError(
         f"Case {case.get('id')!r} defines neither image nor syntheticSolidRgb"
     )

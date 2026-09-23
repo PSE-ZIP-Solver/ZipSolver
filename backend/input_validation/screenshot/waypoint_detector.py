@@ -125,7 +125,10 @@ class WaypointDetector:
             iterator = list(cell_bounds.items())
 
         for (grid_x, grid_y), bbox in iterator:
-            raw = self._detect_marker_and_read(image_data, bbox, theme)
+            if has_disc_positions:
+                raw = self._detect_marker_and_read(image_data, bbox, theme, allow_black=True)
+            else:
+                raw = self._detect_marker_and_read(image_data, bbox, theme)
             if has_disc_positions and raw is None:
                 # Position is trusted (came from global detection); only the number failed.
                 raw = "?"
@@ -204,6 +207,7 @@ class WaypointDetector:
         image_data: "np.ndarray",
         bbox: Tuple[int, int, int, int],
         theme: ThemeMode,
+        allow_black: bool = False,
     ):
         """
         Segments localized blocks validating high saturation circular boundaries yielding read targets.
@@ -236,24 +240,39 @@ class WaypointDetector:
         # Is there an orange disc in this cell? (saturated orange covering a real fraction.)
         disc = (hue > 5) & (hue < 30) & (sat > 65) & (val > 120)
         if disc.sum() < (w * h) * 0.12:
-            return None  # no marker here
+            if not allow_black:
+                return None
+            # LinkedIn uses white digits on black discs. Check the disc shape
+            # so a flat dark cell or a wall does not become a phantom waypoint.
+            black = (val < 95).astype(np.uint8) * 255
+            contours, _ = cv2.findContours(
+                black, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+            has_black_disc = False
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                _, radius = cv2.minEnclosingCircle(contour)
+                if area >= w * h * 0.12 and radius > 0:
+                    if area / (np.pi * radius * radius) > 0.82:
+                        has_black_disc = True
+                        break
+            if not has_black_disc:
+                return None
 
         # Restrict glyph detection to the core, away from the anti-aliased rim.
         cy0, cy1 = int(h * 0.18), int(h * 0.82)
         cx0, cx1 = int(w * 0.18), int(w * 0.82)
-        core = hsv[cy0:cy1, cx0:cx1]
-        # The glyph polarity is local to its disc: dark-theme ZipSolver uses
-        # dark ink, while other sources may keep white ink on a dark page.
-        # Inspect both polarities within the core, away from the disc edge.
-        white = ((core[:, :, 1] < 70) & (core[:, :, 2] > 190)).astype(np.uint8) * 255
-        dark = (core[:, :, 2] < 85).astype(np.uint8) * 255
-        if cv2.countNonZero(dark) > cv2.countNonZero(white):
-            white = dark
-        # Threshold relative to cell area so this works whether the image was downscaled to
-        # ~1024px (pipeline default) or left full-res.
-        min_glyph_px = max(6, int(w * h * 0.004))
-        if cv2.countNonZero(white) < min_glyph_px:
-            return "?"  # disc present but no legible glyph
+        core = cv2.cvtColor(cell[cy0:cy1, cx0:cx1], cv2.COLOR_BGR2GRAY)
+        if core.size == 0 or float(np.percentile(core, 98) - np.percentile(core, 2)) < 45:
+            return "?"
+        # Local contrast retains antialiased strokes in compressed or small
+        # digits. Fixed white/black cutoffs can split a '3' into tiny fragments.
+        core = cv2.resize(core, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+        _, white = cv2.threshold(core, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        if cv2.countNonZero(white) > white.size / 2:
+            white = cv2.bitwise_not(white)
+        if cv2.countNonZero(white) < max(6, int(w * h * 0.004)):
+            return "?"
 
         number = self._read_number(white)
         return number if number is not None else "?"
@@ -303,7 +322,7 @@ class WaypointDetector:
 
     def _classify_digit(self, glyph) -> Optional[int]:
         """
-        Calculates mathematical nearest-neighbor variances matching isolated chunks into numbers.
+        Matches isolated digit shapes against the portable glyph templates.
 
         Args:
             glyph: The targeted geometric subset identifying a singular numerical shape.
@@ -312,21 +331,56 @@ class WaypointDetector:
             The raw identified evaluation metric mapping back onto standard integers.
 
         Implementation Details:
-            Extracts fully normalized layout bounds crossing identical dimensions actively pulling
-            compiled memory templates computing squared mathematical variances dictating optimal
-            distance gaps dynamically mapping pure shape relationships strictly independent of ink weights.
+            Normalizes glyphs to a shared canvas and compares symmetric distances
+            between their ink pixels. Cached template distance maps tolerate moderate
+            differences in stroke thickness without requiring host-installed fonts.
         """
+        import cv2
         import numpy as np
 
-        templates = self._digit_templates()
-        g = self._normalise_glyph(glyph)
-        best, best_dist = None, 1e9
-        for digit, variants in templates.items():
-            for t in variants:
-                dist = float(np.mean((g - t) ** 2))
-                if dist < best_dist:
-                    best_dist, best = dist, digit
+        g = self._normalise_glyph(glyph) > 0
+        if not np.any(g):
+            return None
+        # Compare distances between ink shapes in both directions. Pixelwise
+        # mismatch over-penalises harmless differences in stroke thickness and
+        # can confuse small antialiased digits such as 3 and 5.
+        holes = self._glyph_holes(g)
+        distance = cv2.distanceTransform((~g).astype(np.uint8), cv2.DIST_L2, 3)
+        cache = getattr(self, "_digit_distance_cache", None)
+        if cache is None:
+            cache = []
+            for digit, variants in self._digit_templates().items():
+                for template in variants:
+                    ink = template > 0
+                    target_distance = cv2.distanceTransform(
+                        (~ink).astype(np.uint8), cv2.DIST_L2, 3
+                    )
+                    cache.append((digit, ink, target_distance, self._glyph_holes(ink)))
+            self._digit_distance_cache = cache
+        best, best_dist = None, float("inf")
+        for digit, ink, target_distance, target_holes in cache:
+            dist = float(np.mean(distance[ink]) + np.mean(target_distance[g]))
+            # Closed counters distinguish rounded bold 5s from 6s and 8s.
+            # Keep this a soft penalty: damaged images can break a counter.
+            dist += 0.75 * abs(holes - target_holes)
+            if dist < best_dist:
+                best_dist, best = dist, digit
         return best
+
+    def _glyph_holes(self, ink):
+        """Count sizeable enclosed gaps, ignoring tiny thresholding speckles."""
+        import cv2
+        import numpy as np
+
+        contours, hierarchy = cv2.findContours(
+            ink.astype(np.uint8) * 255, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+        )
+        if hierarchy is None:
+            return 0
+        return sum(
+            int(parent[3]) >= 0 and cv2.contourArea(contour) >= 4
+            for contour, parent in zip(contours, hierarchy[0])
+        )
 
     def _normalise_glyph(self, glyph, box: int = 40):
         """

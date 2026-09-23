@@ -3,7 +3,7 @@
 Dataset: **ZipSolver screenshot regression and robustness v2**  
 Role: `development_regression_and_derived_robustness`  
 Execution: FastAPI TestClient (in-process POST /api/import)  
-Repetitions per case: 20
+Repetitions per case: 40
 
 > The original screenshots were used while correcting the importer, and all
 > robustness cases are deterministic derivatives of those sources. These results
@@ -22,49 +22,49 @@ Repetitions per case: 20
 | Wall precision / recall / F1 | 100.0% / 100.0% / 100.0% |
 | Warning-free valid imports | 82.1% |
 | Expected-error accuracy | 100.0% |
-| Median / p95 in-process latency | 93.845 ms / 201.241 ms |
+| Median / p95 in-process latency | 87.014 ms / 152.075 ms |
 
 ## Per-case results
 
 | Case | Condition | Theme | Size | Expected | HTTP | Exact/error match | Median ms | Stable |
 | --- | --- | --- | ---: | --- | ---: | --- | ---: | --- |
-| 6x6-light | original | light | 6 | success | 200 | Pass | 81.659 | Yes |
-| 6x6-light--scale-75 | scale-75 | light | 6 | success | 200 | Pass | 53.921 | Yes |
-| 6x6-light--scale-125 | scale-125 | light | 6 | success | 200 | Pass | 123.018 | Yes |
-| 6x6-light--jpeg-q65 | jpeg-q65 | light | 6 | success | 200 | Pass | 87.031 | Yes |
-| 6x6-light--blur-0.8 | blur-0.8 | light | 6 | success | 200 | Pass | 73.707 | Yes |
-| 6x6-light--pad-40 | pad-40 | light | 6 | success | 200 | Pass | 87.26 | Yes |
-| 6x6-light--crop-12 | crop-12 | light | 6 | success | 200 | Pass | 67.398 | Yes |
-| 6x6-dark | original | dark | 6 | success | 200 | Pass | 55.882 | Yes |
-| 6x6-dark--scale-75 | scale-75 | dark | 6 | success | 200 | Pass | 39.151 | Yes |
-| 6x6-dark--scale-125 | scale-125 | dark | 6 | success | 200 | Pass | 80.697 | Yes |
-| 6x6-dark--jpeg-q65 | jpeg-q65 | dark | 6 | success | 200 | Pass | 75.172 | Yes |
-| 6x6-dark--blur-0.8 | blur-0.8 | dark | 6 | success | 200 | Pass | 69.458 | Yes |
-| 6x6-dark--pad-40 | pad-40 | dark | 6 | success | 200 | Pass | 94.551 | Yes |
-| 6x6-dark--crop-12 | crop-12 | dark | 6 | success | 200 | Pass | 56.375 | Yes |
-| 8x8-light | original | light | 8 | success | 200 | Pass | 164.564 | Yes |
-| 8x8-light--scale-75 | scale-75 | light | 8 | success | 200 | Fail | 85.295 | Yes |
-| 8x8-light--scale-125 | scale-125 | light | 8 | success | 200 | Pass | 160.706 | Yes |
-| 8x8-light--jpeg-q65 | jpeg-q65 | light | 8 | success | 200 | Fail | 115.944 | Yes |
-| 8x8-light--blur-0.8 | blur-0.8 | light | 8 | success | 200 | Pass | 102.746 | Yes |
-| 8x8-light--pad-40 | pad-40 | light | 8 | success | 200 | Pass | 138.894 | Yes |
-| 8x8-light--crop-12 | crop-12 | light | 8 | success | 200 | Pass | 214.324 | Yes |
-| 8x8-dark | original | dark | 8 | success | 200 | Pass | 151.928 | Yes |
-| 8x8-dark--scale-75 | scale-75 | dark | 8 | success | 200 | Fail | 86.293 | Yes |
-| 8x8-dark--scale-125 | scale-125 | dark | 8 | success | 200 | Pass | 200.009 | Yes |
-| 8x8-dark--jpeg-q65 | jpeg-q65 | dark | 8 | success | 200 | Fail | 111.822 | Yes |
-| 8x8-dark--blur-0.8 | blur-0.8 | dark | 8 | success | 200 | Fail | 106.42 | Yes |
-| 8x8-dark--pad-40 | pad-40 | dark | 8 | success | 200 | Pass | 130.429 | Yes |
-| 8x8-dark--crop-12 | crop-12 | dark | 8 | success | 200 | Pass | 104.218 | Yes |
-| blank-light | negative | light | 6 | error | 422 | Pass | 40.234 | Yes |
-| blank-dark | negative | dark | 6 | error | 422 | Pass | 39.977 | Yes |
+| 6x6-light | original | light | 6 | success | 200 | Pass | 70.814 | Yes |
+| 6x6-light--scale-75 | scale-75 | light | 6 | success | 200 | Pass | 41.142 | Yes |
+| 6x6-light--scale-125 | scale-125 | light | 6 | success | 200 | Pass | 109.623 | Yes |
+| 6x6-light--jpeg-q65 | jpeg-q65 | light | 6 | success | 200 | Pass | 85.973 | Yes |
+| 6x6-light--blur-0.8 | blur-0.8 | light | 6 | success | 200 | Pass | 75.91 | Yes |
+| 6x6-light--pad-40 | pad-40 | light | 6 | success | 200 | Pass | 89.748 | Yes |
+| 6x6-light--crop-12 | crop-12 | light | 6 | success | 200 | Pass | 71.023 | Yes |
+| 6x6-dark | original | dark | 6 | success | 200 | Pass | 57.479 | Yes |
+| 6x6-dark--scale-75 | scale-75 | dark | 6 | success | 200 | Pass | 40.017 | Yes |
+| 6x6-dark--scale-125 | scale-125 | dark | 6 | success | 200 | Pass | 90.689 | Yes |
+| 6x6-dark--jpeg-q65 | jpeg-q65 | dark | 6 | success | 200 | Pass | 75.01 | Yes |
+| 6x6-dark--blur-0.8 | blur-0.8 | dark | 6 | success | 200 | Pass | 56.771 | Yes |
+| 6x6-dark--pad-40 | pad-40 | dark | 6 | success | 200 | Pass | 77.864 | Yes |
+| 6x6-dark--crop-12 | crop-12 | dark | 6 | success | 200 | Pass | 52.152 | Yes |
+| 8x8-light | original | light | 8 | success | 200 | Pass | 103.375 | Yes |
+| 8x8-light--scale-75 | scale-75 | light | 8 | success | 200 | Fail | 67.832 | Yes |
+| 8x8-light--scale-125 | scale-125 | light | 8 | success | 200 | Pass | 140.709 | Yes |
+| 8x8-light--jpeg-q65 | jpeg-q65 | light | 8 | success | 200 | Fail | 99.115 | Yes |
+| 8x8-light--blur-0.8 | blur-0.8 | light | 8 | success | 200 | Pass | 94.389 | Yes |
+| 8x8-light--pad-40 | pad-40 | light | 8 | success | 200 | Pass | 112.696 | Yes |
+| 8x8-light--crop-12 | crop-12 | light | 8 | success | 200 | Pass | 98.669 | Yes |
+| 8x8-dark | original | dark | 8 | success | 200 | Pass | 102.469 | Yes |
+| 8x8-dark--scale-75 | scale-75 | dark | 8 | success | 200 | Fail | 70.099 | Yes |
+| 8x8-dark--scale-125 | scale-125 | dark | 8 | success | 200 | Pass | 164.07 | Yes |
+| 8x8-dark--jpeg-q65 | jpeg-q65 | dark | 8 | success | 200 | Fail | 104.479 | Yes |
+| 8x8-dark--blur-0.8 | blur-0.8 | dark | 8 | success | 200 | Fail | 124.295 | Yes |
+| 8x8-dark--pad-40 | pad-40 | dark | 8 | success | 200 | Pass | 134.912 | Yes |
+| 8x8-dark--crop-12 | crop-12 | dark | 8 | success | 200 | Pass | 110.039 | Yes |
+| blank-light | negative | light | 6 | error | 422 | Pass | 65.672 | Yes |
+| blank-dark | negative | dark | 6 | error | 422 | Pass | 44.559 | Yes |
 
 ## Results by theme
 
 | Theme | Valid | Negative | Exact-board | Expected-error | Median / p95 ms |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| dark | 14 | 1 | 78.6% | 100.0% | 92.172 / 189.259 |
-| light | 14 | 1 | 85.7% | 100.0% | 95.004 / 212.954 |
+| dark | 14 | 1 | 78.6% | 100.0% | 80.278 / 163.088 |
+| light | 14 | 1 | 85.7% | 100.0% | 90.392 / 140.405 |
 
 ## Results by supplied board size
 
@@ -85,14 +85,14 @@ Repetitions per case: 20
 
 | Condition | Cases | Exact-board | Expected-error | Median / p95 ms |
 | --- | ---: | ---: | ---: | ---: |
-| blur-0.8 | 4 | 75.0% | n/a | 100.722 / 125.01 |
-| crop-12 | 4 | 100.0% | n/a | 93.102 / 262.928 |
-| jpeg-q65 | 4 | 50.0% | n/a | 104.852 / 143.908 |
-| negative | 2 | n/a | 100.0% | 39.977 / 46.201 |
-| original | 4 | 100.0% | n/a | 113.827 / 202.188 |
-| pad-40 | 4 | 100.0% | n/a | 114.668 / 183.781 |
-| scale-125 | 4 | 100.0% | n/a | 149.173 / 231.253 |
-| scale-75 | 4 | 50.0% | n/a | 69.826 / 100.982 |
+| blur-0.8 | 4 | 75.0% | n/a | 89.228 / 151.646 |
+| crop-12 | 4 | 100.0% | n/a | 90.106 / 128.981 |
+| jpeg-q65 | 4 | 50.0% | n/a | 96.365 / 113.844 |
+| negative | 2 | n/a | 100.0% | 49.544 / 83.056 |
+| original | 4 | 100.0% | n/a | 97.132 / 114.306 |
+| pad-40 | 4 | 100.0% | n/a | 104.348 / 148.187 |
+| scale-125 | 4 | 100.0% | n/a | 136.424 / 179.618 |
+| scale-75 | 4 | 50.0% | n/a | 62.649 / 78.674 |
 
 ## Interpretation and limitations
 
