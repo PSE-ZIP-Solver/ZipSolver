@@ -13,8 +13,8 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
     title: "What is ZipSolver?",
     icon: "❓",
     content: [
-      "ZipSolver is a Reinforcement Learning based tool for creating, editing, validating, and solving Zip puzzles.",
-      "The application allows users to design their own puzzles, import and export configurations, and visualize solver results."
+      "ZipSolver helps you build, explore, and solve Zip puzzles on an interactive board.",
+      "Create a puzzle by hand or start from an example, then switch to Play mode to follow the path yourself."
     ]
   },
   {
@@ -22,9 +22,9 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
     title: "Zip Puzzle Rules",
     icon: "🧩",
     content: [
-      "Place numbered waypoints on the board.",
-      "The solution path must visit all waypoints in ascending order.",
-      "The path must respect all puzzle constraints and walls."
+      "Fill every cell exactly once, moving only to an orthogonally adjacent cell.",
+      "Visit numbered waypoints in ascending order, starting with waypoint 1.",
+      "Walls block movement between neighboring cells, so plan around them."
     ]
   },
   {
@@ -32,37 +32,39 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
     title: "How do I create a puzzle?",
     icon: "🎮",
     content: [
-      "Select a grid size.",
-      "Place numbered waypoints on the board.",
-      "Add walls between adjacent cells if necessary.",
-      "Click Solve to search for a solution."
+      "Choose a grid size, then place at least two numbered waypoints in Build mode.",
+      "Add walls between adjacent cells when you want to make the route more challenging.",
+      "Click Show Solution to let ZipSolver search for a complete path.",
+      "Switch to Play mode to try the puzzle with arrow keys, touch, or mouse clicks."
     ]
   },
   {
-    id: "import-export",
-    title: "Import and Export",
-    icon: "📁",
+    id: "import-puzzle",
+    title: "Import a Puzzle",
+    icon: "🖼️",
     content: [
-      "Import a puzzle from a JSON file.",
-      "Export your current puzzle configuration for later use or sharing."
+      "Use Import Screenshot to read a Zip board from an image.",
+      "Choose the grid size that matches the screenshot, then check the detected waypoints and walls before solving.",
+      "If a marker is unclear, ZipSolver will warn you so you can correct it in Build mode."
     ]
   },
   {
-    id: "validation-failed",
-    title: "What does 'Validation Failed' mean?",
-    icon: "⚠️",
+    id: "sharing",
+    title: "Share a Puzzle",
+    icon: "🔗",
     content: [
-      "The current puzzle configuration is not valid.",
-      "Review the reported issue, correct it, and try again."
+      "Click Share to copy a link containing your current board.",
+      "Send the link to someone else or keep it as a quick way to return to the puzzle later.",
+      "Opening a shared link restores the board automatically."
     ]
   },
   {
     id: "no-solution",
-    title: "What does 'No Solution Found' mean?",
+    title: "What does 'No solution exists' mean?",
     icon: "🔍",
     content: [
-      "The puzzle configuration is valid, but no valid solution could be found.",
-      "Check the waypoint placement and wall configuration."
+      "ZipSolver checked the current board but could not find a path that visits every cell and waypoint in order.",
+      "Try moving a waypoint, removing a wall, or starting from one of the examples."
     ]
   }
 ];
