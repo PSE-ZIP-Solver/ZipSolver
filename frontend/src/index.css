@@ -142,6 +142,7 @@
   --color-board-shadow: rgba(105, 66, 31, 0.14);
 
   --color-waypoint-shadow: rgba(186, 93, 39, 0.24);
+  --color-waypoint-next-glow: rgba(35, 55, 137, 0.62);
   --color-wall-shadow: rgba(126, 76, 37, 0.22);
 
   --color-panel-bg: rgba(255, 250, 244, 0.84);
@@ -229,6 +230,7 @@
   --color-board-shadow: rgba(0, 0, 0, 0.34);
 
   --color-waypoint-shadow: rgba(191, 118, 80, 0.24);
+  --color-waypoint-next-glow: color-mix(in oklab, var(--color-waypoint-start) 72%, white 28%);
   --color-wall-shadow: rgba(119, 76, 47, 0.28);
 
   --color-panel-bg: rgba(39, 29, 21, 0.78);
@@ -488,7 +490,7 @@ body {
     box-shadow:
       0 14px 28px var(--color-waypoint-shadow),
       0 0 0 8px rgba(255, 255, 255, 0.06),
-      0 0 24px color-mix(in oklab, var(--color-waypoint-start) 72%, white 28%);
+      0 0 24px var(--color-waypoint-next-glow);
   }
 }
 

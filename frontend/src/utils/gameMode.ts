@@ -15,9 +15,14 @@ function getWallKey(a: Position, b: Position) {
     return `${first[0]},${first[1]}|${second[0]},${second[1]}`;
 }
 
+/** Checks whether two cells share an edge. */
+export function areAdjacentPositions(from: Position, to: Position) {
+    return Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]) === 1;
+}
+
 /** Checks whether a wall blocks one orthogonally adjacent move. */
 export function hasWallBetween(from: Position, to: Position, walls: BoardConfig["walls"]) {
-    if (Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]) !== 1) {
+    if (!areAdjacentPositions(from, to)) {
         return false;
     }
 
@@ -31,7 +36,7 @@ export function isValidGameMove(currentPosition: Position, nextPosition: Positio
         return false;
     }
 
-    if (Math.abs(currentPosition[0] - nextPosition[0]) + Math.abs(currentPosition[1] - nextPosition[1]) !== 1) {
+    if (!areAdjacentPositions(currentPosition, nextPosition)) {
         return false;
     }
 

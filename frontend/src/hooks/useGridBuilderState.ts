@@ -13,7 +13,7 @@ import {
 } from "../utils/boardShareService";
 import { createEmptyBoard, toggleWall, toggleWaypoint } from "../utils/boardEditor";
 import { validateImageFile } from "../utils/fileValidation";
-import { isValidGameMove } from "../utils/gameMode";
+import { areAdjacentPositions, isValidGameMove } from "../utils/gameMode";
 import {
     appendVisitedCell,
     createPlayModeState,
@@ -147,6 +147,10 @@ export default function useGridBuilderState() {
 
             if (!currentPosition) {
                 showMessage("WARNING", dialogMessages.play.addWaypointFirst);
+                return;
+            }
+
+            if (!areAdjacentPositions(currentPosition, position)) {
                 return;
             }
 

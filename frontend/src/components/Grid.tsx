@@ -640,7 +640,7 @@ export default function Grid({
 									}
 								}}
 							>
-								{isActive && (
+								{isActive && isPlayMode && (
 									<div className="absolute inset-0 rounded-xl border-2 border-primary shadow-[0_0_0_4px_var(--color-path-highlight-glow)]" />
 								)}
 
